@@ -1,0 +1,67 @@
+.form-group {
+    margin-bottom: 7px;
+}
+.form-group label {
+    font-size: 0.93rem;
+    color: #183153;
+    font-weight: 500;
+    margin-bottom: 2px;
+    display: block;
+    letter-spacing: 0.01em;
+}
+.form-group input, .form-group textarea {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid #e0e3e8;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: #f8fafc;
+    outline: none;
+    margin-top: 1px;
+    transition: border 0.2s, background 0.2s;
+}
+.form-group input:focus, .form-group textarea:focus {
+    border: 1px solid #2563eb;
+    background: #fff;
+}
+.form-group textarea {
+    min-height: 16px;
+    resize: vertical;
+}
+.submit-btn {
+    width: 100%;
+    padding: 8px 0;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    background: #2563eb;
+    color: #fff;
+    cursor: pointer;
+    margin-top: 4px;
+    box-shadow: 0 1px 4px rgba(37,99,235,0.07);
+    transition: background 0.2s, box-shadow 0.2s;
+}
+.submit-btn:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+}
+.submit-btn:hover:enabled {
+    background: #183153;
+    box-shadow: 0 2px 8px rgba(24,49,83,0.10);
+}
+.back-link {
+    text-align: center;
+    margin-top: 7px;
+}
+.back-link a {
+    color: #1d6ee5;
+    font-weight: 500;
+    text-decoration: underline;
+    font-size: 0.97rem;
+}
+@media (max-width: 500px) {
+    .profile-container {
+        padding: 8px 2vw 8px 2vw;
+    }
+}

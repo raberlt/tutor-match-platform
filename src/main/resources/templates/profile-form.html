@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Profile Setup</title>
+</head>
+<body>
+<h2>Setup your Profile</h2>
+<form th:action="@{/profile-setup}" th:object="${profile}" method="post">
+    <label>Full Name:</label>
+    <input type="text" th:field="*{fullName}" /><br/>
+    <label>Phone:</label>
+    <input type="text" th:field="*{phone}" /><br/>
+    <label>Address:</label>
+    <input type="text" th:field="*{address}" /><br/>
+    <label>Description:</label>
+    <textarea th:field="*{description}"></textarea><br/>
+    <button type="submit">Save</button>
+</form>
+</body>
+</html>

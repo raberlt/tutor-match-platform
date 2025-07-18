@@ -22,8 +22,15 @@ public class UserService {
 
     public User save(User user){
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        // Default role
+        if (user.getRole() == null) {
+            user.setRole("STUDENT"); // Hoặc default role khác
+        }
+
         return userRepository.save(user);
     }
+
 
 
     public Optional<User> findByUsername(String username) {

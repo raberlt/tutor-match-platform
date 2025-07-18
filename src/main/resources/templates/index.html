@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TutorMatch - Kết nối gia sư và học viên</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --primary-blue: #1e40af;
+        --light-blue: #3b82f6;
+        --dark-blue: #1e3a8a;
+        --light-gray: #f8fafc;
+        --text-dark: #1f2937;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--light-gray);
+      }
+
+      .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 80px 0;
+      }
+
+      .search-form {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      .form-control,
+      .form-select {
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+        padding: 12px 15px;
+      }
+
+      .form-control:focus,
+      .form-select:focus {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+      }
+
+      .btn-primary-custom {
+        background: var(--primary-blue);
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary-custom:hover {
+        background: var(--dark-blue);
+        transform: translateY(-2px);
+      }
+
+      .step-card {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .step-number {
+        background: var(--primary-blue);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-weight: bold;
+      }
+
+      .subject-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 2px solid transparent;
+      }
+
+      .subject-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary-blue);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+
+      .subject-icon {
+        font-size: 2.5rem;
+        color: var(--primary-blue);
+        margin-bottom: 15px;
+      }
+
+      .testimonial-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        height: 100%;
+      }
+
+      .testimonial-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 15px;
+      }
+
+      .resource-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        height: 100%;
+        transition: all 0.3s ease;
+      }
+
+      .resource-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+
+      .section-title {
+        color: var(--text-dark);
+        font-weight: bold;
+        margin-bottom: 50px;
+      }
+
+      .text-primary-custom {
+        color: var(--primary-blue) !important;
+      }
+
+      .bg-primary-custom {
+        background-color: var(--primary-blue) !important;
+      }
+
+      /* Navbar styles */
+      .navbar-brand {
+        font-weight: bold;
+        color: var(--primary-blue) !important;
+        font-size: 1.5rem;
+      }
+
+      .nav-link {
+        color: var(--text-dark) !important;
+        font-weight: 500;
+        margin: 0 10px;
+      }
+
+      .nav-link:hover {
+        color: var(--primary-blue) !important;
+      }
+
+      .btn-primary-custom {
+        background-color: var(--primary-blue);
+        border-color: var(--primary-blue);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .btn-primary-custom:hover {
+        background-color: var(--dark-blue);
+        border-color: var(--dark-blue);
+        color: white;
+      }
+
+      .btn-outline-custom {
+        border: 2px solid var(--primary-blue);
+        color: var(--primary-blue);
+        background: transparent;
+        padding: 8px 20px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .btn-outline-custom:hover {
+        background-color: var(--primary-blue);
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <div th:replace="fragment/header"></div>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-lg-6 mb-5 mb-lg-0">
+            <h1 class="display-4 fw-bold mb-4">
+              Học giỏi hơn với gia sư phù hợp nhất!
+            </h1>
+
+            <!-- Search Form -->
+            <div class="search-form">
+              <form action="/tutor-search" method="GET">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <select class="form-select" name="subject" required>
+                      <option value="">Chọn môn học</option>
+                      <option value="english">Tiếng Anh</option>
+                      <option value="math">Toán</option>
+                      <option value="literature">Ngữ văn</option>
+                      <option value="ielts">IELTS</option>
+                      <option value="chinese">Tiếng Trung</option>
+                      <option value="korean">Tiếng Hàn</option>
+                      <option value="chemistry">Hóa học</option>
+                      <option value="physics">Vật lý</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <select class="form-select" name="price">
+                      <option value="">Học phí/buổi</option>
+                      <option value="100000-200000">100,000₫ - 200,000₫</option>
+                      <option value="200000-300000">200,000₫ - 300,000₫</option>
+                      <option value="300000-500000">300,000₫ - 500,000₫</option>
+                      <option value="500000+">Trên 500,000₫</option>
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <button type="submit" class="btn btn-primary-custom w-100">
+                      Bắt đầu tìm gia sư <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- 3 Steps -->
+          <div class="col-lg-6">
+            <div class="row g-4">
+              <div class="col-md-4">
+                <div class="step-card">
+                  <div class="step-number">1</div>
+                  <h6 class="fw-bold">Tìm gia sư</h6>
+                  <p class="small mb-0">theo đúng ý bạn và đặt lịch học thử.</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="step-card">
+                  <div class="step-number">2</div>
+                  <h6 class="fw-bold">Thanh toán</h6>
+                  <p class="small mb-0">an toàn và dễ dàng với mã QR.</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="step-card">
+                  <div class="step-number">3</div>
+                  <h6 class="fw-bold">Bắt đầu học</h6>
+                  <p class="small mb-0">
+                    Gia sư sẽ gửi link phòng học qua Hộp thư.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Popular Subjects -->
+    <section class="py-5">
+      <div class="container">
+        <h2 class="text-center section-title">Môn học phổ biến</h2>
+        <div class="row g-4">
+          <div class="col-6 col-md-3">
+            <div class="subject-card">
+              <div class="subject-icon"><i class="fas fa-language"></i></div>
+              <h6 class="fw-bold">Tiếng Anh</h6>
+              <i class="fas fa-arrow-right text-primary-custom"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="subject-card">
+              <div class="subject-icon"><i class="fas fa-calculator"></i></div>
+              <h6 class="fw-bold">Toán</h6>
+              <i class="fas fa-arrow-right text-primary-custom"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="subject-card">
+              <div class="subject-icon"><i class="fas fa-book-open"></i></div>
+              <h6 class="fw-bold">Ngữ văn</h6>
+              <i class="fas fa-arrow-right text-primary-custom"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="subject-card">
+              <div class="subject-icon">
+                <i class="fas fa-graduation-cap"></i>
+              </div>
+              <h6 class="fw-bold">IELTS</h6>
+              <i class="fas fa-arrow-right text-primary-custom"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="subject-card">
+              <div class="subject-icon"><i class="fas fa-language"></i></div>
+              <h6 class="fw-bold">Tiếng Trung</h6>
+              <i class="fas fa-arrow-right text-primary-custom"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="subject-card">
+              <div class="subject-icon"><i class="fas fa-language"></i></div>
+              <h6 class="fw-bold">Tiếng Hàn</h6>
+              <i class="fas fa-arrow-right text-primary-custom"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="subject-card">
+              <div class="subject-icon"><i class="fas fa-flask"></i></div>
+              <h6 class="fw-bold">Hóa học</h6>
+              <i class="fas fa-arrow-right text-primary-custom"></i>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="subject-card">
+              <div class="subject-icon"><i class="fas fa-atom"></i></div>
+              <h6 class="fw-bold">Vật lý</h6>
+              <i class="fas fa-arrow-right text-primary-custom"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Easy Learning Section -->
+    <section class="py-5 bg-white">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-lg-6 mb-4 mb-lg-0">
+            <img
+              src="https://images.unsplash.com/photo-1513258496099-48168024aec0?auto=format&fit=crop&w=600&q=80"
+              class="img-fluid rounded-4"
+              alt="Học tập dễ dàng"
+            />
+          </div>
+          <div class="col-lg-6">
+            <h2 class="fw-bold mb-4">Học tập dễ dàng, tiến bộ nhanh chóng!</h2>
+            <p class="lead text-muted">
+              TutorMatch kết nối học viên với đội ngũ gia sư chuyên nghiệp trên
+              khắp cả nước. Chúng tôi mang đến trải nghiệm học tập cá nhân hóa
+              với lịch học linh hoạt, gia sư được kiểm duyệt kỹ lưỡng và phương
+              pháp giảng dạy phù hợp với từng nhu cầu.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="py-5">
+      <div class="container">
+        <h2 class="text-center section-title">
+          Mọi người nói gì về TutorMatch
+        </h2>
+        <div class="row g-4">
+          <div class="col-lg-4">
+            <div class="testimonial-card">
+              <img
+                src="https://randomuser.me/api/portraits/men/32.jpg"
+                class="testimonial-avatar"
+                alt="Minh Giang"
+              />
+              <div class="text-warning mb-3">
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+              </div>
+              <p class="mb-3">
+                "TutorMatch giúp tôi tìm được gia sư toán rất giỏi. Kết quả học
+                tập của tôi cải thiện rõ rệt chỉ sau 2 tháng!"
+              </p>
+              <h6 class="fw-bold mb-1">Minh Giang</h6>
+              <small class="text-muted"
+                >Học sinh lớp 12 THPT Lương Thế Vinh</small
+              >
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="testimonial-card">
+              <img
+                src="https://randomuser.me/api/portraits/women/44.jpg"
+                class="testimonial-avatar"
+                alt="Đức Duy"
+              />
+              <div class="text-warning mb-3">
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+              </div>
+              <p class="mb-3">
+                "Làm gia sư trên TutorMatch rất thuận tiện. Học viên đều chăm
+                chỉ và có động lực học tập cao."
+              </p>
+              <h6 class="fw-bold mb-1">Đức Duy</h6>
+              <small class="text-muted">Gia sư IELTS</small>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="testimonial-card">
+              <img
+                src="https://randomuser.me/api/portraits/women/45.jpg"
+                class="testimonial-avatar"
+                alt="Cô Yến"
+              />
+              <div class="text-warning mb-3">
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+              </div>
+              <p class="mb-3">
+                "Con tôi học tiếng Anh với gia sư từ TutorMatch và tiến bộ rất
+                nhanh. Tôi rất hài lòng với dịch vụ!"
+              </p>
+              <h6 class="fw-bold mb-1">Cô Yến</h6>
+              <small class="text-muted">Phụ huynh học sinh</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Educational Resources -->
+    <section class="py-5 bg-white">
+      <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="section-title mb-0">Tài liệu và kiến thức</h2>
+          <a href="#" class="text-primary-custom text-decoration-none"
+            >Xem thêm <i class="fas fa-arrow-right"></i
+          ></a>
+        </div>
+        <div class="row g-4">
+          <div class="col-lg-4">
+            <div class="resource-card">
+              <h5 class="fw-bold mb-3">5 lợi ích khi học gia sư 1:1</h5>
+              <p class="text-muted mb-3">
+                Khám phá những lợi ích vượt trội khi học với gia sư cá nhân so
+                với học nhóm...
+              </p>
+              <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">Dành cho học viên</small>
+                <small class="text-muted">15/01/2025</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="resource-card">
+              <h5 class="fw-bold mb-3">Cách tìm gia sư hiệu quả</h5>
+              <p class="text-muted mb-3">
+                Hướng dẫn chi tiết cách chọn gia sư phù hợp với nhu cầu và mục
+                tiêu học tập...
+              </p>
+              <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">Dành cho học viên</small>
+                <small class="text-muted">12/01/2025</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="resource-card">
+              <h5 class="fw-bold mb-3">
+                TOP 5 trung tâm gia sư uy tín tại Miền Bắc
+              </h5>
+              <p class="text-muted mb-3">
+                Danh sách các trung tâm gia sư chất lượng cao được đánh giá bởi
+                cộng đồng...
+              </p>
+              <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">Dành cho học viên</small>
+                <small class="text-muted">10/01/2025</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <div th:replace="fragment/footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

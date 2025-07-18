@@ -31,12 +31,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/css/**", "/images/**", "/js/**", "/favicon.ico").permitAll()
                         .requestMatchers("/fragment/**").permitAll()
-                        .requestMatchers("/showRegister", "/register").permitAll()
+                        .requestMatchers("/showRegister", "/register", "/debug").permitAll()
                         .requestMatchers("/profile-setup").hasAnyRole("STUDENT", "TUTOR")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/student/**").hasRole("STUDENT")
                         .requestMatchers("/tutor/**").hasRole("TUTOR")
-                        .anyRequest().authenticated()
+                        .requestMatchers("/messages", "/my-sessions", "/teaching-schedule", "/students", "/reviews", "/profile", "/settings").authenticated()
+                        .anyRequest().permitAll()
                 )
                 .formLogin(form -> form
                         .loginPage("/showLogin")
@@ -47,7 +48,9 @@ public class SecurityConfig {
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("/showLogin?logout=true")
+                        .logoutSuccessUrl("/") // Đảm bảo chuyển hướng về trang index
+//                        .invalidateHttpSession(true) // Xóa phiên hoàn toàn
+//                        .deleteCookies("JSESSIONID") // Xóa cookie phiên
                         .permitAll()
                 );
 

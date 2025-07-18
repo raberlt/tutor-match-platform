@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Debug - TutorMatch</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1>Debug Authentication</h1>
+
+      <div class="card">
+        <div class="card-header">
+          <h5>Authentication Information</h5>
+        </div>
+        <div class="card-body">
+          <p>
+            <strong>Authentication object:</strong>
+            <span th:text="${#authentication}">null</span>
+          </p>
+          <p>
+            <strong>Authentication name:</strong>
+            <span th:text="${#authentication.name}">null</span>
+          </p>
+          <p>
+            <strong>Authentication principal:</strong>
+            <span th:text="${#authentication.principal}">null</span>
+          </p>
+          <p>
+            <strong>Is authenticated:</strong>
+            <span th:text="${#authentication.authenticated}">false</span>
+          </p>
+          <p>
+            <strong>Authorities:</strong>
+            <span th:text="${#authentication.authorities}">null</span>
+          </p>
+
+          <h6>Authority Details:</h6>
+          <ul th:if="${#authentication != null}">
+            <li
+              th:each="authority : ${#authentication.authorities}"
+              th:text="${authority}"
+            >
+              authority
+            </li>
+          </ul>
+
+          <h6>Condition Checks:</h6>
+          <p>
+            <strong>#authentication == null:</strong>
+            <span th:text="${#authentication == null}">true</span>
+          </p>
+          <p>
+            <strong>#authentication.name == 'anonymousUser':</strong>
+            <span th:text="${#authentication.name == 'anonymousUser'}"
+              >true</span
+            >
+          </p>
+          <p>
+            <strong>!#authentication.authenticated:</strong>
+            <span th:text="${!#authentication.authenticated}">true</span>
+          </p>
+          <p>
+            <strong>#authentication.principal == 'anonymousUser':</strong>
+            <span th:text="${#authentication.principal == 'anonymousUser'}"
+              >true</span
+            >
+          </p>
+
+          <h6>Role Checks:</h6>
+          <p>
+            <strong>Has ROLE_STUDENT:</strong>
+            <span
+              th:text="${#authentication != null && #authentication.authorities.contains('ROLE_STUDENT')}"
+              >false</span
+            >
+          </p>
+          <p>
+            <strong>Has STUDENT:</strong>
+            <span
+              th:text="${#authentication != null && #authentication.authorities.contains('STUDENT')}"
+              >false</span
+            >
+          </p>
+          <p>
+            <strong>Has ROLE_TUTOR:</strong>
+            <span
+              th:text="${#authentication != null && #authentication.authorities.contains('ROLE_TUTOR')}"
+              >false</span
+            >
+          </p>
+          <p>
+            <strong>Has TUTOR:</strong>
+            <span
+              th:text="${#authentication != null && #authentication.authorities.contains('TUTOR')}"
+              >false</span
+            >
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <a href="/" class="btn btn-primary">Back to Home</a>
+      </div>
+    </div>
+  </body>
+</html>

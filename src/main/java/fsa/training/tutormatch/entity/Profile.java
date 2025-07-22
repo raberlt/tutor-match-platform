@@ -47,6 +47,9 @@ public class Profile {
     @Column(columnDefinition = "FLOAT DEFAULT 0")
     private Double ratePointAverage = 0.0;
 
+    @Column(columnDefinition = "INTEGER DEFAULT 0")
+    private Integer totalPoint = 0;
+
     @CreationTimestamp
     @Column(updatable = false)
     private Timestamp createdAt;

@@ -1,7 +1,9 @@
 package fsa.training.tutormatch.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -17,6 +19,8 @@ public class Rate {
 
     @ManyToOne
     @JoinColumn(name = "booking_id", nullable = false)
+    @JsonIgnore
+    @ToString.Exclude
     private Booking booking;
 
     @Column(columnDefinition = "NVARCHAR(2000)")

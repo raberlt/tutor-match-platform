@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class TutorService {
@@ -29,10 +30,35 @@ public class TutorService {
     @Autowired
     private BookingRepository bookingRepository;
 
-    public List<User> findAllTutors() {
-        return tutorRepository.findAllTutors();
-    }
+    // giả sử đã có tutorRepository
+    public List<TutorDTO> findAllTutorDTOs() {
+        List<User> tutors = tutorRepository.findAllTutors();
 
+        return tutors.stream().map(user -> {
+            TutorDTO dto = new TutorDTO();
+            dto.setId(user.getId());
+            dto.setFirstName(user.getFirstName());
+            dto.setLastName(user.getLastName());
+            dto.setImageAvatar(user.getImageAvatar());
+
+            if (user.getProfile() != null) {
+                dto.setBio(user.getProfile().getBio());
+                dto.setHeadline(user.getProfile().getHeadline());
+                dto.setFees(user.getProfile().getFees());
+                dto.setRatePointAverage(user.getProfile().getRatePointAverage());
+                dto.setTotalPoint(user.getProfile().getTotalPoint());
+
+                List<String> subjectNames = user.getProfile().getProfileSubjects()
+                        .stream()
+                        .map(ps -> ps.getSubject().getName())
+                        .collect(Collectors.toList());
+
+                dto.setSubjects(subjectNames);
+            }
+
+            return dto;
+        }).collect(Collectors.toList());
+    }
 
 }
 

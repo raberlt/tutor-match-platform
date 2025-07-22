@@ -1,373 +1,478 @@
-<!--<!DOCTYPE html>-->
-<!--<html xmlns:th="http://www.thymeleaf.org">-->
-<!--  <head>-->
-<!--    <meta charset="UTF-8" />-->
-<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0" />-->
-<!--    <title>Tìm gia sư - TutorMatch</title>-->
-<!--    <link-->
-<!--      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"-->
-<!--      rel="stylesheet"-->
-<!--    />-->
-<!--    <link-->
-<!--      rel="stylesheet"-->
-<!--      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"-->
-<!--    />-->
-<!--    <link rel="stylesheet" href="/css/common.css" />-->
-<!--    <style>-->
-<!--      :root {-->
-<!--        &#45;&#45;primary-blue: #1e40af;-->
-<!--        &#45;&#45;light-blue: #3b82f6;-->
-<!--        &#45;&#45;dark-blue: #1e3a8a;-->
-<!--        &#45;&#45;light-gray: #f8fafc;-->
-<!--        &#45;&#45;text-dark: #1f2937;-->
-<!--      }-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tìm gia sư - TutorMatch</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/css/common.css" />
+    <style>
+      :root {
+        --primary-blue: #1e40af;
+        --light-blue: #3b82f6;
+        --dark-blue: #1e3a8a;
+        --light-gray: #f8fafc;
+        --text-dark: #1f2937;
+      }
 
-<!--      body {-->
-<!--        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;-->
-<!--        background-color: var(&#45;&#45;light-gray);-->
-<!--      }-->
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--light-gray);
+      }
 
-<!--      .search-container {-->
-<!--        background: white;-->
-<!--        border-radius: 15px;-->
-<!--        padding: 30px;-->
-<!--        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);-->
-<!--        margin-top: 30px;-->
-<!--      }-->
+      .filter-sidebar {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+      }
 
-<!--      .tutor-card {-->
-<!--        background: white;-->
-<!--        border-radius: 15px;-->
-<!--        padding: 25px;-->
-<!--        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);-->
-<!--        margin-bottom: 20px;-->
-<!--        transition: all 0.3s ease;-->
-<!--      }-->
+      .tutor-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+      }
 
-<!--      .tutor-card:hover {-->
-<!--        transform: translateY(-3px);-->
-<!--        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);-->
-<!--      }-->
+      .tutor-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
 
-<!--      .tutor-avatar {-->
-<!--        width: 80px;-->
-<!--        height: 80px;-->
-<!--        border-radius: 50%;-->
-<!--        object-fit: cover;-->
-<!--        background-color: #e5e7eb;-->
-<!--      }-->
+      .tutor-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: #e5e7eb;
+      }
 
-<!--      .subject-badge {-->
-<!--        background: #e0f2fe;-->
-<!--        color: #0284c7;-->
-<!--        padding: 4px 12px;-->
-<!--        border-radius: 20px;-->
-<!--        font-size: 0.85rem;-->
-<!--        margin-right: 8px;-->
-<!--        margin-bottom: 8px;-->
-<!--        display: inline-block;-->
-<!--      }-->
+      .subject-badge {
+        background: #e0f2fe;
+        color: #0284c7;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        margin-right: 8px;
+        margin-bottom: 8px;
+        display: inline-block;
+        font-weight: 500;
+      }
 
-<!--      .price-tag {-->
-<!--        background: var(&#45;&#45;primary-blue);-->
-<!--        color: white;-->
-<!--        padding: 8px 16px;-->
-<!--        border-radius: 20px;-->
-<!--        font-weight: bold;-->
-<!--      }-->
+      .price-tag {
+        color: #1f2937;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+      }
 
-<!--      .btn-book {-->
-<!--        background: var(&#45;&#45;primary-blue);-->
-<!--        border: none;-->
-<!--        padding: 10px 25px;-->
-<!--        border-radius: 8px;-->
-<!--        color: white;-->
-<!--        font-weight: 600;-->
-<!--        transition: all 0.3s ease;-->
-<!--      }-->
+      .price-tag i {
+        margin-right: 8px;
+        color: #6b7280;
+      }
 
-<!--      .btn-book:hover {-->
-<!--        background: var(&#45;&#45;dark-blue);-->
-<!--        color: white;-->
-<!--        transform: translateY(-2px);-->
-<!--      }-->
+      .btn-book {
+        background: #60a5fa;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+        width: 100%;
+      }
 
-<!--      .filter-sidebar {-->
-<!--        background: white;-->
-<!--        border-radius: 15px;-->
-<!--        padding: 25px;-->
-<!--        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);-->
-<!--        height: fit-content;-->
-<!--      }-->
+      .btn-book:hover {
+        background: var(--dark-blue);
+        color: white;
+        transform: translateY(-2px);
+      }
 
-<!--      .form-control,-->
-<!--      .form-select {-->
-<!--        border-radius: 8px;-->
-<!--        border: 2px solid #e5e7eb;-->
-<!--        padding: 10px 15px;-->
-<!--      }-->
+      .form-control,
+      .form-select {
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+        padding: 12px 15px;
+        font-size: 0.95rem;
+      }
 
-<!--      .form-control:focus,-->
-<!--      .form-select:focus {-->
-<!--        border-color: var(&#45;&#45;primary-blue);-->
-<!--        box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);-->
-<!--      }-->
+      .form-control:focus,
+      .form-select:focus {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+      }
 
-<!--      .bio-preview {-->
-<!--        display: -webkit-box;-->
-<!--        -webkit-line-clamp: 2;-->
-<!--        -webkit-box-orient: vertical;-->
-<!--        overflow: hidden;-->
-<!--        text-overflow: ellipsis;-->
-<!--      }-->
+      .search-input-wrapper {
+        position: relative;
+      }
 
-<!--      .rating-stars {-->
-<!--        color: #fbbf24;-->
-<!--      }-->
+      .search-input-wrapper .fa-search {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6b7280;
+      }
 
-<!--      .no-tutors {-->
-<!--        text-align: center;-->
-<!--        padding: 60px 20px;-->
-<!--        color: #6b7280;-->
-<!--      }-->
+      .bio-preview {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.5;
+        color: #6b7280;
+        margin-bottom: 15px;
+      }
 
-<!--      .search-results-header {-->
-<!--        background: white;-->
-<!--        border-radius: 10px;-->
-<!--        padding: 20px;-->
-<!--        margin-bottom: 20px;-->
-<!--        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);-->
-<!--      }-->
-<!--    </style>-->
-<!--  </head>-->
-<!--  <body>-->
-<!--    &lt;!&ndash; Header &ndash;&gt;-->
-<!--    <div th:replace="~{fragment/header}"></div>-->
+      .rating-stars {
+        color: #fbbf24;
+        margin-bottom: 8px;
+      }
 
-<!--    <div class="container-fluid py-4">-->
-<!--      <div class="container">-->
-<!--        <h2 class="fw-bold mb-4">Học giỏi hơn với gia sư phù hợp nhất!</h2>-->
-<!--        <p class="text-muted mb-4">-->
-<!--          Duyệt qua các gia sư đã được xác minh và tìm người phù hợp nhất với-->
-<!--          bạn-->
-<!--        </p>-->
+      .no-tutors {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+      }
 
-<!--        <div class="row">-->
-<!--          &lt;!&ndash; Filter Sidebar &ndash;&gt;-->
-<!--          <div class="col-lg-3 mb-4">-->
-<!--            <div class="filter-sidebar">-->
-<!--              <h5 class="fw-bold mb-3">Bộ lọc</h5>-->
-<!--              <form method="get" action="/tutor/tutor-search">-->
-<!--                <div class="mb-3">-->
-<!--                  <label class="form-label fw-semibold">Môn học</label>-->
-<!--                  <select name="subject" class="form-select">-->
-<!--                    <option value="">Tất cả môn học</option>-->
-<!--                    <option-->
-<!--                      th:each="subjectName : ${allSubjects}"-->
-<!--                      th:value="${subjectName}"-->
-<!--                      th:text="${subjectName}"-->
-<!--                      th:selected="${subjectName == currentSubject}"-->
-<!--                    ></option>-->
-<!--                  </select>-->
-<!--                </div>-->
+      .tutor-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
 
-<!--                <div class="mb-3">-->
-<!--                  <label class="form-label fw-semibold"-->
-<!--                    >Học phí/buổi (VNĐ)</label-->
-<!--                  >-->
-<!--                  <div class="row">-->
-<!--                    <div class="col-6">-->
-<!--                      <input-->
-<!--                        type="number"-->
-<!--                        name="minFee"-->
-<!--                        class="form-control"-->
-<!--                        placeholder="Từ"-->
-<!--                        th:value="${currentMinFee}"-->
-<!--                      />-->
-<!--                    </div>-->
-<!--                    <div class="col-6">-->
-<!--                      <input-->
-<!--                        type="number"-->
-<!--                        name="maxFee"-->
-<!--                        class="form-control"-->
-<!--                        placeholder="Đến"-->
-<!--                        th:value="${currentMaxFee}"-->
-<!--                      />-->
-<!--                    </div>-->
-<!--                  </div>-->
-<!--                </div>-->
+      .tutor-name .fa-check-circle {
+        color: #3b82f6;
+        font-size: 1rem;
+      }
 
-<!--                <div class="mb-3">-->
-<!--                  <label class="form-label fw-semibold">Tên hoặc từ khóa</label>-->
-<!--                  <input-->
-<!--                    type="text"-->
-<!--                    name="keyword"-->
-<!--                    class="form-control"-->
-<!--                    placeholder="Nhập tên gia sư..."-->
-<!--                    th:value="${currentKeyword}"-->
-<!--                  />-->
-<!--                </div>-->
+      .view-details-link {
+        color: #3b82f6;
+        text-decoration: underline;
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
 
-<!--                <div class="mb-3">-->
-<!--                  <label class="form-label fw-semibold">Sắp xếp</label>-->
-<!--                  <select name="sortBy" class="form-select">-->
-<!--                    <option value="">Mặc định</option>-->
-<!--                    <option-->
-<!--                      value="priceAsc"-->
-<!--                      th:selected="${currentSortBy == 'priceAsc'}"-->
-<!--                    >-->
-<!--                      Học phí từ thấp đến cao-->
-<!--                    </option>-->
-<!--                    <option-->
-<!--                      value="priceDesc"-->
-<!--                      th:selected="${currentSortBy == 'priceDesc'}"-->
-<!--                    >-->
-<!--                      Học phí từ cao đến thấp-->
-<!--                    </option>-->
-<!--                    <option-->
-<!--                      value="ratingDesc"-->
-<!--                      th:selected="${currentSortBy == 'ratingDesc'}"-->
-<!--                    >-->
-<!--                      Đánh giá cao nhất-->
-<!--                    </option>-->
-<!--                  </select>-->
-<!--                </div>-->
+      .view-details-link:hover {
+        color: var(--dark-blue);
+      }
 
-<!--                <button type="submit" class="btn btn-primary w-100">-->
-<!--                  Tìm kiếm-->
-<!--                </button>-->
-<!--              </form>-->
-<!--            </div>-->
-<!--          </div>-->
+      .rating-text {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin-left: 8px;
+      }
 
-<!--          &lt;!&ndash; Tutor List &ndash;&gt;-->
-<!--          &lt;!&ndash; Tutors List &ndash;&gt;-->
-<!--          <div class="row" th:if="${tutors != null and not tutors.isEmpty()}">-->
-<!--            <div class="col-12" th:each="tutor : ${tutors}">-->
-<!--              <div class="tutor-card">-->
-<!--                <div class="row align-items-center">-->
-<!--                  <div class="col-md-2 text-center">-->
-<!--                    <img-->
-<!--                            th:src="${tutor.imageAvatar != null ? tutor.imageAvatar : 'https://via.placeholder.com/80x80?text=User'}"-->
-<!--                            class="tutor-avatar mb-3"-->
-<!--                            th:alt="${tutor.firstName + ' ' + tutor.lastName}" />-->
-<!--                  </div>-->
+      .page-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 8px;
+      }
 
-<!--                  <div class="col-md-7">-->
-<!--                    <div class="d-flex align-items-center mb-2">-->
-<!--                      <h5 class="fw-bold mb-0 me-2" th:text="${tutor.firstName + ' ' + tutor.lastName}">-->
-<!--                        Tên gia sư-->
-<!--                      </h5>-->
-<!--                      <i class="fas fa-check-circle text-primary" title="Đã xác thực"></i>-->
-<!--                    </div>-->
+      .page-subtitle {
+        color: #6b7280;
+        margin-bottom: 30px;
+      }
 
-<!--                    &lt;!&ndash; Email &ndash;&gt;-->
-<!--                    <p class="text-muted mb-1">-->
-<!--                      <i class="fas fa-envelope me-1"></i>-->
-<!--                      <span th:text="${tutor.email}">Email</span>-->
-<!--                    </p>-->
+      .tutor-headline {
+        font-style: italic;
+        color: #374151;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <div th:replace="~{fragment/header}"></div>
 
-<!--                    &lt;!&ndash; Headline &ndash;&gt;-->
-<!--                    <p class="fw-bold mb-1" th:text="${tutor.profile.headline}">-->
-<!--                      Tiêu đề-->
-<!--                    </p>-->
+    <div class="container-fluid py-4">
+      <div class="container">
+        <h2 class="page-title">Học giỏi hơn với gia sư phù hợp nhất!</h2>
+        <p class="page-subtitle">
+          Duyệt qua các gia sư đã được xác minh và tìm người phù hợp nhất với
+          bạn
+        </p>
 
-<!--                    &lt;!&ndash; Bio &ndash;&gt;-->
-<!--                    <p class="mb-2 bio-preview" th:text="${tutor.profile.bio}">-->
-<!--                      Mô tả chi tiết về gia sư...-->
-<!--                    </p>-->
+        <div class="row">
+          <!-- Filter Sidebar -->
+          <div class="col-lg-3 mb-4">
+            <div class="filter-sidebar">
+              <form method="get" action="/tutor-search">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Môn học</label>
+                  <select name="subject" class="form-select">
+                    <option value="">Tất cả môn học</option>
+                    <option
+                      th:each="subjectName : ${allSubjects}"
+                      th:value="${subjectName}"
+                      th:text="${subjectName}"
+                      th:selected="${subjectName == currentSubject}"
+                    ></option>
+                  </select>
+                </div>
 
-<!--                    &lt;!&ndash; Experience &ndash;&gt;-->
-<!--                    <p class="mb-1">-->
-<!--                      <strong>Kinh nghiệm:</strong>-->
-<!--                      <span th:text="${tutor.profile.experience}"></span>-->
-<!--                    </p>-->
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Học phí/buổi</label>
+                  <select class="form-select" id="feeRange">
+                    <option value="">Chọn</option>
+                    <option value="0-100000">Dưới 100,000 VND</option>
+                    <option value="100000-200000">100,000 - 200,000 VND</option>
+                    <option value="200000-300000">200,000 - 300,000 VND</option>
+                    <option value="300000-500000">300,000 - 500,000 VND</option>
+                    <option value="500000-">Trên 500,000 VND</option>
+                  </select>
+                </div>
 
-<!--                    &lt;!&ndash; Teaching Level &ndash;&gt;-->
-<!--                    <p class="mb-1">-->
-<!--                      <strong>Cấp độ giảng dạy:</strong>-->
-<!--                      <span th:text="${tutor.profile.teachingLevel}"></span>-->
-<!--                    </p>-->
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Tên hoặc từ khóa</label>
+                  <div class="search-input-wrapper">
+                    <input
+                      type="text"
+                      name="keyword"
+                      class="form-control"
+                      placeholder="Tên hoặc từ khóa"
+                      th:value="${currentKeyword}"
+                    />
+                    <i class="fas fa-search"></i>
+                  </div>
+                </div>
 
-<!--                    &lt;!&ndash; Fees &ndash;&gt;-->
-<!--                    <p class="text-primary fw-semibold mb-2">-->
-<!--                      <i class="fas fa-money-bill-wave me-1"></i>-->
-<!--                      <span th:text="${#numbers.formatInteger(tutor.profile.fees, 3, 'COMMA')}">0</span>₫/buổi-->
-<!--                    </p>-->
+                <div class="mb-4">
+                  <label class="form-label fw-semibold">Mặc định</label>
+                  <select name="sortBy" class="form-select">
+                    <option value="">Mặc định</option>
+                    <option
+                      value="priceAsc"
+                      th:selected="${currentSortBy == 'priceAsc'}"
+                    >
+                      Học phí từ thấp đến cao
+                    </option>
+                    <option
+                      value="priceDesc"
+                      th:selected="${currentSortBy == 'priceDesc'}"
+                    >
+                      Học phí từ cao đến thấp
+                    </option>
+                    <option
+                      value="ratingDesc"
+                      th:selected="${currentSortBy == 'ratingDesc'}"
+                    >
+                      Đánh giá cao nhất
+                    </option>
+                  </select>
+                </div>
 
-<!--                    <a th:href="@{'/tutor/detail/' + ${tutor.id}}" class="text-primary text-decoration-none">-->
-<!--                      Xem chi tiết-->
-<!--                    </a>-->
-<!--                  </div>-->
+                <!-- Hidden inputs for fee range -->
+                <input
+                  type="hidden"
+                  name="minFee"
+                  id="minFeeInput"
+                  th:value="${currentMinFee}"
+                />
+                <input
+                  type="hidden"
+                  name="maxFee"
+                  id="maxFeeInput"
+                  th:value="${currentMaxFee}"
+                />
+              </form>
+            </div>
+          </div>
 
-<!--                  <div class="col-md-3 text-center">-->
-<!--                    <button class="btn btn-book" th:onclick="'bookTutor(' + ${tutor.id} + ')'">-->
-<!--                      Đặt lịch học thử-->
-<!--                    </button>-->
-<!--                  </div>-->
-<!--                </div>-->
-<!--              </div>-->
-<!--            </div>-->
-<!--          </div>-->
+          <!-- Tutor List -->
+          <div class="col-lg-9">
+            <div th:if="${tutors != null and not tutors.isEmpty()}">
+              <div th:each="tutor : ${tutors}" class="tutor-card">
+                <div class="row align-items-center">
+                  <!-- Avatar -->
+                  <div class="col-md-3 text-center">
+                    <img
+                      th:src="${tutor.imageAvatar != null ? tutor.imageAvatar : 'https://via.placeholder.com/120x120?text=User'}"
+                      class="tutor-avatar"
+                      th:alt="${tutor.firstName + ' ' + tutor.lastName}"
+                    />
+                  </div>
 
+                  <!-- Info -->
+                  <div class="col-md-6">
+                    <div class="tutor-name">
+                      <span th:text="${tutor.firstName + ' ' + tutor.lastName}"
+                        >Tên gia sư</span
+                      >
+                      <i class="fas fa-check-circle"></i>
+                    </div>
 
+                    <!-- Subjects -->
+                    <div class="mb-2">
+                      <span th:each="subject, iterStat : ${tutor.subjects}">
+                        <span class="subject-badge" th:text="${subject}"
+                          >Môn</span
+                        >
+                      </span>
+                    </div>
 
-<!--          &lt;!&ndash; No Results &ndash;&gt;-->
-<!--          <div class="no-tutors" th:if="${tutors == null or tutors.isEmpty()}">-->
-<!--            <i class="fas fa-search fa-3x mb-3"></i>-->
-<!--            <h4>Không tìm thấy gia sư nào</h4>-->
-<!--            <p class="text-muted">-->
-<!--              Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm-->
-<!--            </p>-->
-<!--          </div>-->
+                    <!-- Price -->
+                    <div class="price-tag">
+                      <i class="far fa-clock"></i>
+                      <span
+                        th:text="${#numbers.formatInteger(tutor.fees, 3, 'COMMA')} + ' VND/buổi'"
+                      ></span>
+                    </div>
 
-<!--        </div>-->
-<!--      </div>-->
-<!--    </div>-->
+                    <!-- Rating -->
+                    <div class="rating-stars">
+                      <span
+                        th:each="i : ${#numbers.sequence(1, T(java.lang.Math).round(tutor.ratePointAverage))}"
+                      >
+                        <i class="fas fa-star"></i>
+                      </span>
+                      <span
+                        th:if="${tutor.ratePointAverage == 0.0}"
+                        class="rating-text"
+                        >Chưa có đánh giá</span
+                      >
+                      <span
+                        th:if="${tutor.totalPoint > 0}"
+                        class="rating-text"
+                        th:text="${tutor.totalPoint + ' đánh giá'}"
+                      ></span>
+                    </div>
 
-<!--    &lt;!&ndash; Footer &ndash;&gt;-->
-<!--    <div th:replace="~{fragment/footer}"></div>-->
+                    <!-- Headline/Quote -->
+                    <div class="tutor-headline">
+                      <span
+                        th:if="${tutor.headline != null and !tutor.headline.isEmpty()}"
+                        th:text="'&quot;' + ${tutor.headline} + '&quot;'"
+                      ></span>
+                      <span
+                        th:if="${tutor.headline == null or tutor.headline.isEmpty()}"
+                      >
+                        "Knowledge is the greatest weapon against anything !"
+                      </span>
+                    </div>
 
-<!--    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>-->
-<!--    <script>-->
-<!--      function bookTutor(tutorId) {-->
-<!--        // TODO: Implement booking functionality-->
-<!--        alert("Chức năng đặt lịch đang được phát triển. Tutor ID: " + tutorId);-->
-<!--      }-->
+                    <!-- Bio (short description) -->
+                    <p class="bio-preview" th:text="${tutor.bio}">
+                      Mình là một người dễ bắt chuyện, linh hoạt, mang lại cảm
+                      giác dễ gần cho học viên.
+                    </p>
 
-<!--      // Auto-submit form when filters change-->
-<!--      document.addEventListener("DOMContentLoaded", function () {-->
-<!--        const selects = document.querySelectorAll(-->
-<!--          'select[name="subject"], select[name="sortBy"]'-->
-<!--        );-->
-<!--        selects.forEach((select) => {-->
-<!--          select.addEventListener("change", function () {-->
-<!--            // Reset to page 0 when filters change-->
-<!--            const form = this.closest("form");-->
-<!--            const pageInput = form.querySelector('input[name="page"]');-->
-<!--            if (pageInput) pageInput.remove();-->
-<!--            form.submit();-->
-<!--          });-->
-<!--        });-->
-<!--      });-->
-<!--    </script>-->
-<!--  </body>-->
-<!--</html>-->
+                    <a
+                      th:href="@{'/tutor/detail/' + ${tutor.id}}"
+                      class="view-details-link"
+                    >
+                      Xem chi tiết
+                    </a>
+                  </div>
 
-<!doctype html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
-  <title>Danh sách Tutors</title>
-</head>
-<body>
+                  <!-- Book button -->
+                  <div class="col-md-3 text-center">
+                    <button
+                      class="btn btn-book"
+                      th:onclick="'bookTutor(' + ${tutor.id} + ')'"
+                    >
+                      Đặt lịch học thử
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-<h1>Danh sách Tutorsfsds</h1>
+            <!-- No Results -->
+            <div
+              class="no-tutors"
+              th:if="${tutors == null or tutors.isEmpty()}"
+            >
+              <i class="fas fa-search fa-3x mb-3"></i>
+              <h4>Không tìm thấy gia sư nào</h4>
+              <p class="text-muted">
+                Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-<p th:text="${message}"></p>
-<p th:text="${tutors}"></p>
-</body>
+    <!-- Footer -->
+    <div th:replace="~{fragment/footer}"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      function bookTutor(tutorId) {
+        // TODO: Implement booking functionality
+        alert("Chức năng đặt lịch đang được phát triển. Tutor ID: " + tutorId);
+      }
+
+      // Handle fee range selection
+      document
+        .getElementById("feeRange")
+        .addEventListener("change", function () {
+          const value = this.value;
+          const minFeeInput = document.getElementById("minFeeInput");
+          const maxFeeInput = document.getElementById("maxFeeInput");
+
+          if (value === "") {
+            minFeeInput.value = "";
+            maxFeeInput.value = "";
+          } else if (value === "500000-") {
+            minFeeInput.value = "500000";
+            maxFeeInput.value = "";
+          } else {
+            const [min, max] = value.split("-");
+            minFeeInput.value = min;
+            maxFeeInput.value = max;
+          }
+
+          // Submit form automatically
+          this.closest("form").submit();
+        });
+
+      // Auto-submit form when filters change
+      document.addEventListener("DOMContentLoaded", function () {
+        const selects = document.querySelectorAll(
+          'select[name="subject"], select[name="sortBy"]'
+        );
+        selects.forEach((select) => {
+          select.addEventListener("change", function () {
+            this.closest("form").submit();
+          });
+        });
+
+        // Set current fee range selection
+        const currentMin = document.getElementById("minFeeInput").value;
+        const currentMax = document.getElementById("maxFeeInput").value;
+        const feeRangeSelect = document.getElementById("feeRange");
+
+        if (currentMin && currentMax) {
+          feeRangeSelect.value = currentMin + "-" + currentMax;
+        } else if (currentMin && !currentMax) {
+          feeRangeSelect.value = currentMin + "-";
+        }
+      });
+    </script>
+  </body>
 </html>
-

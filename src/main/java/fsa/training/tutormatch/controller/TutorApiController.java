@@ -1,10 +1,8 @@
 package fsa.training.tutormatch.controller;
 
-import fsa.training.tutormatch.entity.Profile;
-import fsa.training.tutormatch.entity.User;
+import fsa.training.tutormatch.dto.TutorDTO;
 import fsa.training.tutormatch.repository.ProfileRepository;
-import fsa.training.tutormatch.repository.TutorRepository;
-import fsa.training.tutormatch.repository.UserRepository;
+import fsa.training.tutormatch.service.TutorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,10 +18,10 @@ public class TutorApiController {
     private ProfileRepository profileRepository;
 
     @Autowired
-    private TutorRepository tutorRepository;
+    private TutorService tutorService;
 
     @GetMapping("/tutors")
-    public List<User> getAllTutors() {
-        return tutorRepository.findAllTutors();  // trả về JSON
+    public List<TutorDTO> getAllTutors() {
+        return tutorService.findAllTutorDTOs();  // trả về JSON
     }
 }

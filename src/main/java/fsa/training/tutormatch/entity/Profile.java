@@ -43,6 +43,10 @@ public class Profile {
     private List<ProfileSubject> profileSubjects;
 
     private String videoIntro;
+
+    @Column(columnDefinition = "FLOAT DEFAULT 0")
+    private Double ratePointAverage = 0.0;
+
     @CreationTimestamp
     @Column(updatable = false)
     private Timestamp createdAt;

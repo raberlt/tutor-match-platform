@@ -1,5 +1,6 @@
 package fsa.training.tutormatch.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -17,11 +18,13 @@ public class ProfileSubject {
 
     @ManyToOne
     @JoinColumn(name = "profile_id", nullable = false)
+    @JsonIgnore
     private Profile profile;
 
     @ManyToOne
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
+
 
     @CreationTimestamp
     @Column(updatable = false)

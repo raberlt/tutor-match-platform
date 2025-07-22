@@ -40,10 +40,10 @@ public class ProfileController {
         return "profile-form";
     }
 
-    @PostMapping
-    public String saveProfile(@ModelAttribute("profile") Profile profile, Authentication authentication) {
-        String username = authentication.getName();
-        profileService.save(profile, username);
-        return "redirect:/dashboard";
-    }
+//    @PostMapping
+//    public String saveProfile(@ModelAttribute("profile") Profile profile, Authentication authentication) {
+//        String username = authentication.getName();
+//        profileService.save(profile, username);
+//        return "redirect:/dashboard";
+//    }
 }

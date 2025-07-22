@@ -11,11 +11,11 @@ public class HomeController {
         return "index";
     }
     
-    @GetMapping("/tutor-search")
-    public String tutorSearch() {
-        return "tutor-search";
-    }
-    
+//    @GetMapping("/tutor-search")
+//    public String tutorSearch() {
+//        return "tutor-search";
+//    }
+//
     @GetMapping("/become-tutor")
     public String becomeTutor() {
         return "become-tutor";
@@ -57,10 +57,5 @@ public class HomeController {
     @GetMapping("/settings")
     public String settings() {
         return "settings";
-    }
-    
-    @GetMapping("/debug")
-    public String debug() {
-        return "debug";
     }
 } 

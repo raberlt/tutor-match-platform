@@ -21,6 +21,11 @@ public class ProfileService {
     public Optional<Profile> findById(Long profileId) {
         return profileRepository.findById(profileId);
     }
+
+    public Optional<Profile> findByTutorId(Integer tutorId) {
+        return profileRepository.findByTutorId(tutorId);
+    }
+
     public Profile save(Profile profile, String username) {
         Optional<User> userOptional = userRepository.findByUsername(username);
         if (userOptional.isEmpty()) {
@@ -28,22 +33,10 @@ public class ProfileService {
         }
 
         User user = userOptional.get();
-        profile.setUser(user);
-        user.setProfile(profile);
-
-        userRepository.save(user); // Cập nhật quan hệ
+        profile.setTutor(user);  // Sửa lại ở đây
         return profileRepository.save(profile);
     }
 
-
-    public Profile createProfileForUser(Profile profile, Long userId) {
-        Optional<User> optionalUser = userRepository.findById(userId);
-        if (optionalUser.isEmpty()) {
-            throw new IllegalArgumentException("User ID không tồn tại");
-        }
-        profile.setUser(optionalUser.get());
-        return profileRepository.save(profile);
-    }
 
     public Profile updateProfile(Long profileId, Profile updatedProfile) {
         Optional<Profile> optionalProfile = profileRepository.findById(profileId);
@@ -52,10 +45,11 @@ public class ProfileService {
         }
 
         Profile profile = optionalProfile.get();
-        if (updatedProfile.getFullName() != null) profile.setFullName(updatedProfile.getFullName());
-        if (updatedProfile.getPhone() != null) profile.setPhone(updatedProfile.getPhone());
-        if (updatedProfile.getAddress() != null) profile.setAddress(updatedProfile.getAddress());
-        if (updatedProfile.getDescription() != null) profile.setDescription(updatedProfile.getDescription());
+        if (updatedProfile.getBio() != null) profile.setBio(updatedProfile.getBio());
+        if (updatedProfile.getHeadline() != null) profile.setHeadline(updatedProfile.getHeadline());
+        if (updatedProfile.getExperience() != null) profile.setExperience(updatedProfile.getExperience());
+        if (updatedProfile.getTeachingLevel() != null) profile.setTeachingLevel(updatedProfile.getTeachingLevel());
+        if (updatedProfile.getFees() != null) profile.setFees(updatedProfile.getFees());
 
         return profileRepository.save(profile);
     }

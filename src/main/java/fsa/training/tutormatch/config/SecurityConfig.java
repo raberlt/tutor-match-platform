@@ -31,7 +31,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/css/**", "/images/**", "/js/**", "/favicon.ico").permitAll()
                         .requestMatchers("/fragment/**").permitAll()
-                        .requestMatchers("/showRegister", "/register", "/debug").permitAll()
+                        .requestMatchers("/showRegister", "/register").permitAll()
                         .requestMatchers("/profile-setup").hasAnyRole("STUDENT", "TUTOR")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/student/**").hasRole("STUDENT")

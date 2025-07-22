@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -16,7 +17,7 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
 
 
-    public Optional<User> findById(Long id){
+    public Optional<User> findById(Integer id){
         return userRepository.findById(id);
     }
 
@@ -25,12 +26,14 @@ public class UserService {
 
         // Default role
         if (user.getRole() == null) {
-            user.setRole("STUDENT"); // Hoặc default role khác
+            user.setRole(User.Role.STUDENT); // Hoặc default role khác
         }
 
         return userRepository.save(user);
     }
-
+    public List<User> getAllTutors() {
+        return userRepository.findByRole(User.Role.TUTOR);
+    }
 
 
     public Optional<User> findByUsername(String username) {

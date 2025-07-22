@@ -1,5 +1,7 @@
 package fsa.training.tutormatch.service;
+
 import fsa.training.tutormatch.entity.CustomUserDetails;
+import fsa.training.tutormatch.entity.Profile;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,16 +29,14 @@ public class CustomUserDetailsService implements UserDetailsService {
                 new SimpleGrantedAuthority("ROLE_" + user.getRole())
         );
 
-        Integer profileId = user.getProfile() != null ? user.getProfile().getId().intValue() : null;
-        String profileName = user.getProfile() != null ? user.getProfile().getFullName() : null;
-
+        Profile profile = user.getProfile();
+        Integer profileId = (profile != null) ? profile.getId() : null;
 
         return new CustomUserDetails(
                 user.getUsername(),
                 user.getPassword(),
                 authorities,
-                profileId,
-                profileName
+                profileId
         );
     }
 }

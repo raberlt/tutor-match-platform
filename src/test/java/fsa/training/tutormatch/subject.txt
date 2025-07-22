@@ -1,0 +1,246 @@
+https://tutormatch.vn/proxy/api/v1/subjects?skipMajor=true
+[
+    {
+        "id": 24,
+        "name": "Tiếng Anh",
+        "majorId": 3,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-03-02T08:44:33.901Z",
+        "rank": 100
+    },
+    {
+        "id": 15,
+        "name": "Toán",
+        "majorId": 2,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-06-11T09:23:36.740Z",
+        "rank": 99
+    },
+    {
+        "id": 16,
+        "name": "Ngữ văn",
+        "majorId": 2,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-06-11T09:27:39.640Z",
+        "rank": 97
+    },
+    {
+        "id": 2,
+        "name": "IELTS",
+        "majorId": 1,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-06-11T09:23:48.194Z",
+        "rank": 97
+    },
+    {
+        "id": 28,
+        "name": "Tiếng Trung",
+        "majorId": 3,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-06-11T09:24:34.392Z",
+        "rank": 96
+    },
+    {
+        "id": 25,
+        "name": "Tiếng Hàn",
+        "majorId": 3,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-03-02T08:44:33.901Z",
+        "rank": 95
+    },
+    {
+        "id": 19,
+        "name": "Hóa học",
+        "majorId": 2,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-05-07T13:21:41.517Z",
+        "rank": 92
+    },
+    {
+        "id": 20,
+        "name": "Vật lý",
+        "majorId": 2,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-05-15T08:19:00.873Z",
+        "rank": 91
+    },
+    {
+        "id": 1,
+        "name": "Luyện thi ĐGNL",
+        "majorId": 2,
+        "enable": true,
+        "createdAt": "2025-03-29T13:53:52.041Z",
+        "updatedAt": "2025-06-23T20:39:24.143Z",
+        "rank": 91
+    },
+    {
+        "id": 27,
+        "name": "Tiếng Pháp",
+        "majorId": 3,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-06-11T09:23:16.390Z",
+        "rank": 90
+    },
+    {
+        "id": 26,
+        "name": "Tiếng Nhật",
+        "majorId": 3,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-06-11T09:24:06.571Z",
+        "rank": 89
+    },
+    {
+        "id": 29,
+        "name": "Tiếng Đức",
+        "majorId": 3,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-06-11T09:27:12.898Z",
+        "rank": 89
+    },
+    {
+        "id": 3,
+        "name": "TOEIC",
+        "majorId": 1,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-05-15T08:21:58.208Z",
+        "rank": 88
+    },
+    {
+        "id": 7,
+        "name": "HSK",
+        "majorId": 1,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-05-15T08:22:03.639Z",
+        "rank": 79
+    },
+    {
+        "id": 4,
+        "name": "DELF & TCF",
+        "majorId": 1,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-05-15T08:22:07.785Z",
+        "rank": 78
+    },
+    {
+        "id": 13,
+        "name": "JLPT",
+        "majorId": 1,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-05-15T08:22:14.429Z",
+        "rank": 77
+    },
+    {
+        "id": 12,
+        "name": "TOPIK",
+        "majorId": 1,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-05-15T08:21:03.784Z",
+        "rank": 76
+    },
+    {
+        "id": 5,
+        "name": "SAT",
+        "majorId": 1,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-05-15T08:20:25.948Z",
+        "rank": 69
+    },
+    {
+        "id": 10,
+        "name": "TOEFL iBT",
+        "majorId": 1,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-05-15T08:20:31.179Z",
+        "rank": 68
+    },
+    {
+        "id": 11,
+        "name": "Cambridge",
+        "majorId": 1,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-05-15T08:22:18.739Z",
+        "rank": 67
+    },
+    {
+        "id": 9,
+        "name": "PTE Academic",
+        "majorId": 1,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-05-15T08:20:43.792Z",
+        "rank": 66
+    },
+    {
+        "id": 6,
+        "name": "ACT",
+        "majorId": 1,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-05-15T08:21:11.834Z",
+        "rank": 65
+    },
+    {
+        "id": 18,
+        "name": "Địa Lý",
+        "majorId": 2,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-03-02T08:44:33.901Z",
+        "rank": 0
+    },
+    {
+        "id": 8,
+        "name": "MOS",
+        "majorId": 1,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-05-15T08:22:23.291Z",
+        "rank": 0
+    },
+    {
+        "id": 22,
+        "name": "Giáo dục công dân",
+        "majorId": 2,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-03-02T08:44:33.901Z",
+        "rank": 0
+    },
+    {
+        "id": 21,
+        "name": "Sinh học",
+        "majorId": 2,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-03-02T08:44:33.901Z",
+        "rank": 0
+    },
+    {
+        "id": 17,
+        "name": "Lịch sử",
+        "majorId": 2,
+        "enable": true,
+        "createdAt": "2025-03-02T08:44:33.901Z",
+        "updatedAt": "2025-03-02T08:44:33.901Z",
+        "rank": 0
+    }
+]

@@ -2,8 +2,12 @@ package fsa.training.tutormatch.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
 
 @Entity
 @Data
@@ -11,21 +15,38 @@ import java.time.LocalDateTime;
 public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "student_id")
+    @JoinColumn(name = "student_id", nullable = false)
     private User student;
 
     @ManyToOne
-    @JoinColumn(name = "tutor_id")
+    @JoinColumn(name = "tutor_id", nullable = false)
     private User tutor;
 
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
-    private String status; // PENDING, ACCEPTED, REJECTED
+    @ManyToOne
+    @JoinColumn(name = "subject_id", nullable = false)
+    private Subject subject;
 
-    private String note; // Ghi chú thêm nếu có
+    private Date date;
+    private Time fromTime;
+    private Time toTime;
 
-    // getters, setters
+    @Enumerated(EnumType.STRING)
+    private Status status = Status.PENDING;
+
+    @Column(columnDefinition = "NVARCHAR(500)")
+    private String note;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private Timestamp createdAt;
+
+    @UpdateTimestamp
+    private Timestamp updatedAt;
+
+    public enum Status {
+        PENDING, CONFIRMED, COMPLETED, CANCELLED
+    }
 }

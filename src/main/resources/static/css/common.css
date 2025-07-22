@@ -1,0 +1,93 @@
+:root {
+  --primary-blue: #1e40af;
+  --light-blue: #3b82f6;
+  --dark-blue: #1e3a8a;
+  --light-gray: #f8fafc;
+  --text-dark: #1f2937;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Navbar styles */
+.navbar-brand {
+  font-weight: bold;
+  color: var(--primary-blue) !important;
+  font-size: 1.5rem;
+}
+
+.nav-link {
+  color: var(--text-dark) !important;
+  font-weight: 500;
+  margin: 0 10px;
+}
+
+.nav-link:hover {
+  color: var(--primary-blue) !important;
+}
+
+.btn-primary-custom {
+  background-color: var(--primary-blue);
+  border-color: var(--primary-blue);
+  color: white;
+  padding: 8px 20px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.btn-primary-custom:hover {
+  background-color: var(--dark-blue);
+  border-color: var(--dark-blue);
+  color: white;
+}
+
+.btn-outline-custom {
+  border: 2px solid var(--primary-blue);
+  color: var(--primary-blue);
+  background: transparent;
+  padding: 8px 20px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.btn-outline-custom:hover {
+  background-color: var(--primary-blue);
+  color: white;
+}
+
+/* Form styles */
+.form-control,
+.form-select {
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+  padding: 12px 15px;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+}
+
+/* Utility classes */
+.text-primary-custom {
+  color: var(--primary-blue) !important;
+}
+
+.bg-primary-custom {
+  background-color: var(--primary-blue) !important;
+}
+
+/* Footer styles */
+footer .text-light:hover {
+  color: var(--light-blue) !important;
+  transition: color 0.3s ease;
+}
+
+footer a.text-light:hover {
+  color: var(--light-blue) !important;
+  text-decoration: underline !important;
+}

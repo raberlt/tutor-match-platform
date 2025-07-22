@@ -12,6 +12,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+    <link rel="stylesheet" href="/css/common.css" />
     <style>
       :root {
         --primary-blue: #1e40af;
@@ -53,6 +54,7 @@
         height: 80px;
         border-radius: 50%;
         object-fit: cover;
+        background-color: #e5e7eb;
       }
 
       .subject-badge {
@@ -110,11 +112,37 @@
         border-color: var(--primary-blue);
         box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
       }
+
+      .bio-preview {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .rating-stars {
+        color: #fbbf24;
+      }
+
+      .no-tutors {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+      }
+
+      .search-results-header {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
     </style>
   </head>
   <body>
     <!-- Header -->
-    <div th:replace="fragment/header :: body"></div>
+    <div th:replace="~{fragment/header}"></div>
 
     <div class="container-fluid py-4">
       <div class="container">
@@ -129,208 +157,200 @@
           <div class="col-lg-3 mb-4">
             <div class="filter-sidebar">
               <h5 class="fw-bold mb-3">Bộ lọc</h5>
-              <form>
+              <form method="get" action="/tutor/tutor-search">
                 <div class="mb-3">
                   <label class="form-label fw-semibold">Môn học</label>
-                  <select class="form-select">
+                  <select name="subject" class="form-select">
                     <option value="">Tất cả môn học</option>
-                    <option value="english">Tiếng Anh</option>
-                    <option value="math">Toán</option>
-                    <option value="literature">Ngữ văn</option>
-                    <option value="ielts">IELTS</option>
-                    <option value="chinese">Tiếng Trung</option>
-                    <option value="korean">Tiếng Hàn</option>
-                    <option value="chemistry">Hóa học</option>
-                    <option value="physics">Vật lý</option>
+                    <option
+                      th:each="subjectName : ${allSubjects}"
+                      th:value="${subjectName}"
+                      th:text="${subjectName}"
+                      th:selected="${subjectName == currentSubject}"
+                    ></option>
                   </select>
                 </div>
 
                 <div class="mb-3">
-                  <label class="form-label fw-semibold">Học phí/buổi</label>
-                  <select class="form-select">
-                    <option value="">Mọi mức giá</option>
-                    <option value="0-100000">Dưới 100,000₫</option>
-                    <option value="100000-200000">100,000₫ - 200,000₫</option>
-                    <option value="200000-300000">200,000₫ - 300,000₫</option>
-                    <option value="300000+">Trên 300,000₫</option>
-                  </select>
+                  <label class="form-label fw-semibold"
+                    >Học phí/buổi (VNĐ)</label
+                  >
+                  <div class="row">
+                    <div class="col-6">
+                      <input
+                        type="number"
+                        name="minFee"
+                        class="form-control"
+                        placeholder="Từ"
+                        th:value="${currentMinFee}"
+                      />
+                    </div>
+                    <div class="col-6">
+                      <input
+                        type="number"
+                        name="maxFee"
+                        class="form-control"
+                        placeholder="Đến"
+                        th:value="${currentMaxFee}"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div class="mb-3">
                   <label class="form-label fw-semibold">Tên hoặc từ khóa</label>
                   <input
                     type="text"
+                    name="keyword"
                     class="form-control"
                     placeholder="Nhập tên gia sư..."
+                    th:value="${currentKeyword}"
                   />
                 </div>
 
                 <div class="mb-3">
                   <label class="form-label fw-semibold">Sắp xếp</label>
-                  <select class="form-select">
-                    <option value="default">Mặc định</option>
-                    <option value="price-low">Học phí từ thấp đến cao</option>
-                    <option value="price-high">Học phí từ cao đến thấp</option>
-                    <option value="rating">Đánh giá cao đến thấp</option>
+                  <select name="sortBy" class="form-select">
+                    <option value="">Mặc định</option>
+                    <option
+                      value="priceAsc"
+                      th:selected="${currentSortBy == 'priceAsc'}"
+                    >
+                      Học phí từ thấp đến cao
+                    </option>
+                    <option
+                      value="priceDesc"
+                      th:selected="${currentSortBy == 'priceDesc'}"
+                    >
+                      Học phí từ cao đến thấp
+                    </option>
+                    <option
+                      value="ratingDesc"
+                      th:selected="${currentSortBy == 'ratingDesc'}"
+                    >
+                      Đánh giá cao nhất
+                    </option>
                   </select>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100">
-                  Áp dụng bộ lọc
+                  Tìm kiếm
                 </button>
               </form>
             </div>
           </div>
 
           <!-- Tutor List -->
-          <div class="col-lg-9">
-            <div class="row">
-              <!-- Tutor Card 1 -->
-              <div class="col-12">
-                <div class="tutor-card">
-                  <div class="row align-items-center">
-                    <div class="col-md-2 text-center">
-                      <img
-                        src="https://randomuser.me/api/portraits/women/44.jpg"
-                        class="tutor-avatar mb-3"
-                        alt="Minh Anh Tô Nguyễn"
-                      />
-                    </div>
-                    <div class="col-md-7">
-                      <div class="d-flex align-items-center mb-2">
-                        <h5 class="fw-bold mb-0 me-2">Minh Anh Tô Nguyễn</h5>
-                        <i
-                          class="fas fa-check-circle text-primary"
-                          title="Đã xác thực"
-                        ></i>
-                      </div>
-                      <div class="mb-2">
-                        <span class="subject-badge">Lịch sử</span>
-                        <span class="subject-badge">Tiếng Anh</span>
-                      </div>
-                      <p class="text-muted mb-2">
-                        <i class="fas fa-clock me-1"></i> 200,000₫/buổi
-                      </p>
-                      <p class="mb-2">
-                        <strong>Gia sư lịch sử</strong> - Kinh nghiệm 5 năm
-                        giảng dạy, từng đạt giải nhì môn Lịch sử cấp tỉnh. GPA
-                        3.8/4.0, chuyên ngành Lịch sử Đại học Quốc gia Hà Nội.
-                      </p>
-                      <a href="#" class="text-primary text-decoration-none"
-                        >Xem chi tiết</a
-                      >
-                    </div>
-                    <div class="col-md-3 text-center">
-                      <button class="btn btn-book">Đặt lịch học thử</button>
-                    </div>
+          <!-- Tutors List -->
+          <div class="row" th:if="${tutors != null and not tutors.isEmpty()}">
+            <div class="col-12" th:each="tutor : ${tutors}">
+              <div class="tutor-card">
+                <div class="row align-items-center">
+                  <div class="col-md-2 text-center">
+                    <img
+                            th:src="${tutor.imageAvatar != null ? tutor.imageAvatar : 'https://via.placeholder.com/80x80?text=User'}"
+                            class="tutor-avatar mb-3"
+                            th:alt="${tutor.firstName + ' ' + tutor.lastName}" />
                   </div>
-                </div>
-              </div>
 
-              <!-- Tutor Card 2 -->
-              <div class="col-12">
-                <div class="tutor-card">
-                  <div class="row align-items-center">
-                    <div class="col-md-2 text-center">
-                      <img
-                        src="https://randomuser.me/api/portraits/women/45.jpg"
-                        class="tutor-avatar mb-3"
-                        alt="Hoàng Vân Khánh"
-                      />
+                  <div class="col-md-7">
+                    <div class="d-flex align-items-center mb-2">
+                      <h5 class="fw-bold mb-0 me-2" th:text="${tutor.firstName + ' ' + tutor.lastName}">
+                        Tên gia sư
+                      </h5>
+                      <i class="fas fa-check-circle text-primary" title="Đã xác thực"></i>
                     </div>
-                    <div class="col-md-7">
-                      <div class="d-flex align-items-center mb-2">
-                        <h5 class="fw-bold mb-0 me-2">Hoàng Vân Khánh</h5>
-                        <i
-                          class="fas fa-check-circle text-primary"
-                          title="Đã xác thực"
-                        ></i>
-                      </div>
-                      <div class="mb-2">
-                        <span class="subject-badge">Tiếng Anh</span>
-                        <span class="subject-badge">Toán</span>
-                      </div>
-                      <p class="text-muted mb-2">
-                        <i class="fas fa-clock me-1"></i> 100,000₫/buổi
-                      </p>
-                      <p class="mb-2">
-                        <strong>Gia sư tiếng Anh</strong> - "Life is not fair,
-                        get used to it". GPA Toán: 9.2, Văn: 8.8, Ngoại ngữ:
-                        9.5. Từng tham gia các cuộc thi tiếng Anh cấp thành phố.
-                      </p>
-                      <a href="#" class="text-primary text-decoration-none"
-                        >Xem chi tiết</a
-                      >
-                    </div>
-                    <div class="col-md-3 text-center">
-                      <button class="btn btn-book">Đặt lịch học thử</button>
-                    </div>
+
+                    <!-- Email -->
+                    <p class="text-muted mb-1">
+                      <i class="fas fa-envelope me-1"></i>
+                      <span th:text="${tutor.email}">Email</span>
+                    </p>
+
+                    <!-- Headline -->
+                    <p class="fw-bold mb-1" th:text="${tutor.profile.headline}">
+                      Tiêu đề
+                    </p>
+
+                    <!-- Bio -->
+                    <p class="mb-2 bio-preview" th:text="${tutor.profile.bio}">
+                      Mô tả chi tiết về gia sư...
+                    </p>
+
+                    <!-- Experience -->
+                    <p class="mb-1">
+                      <strong>Kinh nghiệm:</strong>
+                      <span th:text="${tutor.profile.experience}"></span>
+                    </p>
+
+                    <!-- Teaching Level -->
+                    <p class="mb-1">
+                      <strong>Cấp độ giảng dạy:</strong>
+                      <span th:text="${tutor.profile.teachingLevel}"></span>
+                    </p>
+
+                    <!-- Fees -->
+                    <p class="text-primary fw-semibold mb-2">
+                      <i class="fas fa-money-bill-wave me-1"></i>
+                      <span th:text="${#numbers.formatInteger(tutor.profile.fees, 3, 'COMMA')}">0</span>₫/buổi
+                    </p>
+
+                    <a th:href="@{'/tutor/detail/' + ${tutor.id}}" class="text-primary text-decoration-none">
+                      Xem chi tiết
+                    </a>
                   </div>
-                </div>
-              </div>
 
-              <!-- Tutor Card 3 -->
-              <div class="col-12">
-                <div class="tutor-card">
-                  <div class="row align-items-center">
-                    <div class="col-md-2 text-center">
-                      <img
-                        src="https://randomuser.me/api/portraits/men/46.jpg"
-                        class="tutor-avatar mb-3"
-                        alt="MAI NGUYỄN KIM"
-                      />
-                    </div>
-                    <div class="col-md-7">
-                      <div class="d-flex align-items-center mb-2">
-                        <h5 class="fw-bold mb-0 me-2">MAI NGUYỄN KIM</h5>
-                        <i
-                          class="fas fa-check-circle text-primary"
-                          title="Đã xác thực"
-                        ></i>
-                      </div>
-                      <div class="mb-2">
-                        <span class="subject-badge">Toán</span>
-                      </div>
-                      <p class="text-muted mb-2">
-                        <i class="fas fa-clock me-1"></i> 150,000₫/buổi
-                      </p>
-                      <p class="mb-2">
-                        <strong>Gia sư toán</strong> - Chuyên gia toán học với 8
-                        năm kinh nghiệm giảng dạy. Tốt nghiệp loại xuất sắc
-                        ngành Toán học, Đại học Bách khoa Hà Nội.
-                      </p>
-                      <a href="#" class="text-primary text-decoration-none"
-                        >Xem chi tiết</a
-                      >
-                    </div>
-                    <div class="col-md-3 text-center">
-                      <button class="btn btn-book">Đặt lịch học thử</button>
-                    </div>
+                  <div class="col-md-3 text-center">
+                    <button class="btn btn-book" th:onclick="'bookTutor(' + ${tutor.id} + ')'">
+                      Đặt lịch học thử
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
-
-            <!-- Pagination -->
-            <nav class="mt-4">
-              <ul class="pagination justify-content-center">
-                <li class="page-item active">
-                  <a class="page-link" href="#">1</a>
-                </li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item"><a class="page-link" href="#">4</a></li>
-                <li class="page-item"><a class="page-link" href="#">5</a></li>
-              </ul>
-            </nav>
           </div>
+
+
+
+          <!-- No Results -->
+          <div class="no-tutors" th:if="${tutors == null or tutors.isEmpty()}">
+            <i class="fas fa-search fa-3x mb-3"></i>
+            <h4>Không tìm thấy gia sư nào</h4>
+            <p class="text-muted">
+              Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+            </p>
+          </div>
+
         </div>
       </div>
     </div>
 
     <!-- Footer -->
-    <div th:replace="fragment/footer"></div>
+    <div th:replace="~{fragment/footer}"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      function bookTutor(tutorId) {
+        // TODO: Implement booking functionality
+        alert("Chức năng đặt lịch đang được phát triển. Tutor ID: " + tutorId);
+      }
+
+      // Auto-submit form when filters change
+      document.addEventListener("DOMContentLoaded", function () {
+        const selects = document.querySelectorAll(
+          'select[name="subject"], select[name="sortBy"]'
+        );
+        selects.forEach((select) => {
+          select.addEventListener("change", function () {
+            // Reset to page 0 when filters change
+            const form = this.closest("form");
+            const pageInput = form.querySelector('input[name="page"]');
+            if (pageInput) pageInput.remove();
+            form.submit();
+          });
+        });
+      });
+    </script>
   </body>
 </html>
+

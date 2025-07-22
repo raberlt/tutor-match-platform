@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 
 @Controller
+@RequestMapping("/profile-setup")
 public class ProfileController {
 
     @Autowired
@@ -21,22 +22,25 @@ public class ProfileController {
     @Autowired
     private UserService userService;
 
-    @GetMapping("/profile-setup")
+    @GetMapping
     public String showProfileForm(Model model, Authentication authentication) {
         String username = authentication.getName();
         Optional<User> userOptional = userService.findByUsername(username);
-        Profile profile = new Profile();
 
-        if (userOptional.isPresent() && userOptional.get().getProfile() != null) {
-            profile = userOptional.get().getProfile();
+        if (userOptional.isEmpty()) {
+            return "redirect:/login";
         }
+
+        User user = userOptional.get();
+
+        Profile profile = profileService.findByTutorId(user.getId())
+                .orElse(new Profile());
 
         model.addAttribute("profile", profile);
         return "profile-form";
-
     }
 
-    @PostMapping("/profile-setup")
+    @PostMapping
     public String saveProfile(@ModelAttribute("profile") Profile profile, Authentication authentication) {
         String username = authentication.getName();
         profileService.save(profile, username);

@@ -1,8 +1,13 @@
 package fsa.training.tutormatch.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @Entity
@@ -10,27 +15,38 @@ import java.util.List;
 @Table(name = "profiles")
 public class Profile {
     @Id
-    private Long id; // Same as Account ID
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
     @OneToOne
-    @MapsId
-    @JoinColumn(name = "account_id")
-    private User user;
+    @JoinColumn(name = "tutor_id", nullable = false, unique = true)
+    @JsonIgnore
+    @ToString.Exclude
+    private User tutor;
 
-    private String fullName;
-    private String email;
-    private String address;
-    private String phone;
+    @Column(nullable = false, columnDefinition = "NVARCHAR(2000)")
+    private String bio;
 
-    @ManyToMany
-    @JoinTable(
-            name = "profile_specializations",
-            joinColumns = @JoinColumn(name = "profile_id"),
-            inverseJoinColumns = @JoinColumn(name = "specialization_id")
-    )
-    private List<Specialization> specializations;
+    @Column(nullable = false, columnDefinition = "NVARCHAR(255)")
+    private String headline;
 
-    private String description; // Nếu là Tutor
+    @Column(nullable = false, columnDefinition = "NVARCHAR(2000)")
+    private String experience;
 
-    // getters, setters
+    @Column(nullable = false, columnDefinition = "NVARCHAR(2000)")
+    private String teachingLevel;
+
+    @Column(nullable = false)
+    private Integer fees;
+
+    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ProfileSubject> profileSubjects;
+
+    private String videoIntro;
+    @CreationTimestamp
+    @Column(updatable = false)
+    private Timestamp createdAt;
+
+    @UpdateTimestamp
+    private Timestamp updatedAt;
 }

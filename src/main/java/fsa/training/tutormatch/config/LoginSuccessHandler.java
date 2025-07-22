@@ -23,8 +23,6 @@ public class LoginSuccessHandler extends SavedRequestAwareAuthenticationSuccessH
         // Lưu profileId vào session
         HttpSession session = request.getSession();
         session.setAttribute("profileId", userDetails.getProfileId());
-        session.setAttribute("name_profile", userDetails.getNameProfile());
-
         // Chuyển hướng
         super.onAuthenticationSuccess(request, response, authentication);
     }

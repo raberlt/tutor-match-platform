@@ -1,0 +1,7 @@
+🏆 CERTIFICATE RECORD
+====================
+Name: Certificate 18
+Issued by: Issuer 18
+Description: Description 18
+Image: https://example.com/cert.jpg
+Processed: 2025-09-08T16:11:01.143799

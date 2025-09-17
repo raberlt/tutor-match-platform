@@ -1,0 +1,8 @@
+🏫 EDUCATION RECORD
+==================
+School: University 32
+Degree: Bachelor's Degree
+Major: Major 32
+Period: 2032 - 2036
+Image: https://example.com/degree.jpg
+Processed: 2025-09-08T16:11:00.096181

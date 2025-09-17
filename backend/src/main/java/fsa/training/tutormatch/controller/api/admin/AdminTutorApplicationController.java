@@ -1,0 +1,892 @@
+package fsa.training.tutormatch.controller.api.admin;
+
+import fsa.training.tutormatch.entity.*;
+import fsa.training.tutormatch.repository.*;
+import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/admin/tutor-applications")
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminTutorApplicationController {
+
+    @Autowired
+    private ProfileRepository profileRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private ProfileSubjectRepository profileSubjectRepository;
+    
+    @Autowired
+    private ScheduleRepository scheduleRepository;
+    
+    @Autowired
+    private CertificateRepository certificateRepository;
+    
+    @Autowired
+    private EducationRepository educationRepository;
+
+    /**
+     * Lấy danh sách tất cả hồ sơ đăng ký tutor với phân trang và lọc
+     */
+    @GetMapping
+    public ResponseEntity<?> getAllApplications(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search) {
+
+        try {
+            Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                    Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+
+            // Lấy tất cả profile
+            List<BaseProfile> allProfiles = profileRepository.findAll();
+
+            // Lọc danh sách tutor
+            String statusLower = status != null ? status.toLowerCase().trim() : null;
+            String searchLower = search != null ? search.toLowerCase().trim() : null;
+
+            List<TutorProfile> tutorProfiles = allProfiles.stream()
+                    .filter(p -> p instanceof TutorProfile)
+                    .map(p -> (TutorProfile) p)
+                    .filter(p -> filterByStatus(p, statusLower))
+                    .filter(p -> filterBySearch(p, searchLower))
+                    .toList();
+
+            // Thực hiện phân trang thủ công
+            int start = (int) pageable.getOffset();
+            int end = Math.min(start + pageable.getPageSize(), tutorProfiles.size());
+            List<TutorProfile> pageProfiles = tutorProfiles.subList(start, end);
+
+            // Chuẩn bị dữ liệu trả về
+            List<Map<String, Object>> applications = pageProfiles.stream().map(profile -> {
+                Map<String, Object> appData = new HashMap<>();
+                appData.put("id", profile.getId());
+                appData.put("status", profile.getProfileStatus());
+                appData.put("isVerified", profile.isVerified());
+                appData.put("createdAt", profile.getCreatedAt());
+                appData.put("updatedAt", profile.getUpdatedAt());
+
+                // Thông tin tutor (User)
+                User tutor = profile.getUser();
+                if (tutor != null) {
+                    appData.put("tutorId", tutor.getId());
+                    appData.put("tutorName", tutor.getFirstName() + " " + tutor.getLastName());
+                    appData.put("email", tutor.getEmail());
+                }
+
+                // Thông tin profile
+                appData.put("headline", profile.getHeadline());
+                appData.put("fees", profile.getFees());
+                appData.put("university", profile.getUniversity());
+                appData.put("city", profile.getCity());
+
+                return appData;
+            }).toList();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("applications", applications);
+            response.put("currentPage", page);
+            response.put("totalPages", (int) Math.ceil((double) tutorProfiles.size() / size));
+            response.put("totalElements", tutorProfiles.size());
+            response.put("pageSize", size);
+            response.put("hasNext", end < tutorProfiles.size());
+            response.put("hasPrevious", start > 0);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Lỗi khi lấy danh sách hồ sơ: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    private boolean filterByStatus(BaseProfile profile, String statusLower) {
+        if (statusLower == null || statusLower.isEmpty()) return true;
+        return profile.getProfileStatus() != null &&
+                profile.getProfileStatus().toString().toLowerCase().equals(statusLower);
+    }
+
+    private boolean filterBySearch(TutorProfile profile, String searchLower) {
+        if (searchLower == null || searchLower.isEmpty()) return true;
+
+        User tutor = profile.getUser();
+        if (tutor != null) {
+            if (containsIgnoreCase(tutor.getFirstName(), searchLower) ||
+                    containsIgnoreCase(tutor.getLastName(), searchLower) ||
+                    containsIgnoreCase(tutor.getEmail(), searchLower) ||
+                    containsIgnoreCase(tutor.getUsername(), searchLower)) {
+                return true;
+            }
+        }
+
+        return containsIgnoreCase(profile.getHeadline(), searchLower) ||
+                containsIgnoreCase(profile.getBio(), searchLower) ||
+                containsIgnoreCase(profile.getUniversity(), searchLower) ||
+                containsIgnoreCase(profile.getMajor(), searchLower);
+    }
+
+    private boolean containsIgnoreCase(String field, String searchLower) {
+        return field != null && field.toLowerCase().contains(searchLower);
+    }
+
+    /**
+     * Lấy thông tin chi tiết của một hồ sơ Tutor
+     */
+    @GetMapping("/{profileId}")
+    public ResponseEntity<?> getApplicationDetail(@PathVariable Integer profileId) {
+        try {
+            Optional<BaseProfile> profileOpt = profileRepository.findById(profileId);
+
+            if (profileOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Không tìm thấy hồ sơ!"
+                ));
+            }
+
+            BaseProfile profile = profileOpt.get();
+
+            // Kiểm tra có phải hồ sơ tutor không
+            if (!(profile instanceof TutorProfile tutorProfile)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Đây không phải hồ sơ đăng ký tutor!"
+                ));
+            }
+
+            // Trả về chi tiết hồ sơ tutor
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("application", buildDetailedProfileResponse(tutorProfile));
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Lỗi khi lấy chi tiết hồ sơ: " + e.getMessage()
+            ));
+        }
+    }
+    private Map<String, Object> buildDetailedProfileResponse(TutorProfile profile) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("id", profile.getId());
+        data.put("status", profile.getProfileStatus());
+        data.put("isVerified", profile.isVerified());
+        data.put("createdAt", profile.getCreatedAt());
+        data.put("updatedAt", profile.getUpdatedAt());
+
+        // Thông tin tutor (user)
+        User tutor = profile.getUser();
+        if (tutor != null) {
+            data.put("tutorId", tutor.getId());
+            data.put("tutorName", tutor.getFirstName() + " " + tutor.getLastName());
+            data.put("email", tutor.getEmail());
+            data.put("username", tutor.getUsername());
+        }
+
+        // Thông tin profile
+        data.put("headline", profile.getHeadline());
+        data.put("bio", profile.getBio());
+        data.put("experience", profile.getExperience());
+        data.put("teachingLevel", profile.getTeachingLevel());
+        data.put("fees", profile.getFees());
+        data.put("university", profile.getUniversity());
+        data.put("major", profile.getMajor());
+        data.put("city", profile.getCity());
+        data.put("videoIntro", profile.getVideoIntro());
+        data.put("ratePointAverage", profile.getRatePointAverage());
+        data.put("totalPoint", profile.getTotalPoint());
+
+        return data;
+    }
+
+
+    /**
+     * Duyệt hồ sơ
+     */
+    @PutMapping("/{profileId}/approve")
+    public ResponseEntity<?> approveApplication(@PathVariable Integer profileId,
+                                                @RequestBody(required = false) Map<String, String> requestBody,
+                                                Authentication authentication) {
+        try {
+            Optional<BaseProfile> profileOpt = profileRepository.findById(profileId);
+
+            if (profileOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Không tìm thấy hồ sơ!"
+                ));
+            }
+
+            BaseProfile profile = profileOpt.get();
+
+            // Chỉ chấp nhận duyệt nếu là TutorProfile
+            if (!(profile instanceof TutorProfile tutorProfile)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Đây không phải hồ sơ tutor!"
+                ));
+            }
+
+            // Chỉ cho phép duyệt hồ sơ đang PENDING_VERIFICATION
+            if (tutorProfile.getProfileStatus() != BaseProfile.ProfileStatus.PENDING_VERIFICATION) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Chỉ có thể duyệt hồ sơ đang chờ xét duyệt!"
+                ));
+            }
+
+            // Lấy admin hiện tại
+            String adminUsername = authentication.getName();
+            User admin = userRepository.findByUsername(adminUsername)
+                    .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+            // Cập nhật trạng thái profile
+            tutorProfile.setProfileStatus(BaseProfile.ProfileStatus.ACTIVE);
+            tutorProfile.setVerified(true);
+            tutorProfile.setApprovedBy(admin);
+            tutorProfile.setApprovedAt(new Timestamp(System.currentTimeMillis()));
+
+            // Ghi chú của admin (nếu có)
+            if (requestBody != null && requestBody.containsKey("adminNote")) {
+                tutorProfile.setAdminNote(requestBody.get("adminNote"));
+            }
+
+            // Chuyển role của user từ STUDENT thành TUTOR
+            User tutorUser = tutorProfile.getUser();
+            if (tutorUser != null && tutorUser.getRole() == User.Role.STUDENT) {
+                tutorUser.setRole(User.Role.TUTOR);
+                userRepository.save(tutorUser);
+            }
+
+            profileRepository.save(tutorProfile);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Đã duyệt hồ sơ thành công! User đã được chuyển thành TUTOR.",
+                    "profileId", profileId,
+                    "newStatus", "ACTIVE",
+                    "userRole", tutorUser != null ? tutorUser.getRole().toString() : null
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Lỗi khi duyệt hồ sơ: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Từ chối hồ sơ
+     */
+    @PutMapping("/{profileId}/reject")
+    public ResponseEntity<?> rejectApplication(@PathVariable Integer profileId,
+                                               @RequestBody Map<String, String> requestBody,
+                                               Authentication authentication) {
+        try {
+            Optional<BaseProfile> profileOpt = profileRepository.findById(profileId);
+
+            if (profileOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Không tìm thấy hồ sơ!"
+                ));
+            }
+
+            BaseProfile profile = profileOpt.get();
+
+            // Chỉ chấp nhận từ chối nếu là TutorProfile
+            if (!(profile instanceof TutorProfile tutorProfile)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Đây không phải hồ sơ tutor!"
+                ));
+            }
+
+            // Chỉ cho phép từ chối hồ sơ đang PENDING_VERIFICATION
+            if (tutorProfile.getProfileStatus() != BaseProfile.ProfileStatus.PENDING_VERIFICATION) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Chỉ có thể từ chối hồ sơ đang chờ xét duyệt!"
+                ));
+            }
+
+            // Lấy admin hiện tại
+            String adminUsername = authentication.getName();
+            User admin = userRepository.findByUsername(adminUsername)
+                    .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+            // Lý do từ chối (bắt buộc)
+            String rejectReason = requestBody.get("adminNote");
+            if (rejectReason == null || rejectReason.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Vui lòng nhập lý do từ chối!"
+                ));
+            }
+
+            // Cập nhật trạng thái
+            tutorProfile.setProfileStatus(BaseProfile.ProfileStatus.REJECTED);
+            tutorProfile.setVerified(false);
+            tutorProfile.setApprovedBy(admin);
+            tutorProfile.setApprovedAt(new Timestamp(System.currentTimeMillis()));
+            tutorProfile.setAdminNote(rejectReason);
+
+            // Đảm bảo user vẫn là STUDENT khi bị từ chối
+            User tutorUser = tutorProfile.getUser();
+            if (tutorUser != null && tutorUser.getRole() == User.Role.TUTOR) {
+                tutorUser.setRole(User.Role.STUDENT);
+                userRepository.save(tutorUser);
+            }
+
+            profileRepository.save(tutorProfile);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Đã từ chối hồ sơ!",
+                    "profileId", profileId,
+                    "newStatus", "REJECTED",
+                    "rejectReason", rejectReason
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Lỗi khi từ chối hồ sơ: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Tạm khóa hồ sơ tutor
+     */
+    @PutMapping("/{profileId}/suspend")
+    public ResponseEntity<?> suspendApplication(@PathVariable Integer profileId,
+                                                @RequestBody Map<String, String> requestBody,
+                                                Authentication authentication) {
+        try {
+            Optional<BaseProfile> profileOpt = profileRepository.findById(profileId);
+
+            if (profileOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Không tìm thấy hồ sơ!"
+                ));
+            }
+
+            BaseProfile profile = profileOpt.get();
+
+            // Chỉ áp dụng cho TutorProfile
+            if (!(profile instanceof TutorProfile tutorProfile)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Đây không phải hồ sơ tutor!"
+                ));
+            }
+
+            // Chỉ có thể suspend hồ sơ ACTIVE
+            if (tutorProfile.getProfileStatus() != BaseProfile.ProfileStatus.ACTIVE) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Chỉ có thể tạm khóa hồ sơ đang hoạt động!"
+                ));
+            }
+
+            // Lấy admin hiện tại
+            String adminUsername = authentication.getName();
+            User admin = userRepository.findByUsername(adminUsername)
+                    .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+            // Lý do tạm khóa (bắt buộc)
+            String suspendReason = requestBody.get("adminNote");
+            if (suspendReason == null || suspendReason.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Vui lòng nhập lý do tạm khóa!"
+                ));
+            }
+
+            // Cập nhật trạng thái hồ sơ
+            tutorProfile.setProfileStatus(BaseProfile.ProfileStatus.SUSPENDED);
+            tutorProfile.setVerified(false);
+            tutorProfile.setApprovedBy(admin);
+            tutorProfile.setApprovedAt(new Timestamp(System.currentTimeMillis()));
+            tutorProfile.setAdminNote(suspendReason);
+
+            // Chuyển role user về STUDENT khi bị suspend
+            User tutorUser = tutorProfile.getUser();
+            if (tutorUser != null && tutorUser.getRole() == User.Role.TUTOR) {
+                tutorUser.setRole(User.Role.STUDENT);
+                userRepository.save(tutorUser);
+            }
+
+            profileRepository.save(tutorProfile);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Đã tạm khóa hồ sơ!",
+                    "profileId", profileId,
+                    "newStatus", "SUSPENDED",
+                    "suspendReason", suspendReason
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Lỗi khi tạm khóa hồ sơ: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Kích hoạt lại hồ sơ tutor (từ trạng thái SUSPENDED → ACTIVE)
+     */
+    @PutMapping("/{profileId}/reactivate")
+    public ResponseEntity<?> reactivateApplication(@PathVariable Integer profileId,
+                                                   @RequestBody(required = false) Map<String, String> requestBody,
+                                                   Authentication authentication) {
+        try {
+            Optional<BaseProfile> profileOpt = profileRepository.findById(profileId);
+
+            if (profileOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Không tìm thấy hồ sơ!"
+                ));
+            }
+
+            BaseProfile profile = profileOpt.get();
+
+            // Chỉ áp dụng cho TutorProfile
+            if (!(profile instanceof TutorProfile tutorProfile)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Đây không phải hồ sơ tutor!"
+                ));
+            }
+
+            // Chỉ có thể kích hoạt hồ sơ đang bị suspend
+            if (tutorProfile.getProfileStatus() != BaseProfile.ProfileStatus.SUSPENDED) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "error", "Chỉ có thể kích hoạt hồ sơ đang bị tạm khóa!"
+                ));
+            }
+
+            // Lấy admin hiện tại
+            String adminUsername = authentication.getName();
+            User admin = userRepository.findByUsername(adminUsername)
+                    .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+            // Cập nhật trạng thái hồ sơ
+            tutorProfile.setProfileStatus(BaseProfile.ProfileStatus.ACTIVE);
+            tutorProfile.setVerified(true);
+            tutorProfile.setApprovedBy(admin);
+            tutorProfile.setApprovedAt(new Timestamp(System.currentTimeMillis()));
+
+            // Ghi chú admin (nếu có)
+            if (requestBody != null && requestBody.containsKey("adminNote")) {
+                tutorProfile.setAdminNote(requestBody.get("adminNote"));
+            }
+
+            // Chuyển role user về TUTOR khi được re-activate
+            User tutorUser = tutorProfile.getUser();
+            if (tutorUser != null && tutorUser.getRole() == User.Role.STUDENT) {
+                tutorUser.setRole(User.Role.TUTOR);
+                userRepository.save(tutorUser);
+            }
+
+            profileRepository.save(tutorProfile);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Đã kích hoạt lại hồ sơ!",
+                    "profileId", profileId,
+                    "newStatus", "ACTIVE",
+                    "userRole", tutorUser != null ? tutorUser.getRole().toString() : null
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Lỗi khi kích hoạt hồ sơ: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Xóa hồ sơ tutor (xóa vĩnh viễn)
+     */
+    @DeleteMapping("/{profileId}")
+    @Transactional
+    public ResponseEntity<?> deleteApplication(@PathVariable Integer profileId,
+                                               @RequestBody Map<String, String> requestBody,
+                                               Authentication authentication) {
+        try {
+            Optional<BaseProfile> profileOpt = profileRepository.findById(profileId);
+
+            if (!profileOpt.isPresent()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "Không tìm thấy hồ sơ!");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            BaseProfile profile = profileOpt.get();
+
+            // Xác nhận lý do xóa
+            String deleteReason = requestBody.get("deleteReason");
+            if (deleteReason == null || deleteReason.trim().isEmpty()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "Vui lòng nhập lý do xóa hồ sơ!");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Kiểm tra loại hồ sơ có phải tutor không
+            if (profile instanceof TutorProfile tutorProfile) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "Đây không phải hồ sơ đăng ký tutor!");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Vì đã dùng CascadeType.ALL nên chỉ cần xóa BaseProfile
+            profileRepository.delete(profile);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Đã xóa hồ sơ vĩnh viễn!");
+            response.put("profileId", profileId);
+            response.put("deleteReason", deleteReason);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Lỗi khi xóa hồ sơ: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * Cập nhật ghi chú admin cho hồ sơ
+     */
+    @PutMapping("/{profileId}/note")
+    public ResponseEntity<?> updateAdminNote(@PathVariable Integer profileId,
+                                             @RequestBody Map<String, String> requestBody,
+                                             Authentication authentication) {
+        try {
+            Optional<BaseProfile> profileOpt = profileRepository.findById(profileId);
+
+            if (!profileOpt.isPresent()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "Không tìm thấy hồ sơ!");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            BaseProfile profile = profileOpt.get();
+
+            String adminNote = requestBody.get("adminNote");
+            if (adminNote == null) {
+                adminNote = "";
+            }
+
+            // Lấy admin hiện tại
+            String adminUsername = authentication.getName();
+            User admin = userRepository.findByUsername(adminUsername)
+                    .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+            // Cập nhật ghi chú
+            profile.setAdminNote(adminNote);
+            profile.setApprovedBy(admin);
+            profile.setApprovedAt(new Timestamp(System.currentTimeMillis()));
+
+            profileRepository.save(profile);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Đã cập nhật ghi chú!");
+            response.put("profileId", profileId);
+            response.put("adminNote", adminNote);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Lỗi khi cập nhật ghi chú: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * Xác thực bằng cấp/chứng chỉ
+     */
+    @PutMapping("/{profileId}/verify-credentials")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')") //  chỉ Admin mới được verify
+    public ResponseEntity<?> verifyCredentials(@PathVariable Integer profileId,
+                                               @RequestBody Map<String, Object> requestBody,
+                                               Authentication authentication) {
+        try {
+            Optional<BaseProfile> profileOpt = profileRepository.findById(profileId);
+
+            if (profileOpt.isEmpty()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "Không tìm thấy hồ sơ!");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            BaseProfile profile = profileOpt.get();
+
+            //  Xác thực danh sách Education
+            if (requestBody.containsKey("educationIds")) {
+                @SuppressWarnings("unchecked")
+                List<Integer> educationIds = (List<Integer>) requestBody.get("educationIds");
+                for (Integer eduId : educationIds) {
+                    educationRepository.findById(eduId).ifPresent(edu -> {
+                        if (edu.getProfile().getId().equals(profileId)) {
+                            edu.setValid(true);
+                            educationRepository.save(edu);
+                        }
+                    });
+                }
+            }
+
+            //  Xác thực danh sách Certificate
+            if (requestBody.containsKey("certificateIds")) {
+                @SuppressWarnings("unchecked")
+                List<Integer> certificateIds = (List<Integer>) requestBody.get("certificateIds");
+                for (Integer certId : certificateIds) {
+                    certificateRepository.findById(certId).ifPresent(cert -> {
+                        if (cert.getProfile().getId().equals(profileId)) {
+                            cert.setValid(true);
+                            certificateRepository.save(cert);
+                        }
+                    });
+                }
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Đã xác thực bằng cấp/chứng chỉ!");
+            response.put("profileId", profileId);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Lỗi khi xác thực: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+
+    /**
+     * Lấy thống kê hồ sơ
+     */
+    @GetMapping("/statistics")
+    public ResponseEntity<?> getApplicationStatistics() {
+        try {
+            List<BaseProfile> allProfiles = profileRepository.findAll();
+
+            int totalApplications = 0;
+            int pendingCount = 0;
+            int approvedCount = 0;
+            int rejectedCount = 0;
+            int suspendedCount = 0;
+
+            for (BaseProfile profile : allProfiles) {
+                if (profile instanceof TutorProfile) {
+                    totalApplications++;
+
+                    switch (profile.getProfileStatus()) {
+                        case PENDING_VERIFICATION:
+                            pendingCount++;
+                            break;
+                        case ACTIVE:
+                            approvedCount++;
+                            break;
+                        case REJECTED:
+                            rejectedCount++;
+                            break;
+                        case SUSPENDED:
+                            suspendedCount++;
+                            break;
+                    }
+                }
+            }
+
+            Map<String, Object> statistics = new HashMap<>();
+            statistics.put("total", totalApplications);
+            statistics.put("pending", pendingCount);
+            statistics.put("approved", approvedCount);
+            statistics.put("rejected", rejectedCount);
+            statistics.put("suspended", suspendedCount);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("statistics", statistics);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Lỗi khi lấy thống kê: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    private Map<String, Object> buildDetailedProfileResponse(BaseProfile profile) {
+        Map<String, Object> profileData = new HashMap<>();
+
+        // Thông tin cơ bản
+        profileData.put("id", profile.getId());
+        profileData.put("dateOfBirth", profile.getDateOfBirth());
+        profileData.put("gender", profile.getGender());
+        profileData.put("phoneNumber", profile.getPhoneNumber());
+        profileData.put("addressLine1", profile.getAddressLine1());
+        profileData.put("city", profile.getCity());
+        profileData.put("educationLevel", profile.getEducationLevel());
+        profileData.put("university", profile.getUniversity());
+        profileData.put("major", profile.getMajor());
+        profileData.put("status", profile.getProfileStatus());
+        profileData.put("isVerified", profile.isVerified());
+        profileData.put("adminNote", profile.getAdminNote());
+        profileData.put("createdAt", profile.getCreatedAt());
+        profileData.put("updatedAt", profile.getUpdatedAt());
+        profileData.put("approvedAt", profile.getApprovedAt());
+
+        // Người dùng
+        User user = profile.getUser();
+        if (user != null) {
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", user.getId());
+            userData.put("username", user.getUsername());
+            userData.put("firstName", user.getFirstName());
+            userData.put("lastName", user.getLastName());
+            userData.put("email", user.getEmail());
+            userData.put("phoneNumber", user.getPhoneNumber());
+            userData.put("address", user.getAddress());
+            userData.put("createdAt", user.getCreatedAt());
+            profileData.put("user", userData);
+        }
+
+        // Admin đã duyệt
+        if (profile.getApprovedBy() != null) {
+            Map<String, Object> approverData = new HashMap<>();
+            approverData.put("id", profile.getApprovedBy().getId());
+            approverData.put("name", profile.getApprovedBy().getFirstName() + " " + profile.getApprovedBy().getLastName());
+            approverData.put("username", profile.getApprovedBy().getUsername());
+            profileData.put("approvedBy", approverData);
+        }
+
+        // Nếu là TutorProfile → lấy thêm thông tin chi tiết
+        if (profile instanceof TutorProfile) {
+            TutorProfile tutor = (TutorProfile) profile;
+            profileData.put("bio", tutor.getBio());
+            profileData.put("headline", tutor.getHeadline());
+            profileData.put("experience", tutor.getExperience());
+            profileData.put("teachingLevel", tutor.getTeachingLevel());
+            profileData.put("fees", tutor.getFees());
+            profileData.put("videoIntro", tutor.getVideoIntro());
+
+            // Subjects
+            List<Map<String, Object>> subjects = new ArrayList<>();
+            if (tutor.getProfileSubjects() != null) {
+                for (ProfileSubject ps : tutor.getProfileSubjects()) {
+                    Map<String, Object> subjectData = new HashMap<>();
+                    subjectData.put("id", ps.getSubject().getId());
+                    subjectData.put("name", ps.getSubject().getName());
+                    subjects.add(subjectData);
+                }
+            }
+            profileData.put("subjects", subjects);
+
+            // Schedules
+            List<Map<String, Object>> schedulesData = new ArrayList<>();
+            if (tutor.getSchedules() != null) {
+                for (Schedule schedule : tutor.getSchedules()) {
+                    Map<String, Object> scheduleData = new HashMap<>();
+                    scheduleData.put("id", schedule.getId());
+                    scheduleData.put("dayOfWeek", schedule.getDayOfWeek());
+                    scheduleData.put("fromTime", schedule.getFromTime().toString().substring(0, 5));
+                    scheduleData.put("toTime", schedule.getToTime().toString().substring(0, 5));
+                    scheduleData.put("enable", schedule.getEnable());
+                    schedulesData.add(scheduleData);
+                }
+            }
+            profileData.put("schedules", schedulesData);
+
+            // Educations
+            List<Map<String, Object>> educationsData = new ArrayList<>();
+            if (tutor.getEducations() != null) {
+                for (Education education : tutor.getEducations()) {
+                    Map<String, Object> educationData = new HashMap<>();
+                    educationData.put("id", education.getId());
+                    educationData.put("schoolName", education.getSchoolName());
+                    educationData.put("degree", education.getDegree());
+                    educationData.put("major", education.getMajor());
+                    educationData.put("fromTime", education.getFromTime());
+                    educationData.put("toTime", education.getToTime());
+                    educationData.put("degreeImage", education.getDegreeImage());
+                    educationData.put("valid", education.getValid());
+                    educationsData.add(educationData);
+                }
+            }
+            profileData.put("educations", educationsData);
+
+            // Certificates
+            List<Map<String, Object>> certificatesData = new ArrayList<>();
+            if (tutor.getCertificates() != null) {
+                for (Certificate certificate : tutor.getCertificates()) {
+                    Map<String, Object> certificateData = new HashMap<>();
+                    certificateData.put("id", certificate.getId());
+                    certificateData.put("name", certificate.getName());
+                    certificateData.put("issuedBy", certificate.getIssuedBy());
+                    certificateData.put("description", certificate.getDescription());
+                    certificateData.put("certImage", certificate.getCertImage());
+                    certificateData.put("valid", certificate.getValid());
+                    certificatesData.add(certificateData);
+                }
+            }
+            profileData.put("certificates", certificatesData);
+        }
+
+        return profileData;
+    }
+
+} 

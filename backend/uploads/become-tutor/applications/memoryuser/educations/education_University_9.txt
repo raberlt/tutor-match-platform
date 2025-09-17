@@ -1,0 +1,8 @@
+🏫 EDUCATION RECORD
+==================
+School: University 9
+Degree: Bachelor's Degree
+Major: Major 9
+Period: 2009 - 2013
+Image: https://example.com/degree.jpg
+Processed: 2025-09-08T16:11:00.105952

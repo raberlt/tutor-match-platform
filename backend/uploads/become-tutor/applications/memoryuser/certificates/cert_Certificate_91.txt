@@ -1,0 +1,7 @@
+🏆 CERTIFICATE RECORD
+====================
+Name: Certificate 91
+Issued by: Issuer 91
+Description: Description 91
+Image: https://example.com/cert.jpg
+Processed: 2025-09-08T16:11:04.309169

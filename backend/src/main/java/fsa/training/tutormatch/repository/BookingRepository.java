@@ -1,0 +1,74 @@
+package fsa.training.tutormatch.repository;
+
+import fsa.training.tutormatch.entity.Booking;
+import fsa.training.tutormatch.entity.BookingStatus;
+import fsa.training.tutormatch.entity.BookingType;
+import fsa.training.tutormatch.entity.StudentProfile;
+import fsa.training.tutormatch.entity.TutorProfile;
+import fsa.training.tutormatch.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.List;
+
+@Repository
+public interface BookingRepository extends JpaRepository<Booking, Integer> {
+    
+    // ✅ Update để match với entity field types
+    
+    // Methods với StudentProfile và TutorProfile
+    Page<Booking> findByStudent(StudentProfile student, Pageable pageable);
+    Page<Booking> findByStudentAndStatus(StudentProfile student, BookingStatus status, Pageable pageable);
+    Page<Booking> findByTutor(TutorProfile tutor, Pageable pageable);
+    Page<Booking> findByTutorAndStatus(TutorProfile tutor, BookingStatus status, Pageable pageable);
+    List<Booking> findByTutorAndStatus(TutorProfile tutor, BookingStatus status);
+    List<Booking> findByTutorAndDateBetween(TutorProfile tutor, Date startDate, Date endDate);
+    
+    // Methods với User để backward compatibility
+    @Query("SELECT b FROM Booking b WHERE b.student.user = :user")
+    Page<Booking> findByStudentUser(@Param("user") User user, Pageable pageable);
+    
+    @Query("SELECT b FROM Booking b WHERE b.student.user = :user AND b.status = :status")
+    Page<Booking> findByStudentUserAndStatus(@Param("user") User user, @Param("status") BookingStatus status, Pageable pageable);
+    
+    @Query("SELECT b FROM Booking b WHERE b.tutor.user = :user")
+    Page<Booking> findByTutorUser(@Param("user") User user, Pageable pageable);
+    
+    @Query("SELECT b FROM Booking b WHERE b.tutor.user = :user AND b.status = :status")
+    Page<Booking> findByTutorUserAndStatus(@Param("user") User user, @Param("status") BookingStatus status, Pageable pageable);
+    
+    @Query("SELECT b FROM Booking b WHERE b.tutor.user = :user AND b.status = :status")
+    List<Booking> findByTutorUserAndStatus(@Param("user") User user, @Param("status") BookingStatus status);
+    
+    @Query("SELECT b FROM Booking b WHERE b.tutor.user = :user AND b.date = :date")
+    List<Booking> findByTutorUserAndDate(@Param("user") User user, @Param("date") Date date);
+    
+    @Query("SELECT b FROM Booking b WHERE b.tutor.user = :user AND b.date BETWEEN :startDate AND :endDate")
+    List<Booking> findByTutorUserAndDateBetween(@Param("user") User user, @Param("startDate") Date startDate, @Param("endDate") Date endDate);
+    
+    // Basic find methods
+    List<Booking> findByStudentId(Integer studentId);
+    List<Booking> findByTutorId(Integer tutorId);
+    
+    // Admin pagination methods
+    Page<Booking> findByStatus(BookingStatus status, Pageable pageable);
+    
+    // Count methods for statistics
+    long countByStatus(BookingStatus status);
+    long countByBookingType(BookingType bookingType);
+    long countByDate(Date date);
+    long countByCreatedAtAfter(Timestamp date);
+    long countByTutor(TutorProfile tutor);
+    long countByTutorAndStatus(TutorProfile tutor, BookingStatus status);
+    long countByStudent(StudentProfile student);
+    long countByStudentAndStatus(StudentProfile student, BookingStatus status);
+    
+    // Additional methods for student controller
+    List<Booking> findByStudentAndStatus(StudentProfile student, BookingStatus status);
+} 

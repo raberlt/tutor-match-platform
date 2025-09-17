@@ -1,0 +1,7 @@
+🏆 CERTIFICATE RECORD
+====================
+Name: Certificate 27
+Issued by: Issuer 27
+Description: Description 27
+Image: https://example.com/cert.jpg
+Processed: 2025-09-08T16:11:01.512958

@@ -1,0 +1,7 @@
+🏆 CERTIFICATE RECORD
+====================
+Name: Certificate 1
+Issued by: Issuer 1
+Description: Description 1
+Image: https://example.com/cert.jpg
+Processed: 2025-09-08T16:11:00.244045

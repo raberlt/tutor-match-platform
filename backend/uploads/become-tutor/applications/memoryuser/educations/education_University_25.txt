@@ -1,0 +1,8 @@
+🏫 EDUCATION RECORD
+==================
+School: University 25
+Degree: Bachelor's Degree
+Major: Major 25
+Period: 2025 - 2029
+Image: https://example.com/degree.jpg
+Processed: 2025-09-08T16:10:59.852442

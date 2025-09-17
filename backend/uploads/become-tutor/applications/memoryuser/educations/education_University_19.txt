@@ -1,0 +1,8 @@
+🏫 EDUCATION RECORD
+==================
+School: University 19
+Degree: Bachelor's Degree
+Major: Major 19
+Period: 2019 - 2023
+Image: https://example.com/degree.jpg
+Processed: 2025-09-08T16:11:00.101216

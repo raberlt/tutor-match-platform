@@ -1,0 +1,7 @@
+🏆 CERTIFICATE RECORD
+====================
+Name: Certificate 21
+Issued by: Issuer 21
+Description: Description 21
+Image: https://example.com/cert.jpg
+Processed: 2025-09-08T16:11:01.247147

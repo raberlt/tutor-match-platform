@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TutorMatch</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/css/common.css" />
+    <script src="/js/auth.js"></script>
+  </head>
+  <body>
+    <!-- Header anonymous (hiển thị khi chưa đăng nhập) -->
+    <nav
+      th:unless="${#authorization.expression('isAuthenticated()') && #authentication.name != 'anonymousUser'}"
+    >
+      <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+          <a class="navbar-brand fw-bold text-primary" href="/">
+            <i class="fas fa-graduation-cap me-2"></i>TutorMatch
+          </a>
+
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+              <li class="nav-item">
+                <a class="nav-link" href="/">Trang chủ</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/tutor-search">Tìm gia sư</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#about">Về chúng tôi</a>
+              </li>
+            </ul>
+
+            <div class="d-flex">
+              <a
+                href="/showLogin"
+                class="btn btn-outline-primary me-2 btn-login"
+              >
+                <i class="fas fa-sign-in-alt"></i> Đăng nhập
+              </a>
+              <a href="/register" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i> Đăng ký
+              </a>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </nav>
+
+    <!-- Header authenticated (hiển thị khi đã đăng nhập) -->
+    <nav
+      th:if="${#authorization.expression('isAuthenticated()') && #authentication.name != 'anonymousUser'}"
+    >
+      <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+          <a class="navbar-brand fw-bold text-primary" href="/">
+            <i class="fas fa-graduation-cap me-2"></i>TutorMatch
+          </a>
+
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <!-- Menu cho STUDENT -->
+            <ul
+              class="navbar-nav me-auto"
+              th:if="${#authorization.expression('hasRole(''STUDENT'')')}"
+            >
+              <li class="nav-item">
+                <a class="nav-link" href="/tutor-search">
+                  <i class="fas fa-search me-1"></i>Tìm gia sư
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/become-tutor">
+                  <i class="fas fa-chalkboard-teacher me-1"></i>Trở thành gia sư
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/my-sessions">
+                  <i class="fas fa-calendar-alt me-1"></i>Lịch học của tôi
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/messages">
+                  <i class="fas fa-envelope me-1"></i>Tin nhắn
+                </a>
+              </li>
+            </ul>
+
+            <!-- Menu cho TUTOR -->
+            <ul
+              class="navbar-nav me-auto"
+              th:if="${#authorization.expression('hasRole(''TUTOR'')')}"
+            >
+              <li class="nav-item">
+                <a class="nav-link" href="/tutor/dashboard">
+                  <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/teaching-schedule">
+                  <i class="fas fa-calendar me-1"></i>Lịch dạy
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/students">
+                  <i class="fas fa-users me-1"></i>Học viên
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/messages">
+                  <i class="fas fa-envelope me-1"></i>Tin nhắn
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/reviews">
+                  <i class="fas fa-star me-1"></i>Đánh giá
+                </a>
+              </li>
+            </ul>
+
+            <!-- Menu cho ADMIN -->
+            <ul
+              class="navbar-nav me-auto"
+              th:if="${#authorization.expression('hasRole(''ADMIN'')')}"
+            >
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/dashboard">
+                  <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/tutor-applications">
+                  <i class="fas fa-user-check me-1"></i>Đơn gia sư
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/users">
+                  <i class="fas fa-users me-1"></i>Người dùng
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/bookings">
+                  <i class="fas fa-calendar-check me-1"></i>Booking
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/payments">
+                  <i class="fas fa-credit-card me-1"></i>Thanh toán
+                </a>
+              </li>
+            </ul>
+
+            <!-- User menu (dropdown cho tất cả người dùng đã đăng nhập) -->
+            <div class="d-flex align-items-center">
+              <div class="dropdown">
+                <button
+                  class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center"
+                  type="button"
+                  id="userMenuDropdown"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  <img
+                    src="https://via.placeholder.com/32x32?text=User"
+                    class="rounded-circle me-2"
+                    width="32"
+                    height="32"
+                    alt="Avatar"
+                  />
+                  <span class="user-info" th:text="${#authentication.name}"
+                    >User</span
+                  >
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li>
+                    <h6 class="dropdown-header">
+                      <span th:text="${#authentication.name}">Username</span>
+                      <br />
+                      <small
+                        class="text-muted"
+                        th:text="${#authentication.authorities}"
+                        >Role</small
+                      >
+                    </h6>
+                  </li>
+                  <li><hr class="dropdown-divider" /></li>
+
+                  <!-- Student specific menu -->
+                  <li
+                    th:if="${#authorization.expression('hasRole(''STUDENT'')')}"
+                  >
+                    <a class="dropdown-item" href="/student/dashboard">
+                      <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                  </li>
+
+                  <!-- Tutor specific menu -->
+                  <li
+                    th:if="${#authorization.expression('hasRole(''TUTOR'')')}"
+                  >
+                    <a class="dropdown-item" href="/tutor/dashboard">
+                      <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                  </li>
+
+                  <!-- Common menu items -->
+                  <li>
+                    <a class="dropdown-item" href="/profile">
+                      <i class="fas fa-user me-2"></i>Hồ sơ cá nhân
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="/settings">
+                      <i class="fas fa-cog me-2"></i>Cài đặt
+                    </a>
+                  </li>
+                  <li><hr class="dropdown-divider" /></li>
+                  <li>
+                    <button class="dropdown-item btn-logout" onclick="logout()">
+                      <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </nav>
+
+    <script>
+      function logout() {
+        if (confirm("Bạn có chắc chắn muốn đăng xuất?")) {
+          // Clear auth data
+          if (window.authManager) {
+            window.authManager.logout();
+          } else {
+            // Fallback if auth.js not loaded
+            localStorage.removeItem("jwt_token");
+            sessionStorage.removeItem("jwt_token");
+            localStorage.removeItem("user_info");
+            sessionStorage.removeItem("user_info");
+          }
+
+          // Redirect to login
+          window.location.href = "/showLogin";
+        }
+      }
+
+      // Update UI on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        if (typeof updateAuthUI === "function") {
+          updateAuthUI();
+        }
+      });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

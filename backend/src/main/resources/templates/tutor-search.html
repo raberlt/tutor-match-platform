@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tìm gia sư - TutorMatch</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/css/common.css" />
+    <style>
+      :root {
+        --primary-blue: #1e40af;
+        --light-blue: #3b82f6;
+        --dark-blue: #1e3a8a;
+        --light-gray: #f8fafc;
+        --text-dark: #1f2937;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--light-gray);
+      }
+
+      .filter-sidebar {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+      }
+
+      .tutor-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+      }
+
+      .tutor-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+
+      .tutor-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: #e5e7eb;
+      }
+
+      .subject-badge {
+        background: #e0f2fe;
+        color: #0284c7;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        margin-right: 8px;
+        margin-bottom: 8px;
+        display: inline-block;
+        font-weight: 500;
+      }
+
+      .price-tag {
+        color: #1f2937;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+      }
+
+      .price-tag i {
+        margin-right: 8px;
+        color: #6b7280;
+      }
+
+      .btn-book {
+        background: #60a5fa;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+        width: 100%;
+      }
+
+      .btn-book:hover {
+        background: var(--dark-blue);
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .form-control,
+      .form-select {
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+        padding: 12px 15px;
+        font-size: 0.95rem;
+      }
+
+      .form-control:focus,
+      .form-select:focus {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+      }
+
+      .search-input-wrapper {
+        position: relative;
+      }
+
+      .search-input-wrapper .fa-search {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6b7280;
+      }
+
+      .bio-preview {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.5;
+        color: #6b7280;
+        margin-bottom: 15px;
+      }
+
+      .rating-stars {
+        color: #fbbf24;
+        margin-bottom: 8px;
+      }
+
+      .no-tutors {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+      }
+
+      .tutor-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .tutor-name .fa-check-circle {
+        color: #3b82f6;
+        font-size: 1rem;
+      }
+
+      .view-details-link {
+        color: #3b82f6;
+        text-decoration: underline;
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
+
+      .view-details-link:hover {
+        color: var(--dark-blue);
+      }
+
+      .rating-text {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin-left: 8px;
+      }
+
+      .page-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 8px;
+      }
+
+      .page-subtitle {
+        color: #6b7280;
+        margin-bottom: 30px;
+      }
+
+      .tutor-headline {
+        font-style: italic;
+        color: #374151;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      .calendar-container {
+        border: 1px solid #e5e7eb !important;
+        border-radius: 12px !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+        background: white;
+      }
+
+      .calendar-container .selected {
+        background-color: #007bff !important;
+        color: white !important;
+        font-weight: bold;
+      }
+
+      .calendar-container .day-limited-slots {
+        background-color: #fff3cd !important;
+        color: #856404 !important;
+      }
+
+      .calendar-container .day-no-slots {
+        background-color: #f8d7da !important;
+        color: #721c24 !important;
+      }
+
+      .calendar-container .calendar-header {
+        border-bottom: 1px solid #f0f0f0;
+        padding-bottom: 10px;
+      }
+
+      .date-picker-container {
+        position: relative;
+      }
+
+      #dateDisplay {
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px 15px;
+        font-size: 0.95rem;
+        background: white;
+      }
+
+      #dateDisplay:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <div th:replace="~{fragment/header}"></div>
+
+    <div class="container-fluid py-4">
+      <div class="container">
+        <h2 class="page-title">Học giỏi hơn với gia sư phù hợp nhất!</h2>
+        <p class="page-subtitle">
+          Duyệt qua các gia sư đã được xác minh và tìm người phù hợp nhất với
+          bạn
+        </p>
+
+        <div class="row">
+          <!-- Filter Sidebar -->
+          <div class="col-lg-3 mb-4">
+            <div class="filter-sidebar">
+              <form method="get" action="/tutor-search">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Môn học</label>
+                  <select name="subject" class="form-select">
+                    <option value="">Tất cả môn học</option>
+                    <option
+                      th:each="subjectName : ${allSubjects}"
+                      th:value="${subjectName}"
+                      th:text="${subjectName}"
+                      th:selected="${subjectName == currentSubject}"
+                    ></option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Học phí/buổi</label>
+                  <select class="form-select" id="feeRange">
+                    <option value="">Chọn</option>
+                    <option value="0-100000">Dưới 100,000 VND</option>
+                    <option value="100000-200000">100,000 - 200,000 VND</option>
+                    <option value="200000-300000">200,000 - 300,000 VND</option>
+                    <option value="300000-500000">300,000 - 500,000 VND</option>
+                    <option value="500000-">Trên 500,000 VND</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Tên hoặc từ khóa</label>
+                  <div class="search-input-wrapper">
+                    <input
+                      type="text"
+                      name="keyword"
+                      class="form-control"
+                      placeholder="Tên hoặc từ khóa"
+                      th:value="${currentKeyword}"
+                    />
+                    <i class="fas fa-search"></i>
+                  </div>
+                </div>
+
+                <div class="mb-4">
+                  <label class="form-label fw-semibold">Mặc định</label>
+                  <select name="sortBy" class="form-select">
+                    <option value="">Mặc định</option>
+                    <option
+                      value="priceAsc"
+                      th:selected="${currentSortBy == 'priceAsc'}"
+                    >
+                      Học phí từ thấp đến cao
+                    </option>
+                    <option
+                      value="priceDesc"
+                      th:selected="${currentSortBy == 'priceDesc'}"
+                    >
+                      Học phí từ cao đến thấp
+                    </option>
+                    <option
+                      value="ratingDesc"
+                      th:selected="${currentSortBy == 'ratingDesc'}"
+                    >
+                      Đánh giá cao nhất
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Hidden inputs for fee range -->
+                <input
+                  type="hidden"
+                  name="minFee"
+                  id="minFeeInput"
+                  th:value="${currentMinFee}"
+                />
+                <input
+                  type="hidden"
+                  name="maxFee"
+                  id="maxFeeInput"
+                  th:value="${currentMaxFee}"
+                />
+              </form>
+            </div>
+          </div>
+
+          <!-- Tutor List -->
+          <div class="col-lg-9">
+            <!-- Tutor Count and Sort -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 id="tutorCount">Đang tải...</h5>
+              <select id="sortBy" class="form-select" style="width: auto">
+                <option value="id,asc">Mặc định</option>
+                <option value="fees,asc">Học phí: Thấp → Cao</option>
+                <option value="fees,desc">Học phí: Cao → Thấp</option>
+                <option value="ratePointAverage,desc">
+                  Đánh giá: Cao → Thấp
+                </option>
+              </select>
+            </div>
+
+            <!-- Tutors Container -->
+            <div id="tutorsContainer">
+              <!-- Tutors will be loaded via JavaScript -->
+            </div>
+
+            <!-- Pagination -->
+            <div
+              id="paginationContainer"
+              class="d-flex justify-content-center mt-4"
+              style="display: none"
+            >
+              <nav aria-label="Tutor search pagination">
+                <ul id="pagination" class="pagination pagination-lg">
+                  <!-- Pagination buttons will be generated here -->
+                </ul>
+              </nav>
+            </div>
+
+            <!-- Fallback: Static tutors from Thymeleaf -->
+            <div
+              id="staticTutors"
+              th:if="${tutors != null and not tutors.isEmpty()}"
+            >
+              <div th:each="tutor : ${tutors}" class="tutor-card">
+                <div class="row align-items-center">
+                  <!-- Avatar -->
+                  <div class="col-md-3 text-center">
+                    <img
+                      th:src="${tutor.imageAvatar != null ? tutor.imageAvatar : 'https://via.placeholder.com/120x120?text=User'}"
+                      class="tutor-avatar"
+                      th:alt="${tutor.firstName + ' ' + tutor.lastName}"
+                    />
+                  </div>
+
+                  <!-- Info -->
+                  <div class="col-md-6">
+                    <div class="tutor-name">
+                      <span th:text="${tutor.firstName + ' ' + tutor.lastName}"
+                        >Tên gia sư</span
+                      >
+                      <i class="fas fa-check-circle"></i>
+                    </div>
+
+                    <!-- Subjects -->
+                    <div class="mb-2">
+                      <span th:each="subject, iterStat : ${tutor.subjects}">
+                        <span
+                          class="subject-badge"
+                          th:text="${subject.name}"
+                          th:data-subject-id="${subject.id}"
+                          >Môn</span
+                        >
+                      </span>
+                    </div>
+
+                    <!-- Price -->
+                    <div class="price-tag">
+                      <i class="far fa-clock"></i>
+                      <span
+                        th:text="${#numbers.formatInteger(tutor.fees, 3, 'COMMA')} + ' VND/buổi'"
+                      ></span>
+                    </div>
+
+                    <!-- Rating -->
+                    <div class="rating-stars">
+                      <span
+                        th:each="i : ${#numbers.sequence(1, T(java.lang.Math).round(tutor.ratePointAverage))}"
+                      >
+                        <i class="fas fa-star"></i>
+                      </span>
+                      <span
+                        th:if="${tutor.ratePointAverage == 0.0}"
+                        class="rating-text"
+                        >Chưa có đánh giá</span
+                      >
+                      <span
+                        th:if="${tutor.totalPoint > 0}"
+                        class="rating-text"
+                        th:text="${tutor.totalPoint + ' đánh giá'}"
+                      ></span>
+                    </div>
+
+                    <!-- Headline/Quote -->
+                    <div class="tutor-headline">
+                      <span
+                        th:if="${tutor.headline != null and !tutor.headline.isEmpty()}"
+                        th:text="'&quot;' + ${tutor.headline} + '&quot;'"
+                      ></span>
+                      <span
+                        th:if="${tutor.headline == null or tutor.headline.isEmpty()}"
+                      >
+                        "Knowledge is the greatest weapon against anything !"
+                      </span>
+                    </div>
+
+                    <!-- Bio (short description) -->
+                    <p class="bio-preview" th:text="${tutor.bio}">
+                      Mình là một người dễ bắt chuyện, linh hoạt, mang lại cảm
+                      giác dễ gần cho học viên.
+                    </p>
+
+                    <a
+                      th:href="@{'/tutor/detail/' + ${tutor.id}}"
+                      class="view-details-link"
+                    >
+                      Xem chi tiết
+                    </a>
+                  </div>
+
+                  <!-- Book button -->
+                  <div class="col-md-3 text-center">
+                    <button
+                      class="btn btn-book"
+                      th:onclick="'bookTutor(' + ${tutor.id} + ')'"
+                    >
+                      Đặt lịch học thử
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- No Results -->
+            <div
+              class="no-tutors"
+              th:if="${tutors == null or tutors.isEmpty()}"
+            >
+              <i class="fas fa-search fa-3x mb-3"></i>
+              <h4>Không tìm thấy gia sư nào</h4>
+              <p class="text-muted">
+                Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div
+      class="modal fade"
+      id="bookingModal"
+      tabindex="-1"
+      aria-labelledby="bookingModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 15px">
+          <div class="modal-header border-0 pb-2">
+            <div class="d-flex align-items-center">
+              <img
+                id="tutorModalAvatar"
+                src=""
+                class="rounded-circle me-3"
+                style="width: 50px; height: 50px; object-fit: cover"
+              />
+              <div>
+                <h5 class="modal-title fw-bold mb-0" id="bookingModalLabel">
+                  Đặt một buổi học thử
+                </h5>
+                <small class="text-muted"
+                  >Để thảo luận về tiến độ và kế hoạch học tập của bạn</small
+                >
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body pt-0">
+            <form id="bookingForm">
+              <input type="hidden" id="selectedTutorId" name="tutorId" />
+              <input type="hidden" id="selectedDate" name="date" />
+
+              <!-- Time Selection Label -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold"
+                  >Thời gian học mong muốn:</label
+                >
+                <small class="text-muted d-block mb-2">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Bạn có thể đặt lịch từ ngày mai đến 1 tháng tới
+                </small>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="date-picker-container">
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="dateDisplay"
+                        readonly
+                        placeholder="Chọn ngày"
+                        style="cursor: pointer"
+                      />
+                      <!-- Calendar -->
+                      <div
+                        class="calendar-container"
+                        id="calendarContainer"
+                        style="
+                          display: none;
+                          position: absolute;
+                          background: white;
+                          border: 1px solid #ddd;
+                          border-radius: 8px;
+                          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                          z-index: 1050;
+                          width: 300px;
+                          padding: 15px;
+                        "
+                      >
+                        <div
+                          class="calendar-header d-flex justify-content-between align-items-center mb-3"
+                        >
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            id="prevMonth"
+                          >
+                            ‹
+                          </button>
+                          <span class="fw-bold" id="currentMonth"
+                            >Tháng 1 2024</span
+                          >
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            id="nextMonth"
+                          >
+                            ›
+                          </button>
+                        </div>
+                        <div class="calendar-days">
+                          <div class="d-flex mb-2">
+                            <div
+                              class="text-center"
+                              style="width: 40px; font-size: 12px; color: #666"
+                            >
+                              Th 2
+                            </div>
+                            <div
+                              class="text-center"
+                              style="width: 40px; font-size: 12px; color: #666"
+                            >
+                              Th 3
+                            </div>
+                            <div
+                              class="text-center"
+                              style="width: 40px; font-size: 12px; color: #666"
+                            >
+                              Th 4
+                            </div>
+                            <div
+                              class="text-center"
+                              style="width: 40px; font-size: 12px; color: #666"
+                            >
+                              Th 5
+                            </div>
+                            <div
+                              class="text-center"
+                              style="width: 40px; font-size: 12px; color: #666"
+                            >
+                              Th 6
+                            </div>
+                            <div
+                              class="text-center"
+                              style="width: 40px; font-size: 12px; color: #666"
+                            >
+                              Th 7
+                            </div>
+                            <div
+                              class="text-center"
+                              style="width: 40px; font-size: 12px; color: #666"
+                            >
+                              CN
+                            </div>
+                          </div>
+                          <div id="calendarGrid"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <select
+                      class="form-select"
+                      id="timeSelect"
+                      name="time"
+                      required
+                      disabled
+                    >
+                      <option value="">Chọn khung giờ</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Subject Selection -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Môn học</label>
+                <select
+                  class="form-select"
+                  id="subjectSelect"
+                  name="subjectId"
+                  required
+                >
+                  <option value="">Chọn môn học</option>
+                </select>
+              </div>
+
+              <!-- Learning Goals -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold"
+                  >Mục tiêu, mong muốn học tập:</label
+                >
+                <textarea
+                  class="form-control"
+                  id="learningGoals"
+                  name="note"
+                  rows="4"
+                  placeholder="Chia sẻ mục tiêu học tập của bạn để gia sư có thể chuẩn bị tốt nhất..."
+                  style="border-radius: 8px"
+                ></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-bs-dismiss="modal"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="confirmBooking"
+              style="background: #60a5fa; border: none"
+            >
+              Đặt lịch học thử
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div th:replace="~{fragment/footer}"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/tutor-search-pagination.js"></script>
+    <script th:inline="javascript">
+      // Store tutors data globally for JavaScript access
+      window.tutorsData = /*[[${tutors}]]*/ [];
+      console.log("Tutors data loaded:", window.tutorsData);
+
+      let selectedTutor = null;
+      let tutorSchedules = [];
+
+      // Global functions for tutor actions (to be used by existing code)
+      function bookTutor(tutorId) {
+        console.log("Book tutor:", tutorId);
+
+        // Check authentication first
+        const token =
+          localStorage.getItem("jwt_token") ||
+          sessionStorage.getItem("jwt_token");
+        if (!token) {
+          alert("Vui lòng đăng nhập để đặt lịch học");
+          window.location.href = "/showLogin";
+          return;
+        }
+
+        // Redirect to booking form
+        window.location.href = `/booking-form?tutorId=${tutorId}`;
+      }
+
+      function viewTutorDetail(tutorId) {
+        console.log("View tutor detail:", tutorId);
+
+        // Check authentication first
+        const token =
+          localStorage.getItem("jwt_token") ||
+          sessionStorage.getItem("jwt_token");
+        if (!token) {
+          alert("Vui lòng đăng nhập để xem chi tiết gia sư");
+          window.location.href = "/showLogin";
+          return;
+        }
+
+        // For now, redirect to booking form since we don't have detail page yet
+        // TODO: Create tutor detail page later
+        window.location.href = `/booking-form?tutorId=${tutorId}`;
+      }
+
+      // Debug: Check authentication status
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("=== DEBUG AUTH STATUS ===");
+        console.log(
+          "localStorage jwt_token:",
+          localStorage.getItem("jwt_token")
+        );
+        console.log(
+          "sessionStorage jwt_token:",
+          sessionStorage.getItem("jwt_token")
+        );
+
+        if (window.authManager) {
+          console.log("AuthManager available:", window.authManager);
+          console.log(
+            "AuthManager.isAuthenticated():",
+            window.authManager.isAuthenticated()
+          );
+          console.log("AuthManager.user:", window.authManager.user);
+        } else {
+          console.log("AuthManager not available");
+        }
+
+        if (window.tutorSearch) {
+          console.log(
+            "TutorSearch.isAuthenticated:",
+            window.tutorSearch.isAuthenticated
+          );
+        }
+        console.log("=== END DEBUG ===");
+
+        // Add refresh button for debug
+        if (window.location.search.includes("debug=true")) {
+          const debugBtn = document.createElement("button");
+          debugBtn.innerHTML = "🔄 Refresh Auth";
+          debugBtn.className = "btn btn-warning btn-sm position-fixed";
+          debugBtn.style.cssText = "top: 10px; right: 10px; z-index: 9999;";
+          debugBtn.onclick = function () {
+            if (window.tutorSearch) {
+              window.tutorSearch.checkAuthStatus();
+              window.tutorSearch.loadTutors();
+              console.log(
+                "Manual refresh - Auth:",
+                window.tutorSearch.isAuthenticated
+              );
+            }
+          };
+          document.body.appendChild(debugBtn);
+        }
+      });
+
+      function populateSubjects(subjects) {
+        const subjectSelect = document.getElementById("subjectSelect");
+        subjectSelect.innerHTML = '<option value="">Chọn môn học</option>';
+
+        subjects.forEach((subject) => {
+          const option = document.createElement("option");
+          option.value = subject.id;
+          option.textContent = subject.name;
+          subjectSelect.appendChild(option);
+        });
+      }
+
+      let currentCalendarDate = new Date();
+      let selectedDateValue = null;
+      let loadTimeSlotsTimeout = null;
+
+      function populateAvailableDates() {
+        const timeSelect = document.getElementById("timeSelect");
+        timeSelect.innerHTML = '<option value="">Chọn khung giờ</option>';
+        timeSelect.disabled = true;
+
+        // Initialize calendar
+        initializeCalendar();
+      }
+
+      function initializeCalendar() {
+        const today = new Date();
+        // Set to current month and year
+        currentCalendarDate = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          1
+        );
+        renderCalendar();
+
+        console.log(
+          "Calendar initialized - booking range: tomorrow to 1 month from now"
+        );
+      }
+
+      function renderCalendar() {
+        const currentMonth = document.getElementById("currentMonth");
+        const calendarGrid = document.getElementById("calendarGrid");
+
+        const months = [
+          "Tháng Một",
+          "Tháng Hai",
+          "Tháng Ba",
+          "Tháng Tư",
+          "Tháng Năm",
+          "Tháng Sáu",
+          "Tháng Bảy",
+          "Tháng Tám",
+          "Tháng Chín",
+          "Tháng Mười",
+          "Tháng Mười Một",
+          "Tháng Mười Hai",
+        ];
+
+        currentMonth.textContent = `${
+          months[currentCalendarDate.getMonth()]
+        } ${currentCalendarDate.getFullYear()}`;
+
+        // Clear previous calendar
+        calendarGrid.innerHTML = "";
+
+        const firstDay = new Date(
+          currentCalendarDate.getFullYear(),
+          currentCalendarDate.getMonth(),
+          1
+        );
+        const lastDay = new Date(
+          currentCalendarDate.getFullYear(),
+          currentCalendarDate.getMonth() + 1,
+          0
+        );
+        const today = new Date();
+
+        // Adjust first day to Monday = 0
+        let startDay = (firstDay.getDay() + 6) % 7;
+
+        // Create weeks
+        let currentDate = new Date(firstDay);
+        currentDate.setDate(currentDate.getDate() - startDay);
+
+        for (let week = 0; week < 6; week++) {
+          const weekRow = document.createElement("div");
+          weekRow.className = "d-flex mb-1";
+
+          for (let day = 0; day < 7; day++) {
+            const dayElement = document.createElement("div");
+            dayElement.className =
+              "text-center d-flex align-items-center justify-content-center";
+            dayElement.style.cssText =
+              "width: 40px; height: 35px; cursor: pointer; border-radius: 4px; font-size: 14px;";
+
+            const isCurrentMonth =
+              currentDate.getMonth() === currentCalendarDate.getMonth();
+            const isToday = currentDate.toDateString() === today.toDateString();
+
+            // Calculate tomorrow and 1 month limit
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const oneMonthFromNow = new Date(today);
+            oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+            const isPastDate = currentDate < tomorrow; // Must be from tomorrow
+            const isFutureLimit = currentDate > oneMonthFromNow; // Cannot exceed 1 month
+
+            dayElement.textContent = currentDate.getDate();
+
+            if (!isCurrentMonth) {
+              dayElement.style.color = "#ccc";
+            } else if (isPastDate) {
+              dayElement.style.color = "#ccc";
+              dayElement.style.cursor = "not-allowed";
+              dayElement.title =
+                "Không thể đặt lịch cho ngày hôm nay hoặc quá khứ";
+            } else if (isFutureLimit) {
+              dayElement.style.color = "#ccc";
+              dayElement.style.cursor = "not-allowed";
+              dayElement.title = "Chỉ có thể đặt lịch trong vòng 1 tháng";
+            } else {
+              // Check if tutor has schedule on this day
+              const dayOfWeek = getDayOfWeekVi(currentDate.getDay());
+              const dayOfWeekEn = getDayOfWeekEn(currentDate.getDay());
+              const hasSchedule = tutorSchedules.some(
+                (schedule) =>
+                  schedule.dayOfWeek === dayOfWeek ||
+                  schedule.dayOfWeek === dayOfWeekEn
+              );
+
+              if (hasSchedule || tutorSchedules.length === 0) {
+                dayElement.style.cursor = "pointer";
+                dayElement.addEventListener("mouseenter", function () {
+                  if (!this.classList.contains("selected")) {
+                    this.style.backgroundColor = "#f0f0f0";
+                  }
+                });
+                dayElement.addEventListener("mouseleave", function () {
+                  if (!this.classList.contains("selected")) {
+                    this.style.backgroundColor = "";
+                  }
+                });
+
+                const dateStr = currentDate.toISOString().split("T")[0];
+                const dateForCallback = new Date(currentDate); // Create a copy to avoid closure issues
+                dayElement.addEventListener("click", function () {
+                  selectDate(dateStr, dateForCallback, dayElement);
+                });
+              } else {
+                dayElement.style.color = "#ddd";
+                dayElement.style.cursor = "not-allowed";
+                dayElement.title = "Gia sư không có lịch dạy trong ngày này";
+              }
+            }
+
+            // Highlight tomorrow instead of today since today is not selectable
+            const isTomorrow =
+              currentDate.toDateString() === tomorrow.toDateString();
+            if (isTomorrow && isCurrentMonth) {
+              dayElement.style.fontWeight = "bold";
+              dayElement.style.color = "#007bff";
+              dayElement.title = "Ngày mai - Ngày sớm nhất có thể đặt lịch";
+            } else if (isToday && isCurrentMonth) {
+              dayElement.style.fontWeight = "bold";
+              dayElement.style.color = "#999";
+              dayElement.title = "Hôm nay - Không thể đặt lịch";
+            }
+
+            weekRow.appendChild(dayElement);
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+
+          calendarGrid.appendChild(weekRow);
+
+          // Stop if we've filled the month
+          if (
+            currentDate.getDate() > 7 &&
+            currentDate.getMonth() !== currentCalendarDate.getMonth()
+          ) {
+            break;
+          }
+        }
+      }
+
+      function getDayOfWeekVi(dayIndex) {
+        const days = [
+          "Chủ nhật",
+          "Thứ hai",
+          "Thứ ba",
+          "Thứ tư",
+          "Thứ năm",
+          "Thứ sáu",
+          "Thứ bảy",
+        ];
+        return days[dayIndex];
+      }
+
+      function getDayOfWeekViAlternative(dayIndex) {
+        // Alternative mapping for data with encoding issues
+        // Note: "Th? X" seems to be "Thứ X" with encoding problems
+        const days = [
+          "Chủ nhật", // 0 = Sunday
+          "Th? 2", // 1 = Monday (Thứ hai)
+          "Th? 3", // 2 = Tuesday (Thứ ba)
+          "Th? 4", // 3 = Wednesday (Thứ tư)
+          "Th? 5", // 4 = Thursday (Thứ năm)
+          "Th? 6", // 5 = Friday (Thứ sáu)
+          "Thứ 7", // 6 = Saturday (Thứ bảy)
+        ];
+        return days[dayIndex];
+      }
+
+      // Additional mapping to handle various formats in data
+      function getAllDayVariations(dayIndex) {
+        const viStandard = getDayOfWeekVi(dayIndex);
+        const viAlternative = getDayOfWeekViAlternative(dayIndex);
+        const en = getDayOfWeekEn(dayIndex);
+
+        return [viStandard, viAlternative, en];
+      }
+
+      function selectDate(dateStr, dateObj, dayElement) {
+        console.log("=== SELECT DATE DEBUG ===");
+        console.log("Input dateStr:", dateStr);
+        console.log("Input dateObj:", dateObj);
+        console.log("dateObj.getDay():", dateObj.getDay());
+        console.log("dateObj full date:", dateObj.toString());
+
+        // Remove previous selection
+        document
+          .querySelectorAll(".calendar-container .selected")
+          .forEach((el) => {
+            el.classList.remove("selected");
+            el.style.backgroundColor = "";
+            el.style.color = "";
+          });
+
+        // Add selection to current element
+        dayElement.classList.add("selected");
+        dayElement.style.backgroundColor = "#007bff";
+        dayElement.style.color = "white";
+
+        // Update form values
+        selectedDateValue = dateStr;
+        document.getElementById("selectedDate").value = dateStr;
+
+        const dayOfWeek = getDayOfWeekVi(dateObj.getDay());
+        console.log("Calculated dayOfWeek:", dayOfWeek);
+
+        const displayDate = `${dayOfWeek}, ${dateObj.getDate()}/${
+          dateObj.getMonth() + 1
+        }/${dateObj.getFullYear()}`;
+        console.log("Display date:", displayDate);
+        document.getElementById("dateDisplay").value = displayDate;
+
+        // Validate dateStr matches dateObj
+        const calculatedDateStr = dateObj.toISOString().split("T")[0];
+        console.log("Calculated dateStr from dateObj:", calculatedDateStr);
+        if (calculatedDateStr !== dateStr) {
+          console.warn("DATE MISMATCH! Using calculated dateStr instead");
+          selectedDateValue = calculatedDateStr;
+          document.getElementById("selectedDate").value = calculatedDateStr;
+        }
+
+        // Hide calendar
+        document.getElementById("calendarContainer").style.display = "none";
+
+        // Load available times for selected date with debouncing
+        if (loadTimeSlotsTimeout) {
+          clearTimeout(loadTimeSlotsTimeout);
+        }
+        loadTimeSlotsTimeout = setTimeout(() => {
+          // Use the corrected dateStr
+          const finalDateStr = selectedDateValue;
+          console.log("Final dateStr for loadTimeSlotsForDate:", finalDateStr);
+          loadTimeSlotsForDate(finalDateStr, dayOfWeek);
+        }, 300);
+      }
+
+      async function loadTimeSlotsForDate(dateStr, dayOfWeek) {
+        console.log(
+          "Loading time slots for date:",
+          dateStr,
+          "dayOfWeek:",
+          dayOfWeek
+        );
+        const timeSelect = document.getElementById("timeSelect");
+        timeSelect.innerHTML = '<option value="">Đang tải...</option>';
+        timeSelect.disabled = true;
+
+        // Always use fallback to local schedule data first for debugging
+        console.log("Using local schedule data for debugging");
+        fallbackToScheduleData(dateStr, dayOfWeek);
+
+        // Commented out API call for now to debug local data
+        /*
+        try {
+          const tutorId = document.getElementById("selectedTutorId").value;
+          if (tutorId) {
+            // Use API to get real-time available slots (excluding booked ones)
+            const response = await fetch(
+              `/api/tutor/${tutorId}/available-slots?date=${dateStr}`
+            );
+
+            if (response.ok) {
+              const availableSlots = await response.json();
+              console.log("Available slots from API:", availableSlots);
+
+              timeSelect.innerHTML = '<option value="">Chọn khung giờ</option>';
+
+              if (availableSlots.length > 0) {
+                availableSlots.forEach((slot) => {
+                  const option = document.createElement("option");
+                  option.value = `${slot.fromTime}-${slot.toTime}`;
+                  option.textContent = `${slot.fromTime} - ${slot.toTime}`;
+                  timeSelect.appendChild(option);
+                });
+                timeSelect.disabled = false;
+              } else {
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "Không có khung giờ trống trong ngày này";
+                option.disabled = true;
+                timeSelect.appendChild(option);
+                timeSelect.disabled = true;
+              }
+              return; // Exit function if API call succeeds
+            } else {
+              console.error("Failed to load available slots from API");
+            }
+          }
+
+          // Fallback to local schedule data
+          fallbackToScheduleData(dateStr, dayOfWeek);
+        } catch (error) {
+          console.error("Error loading available slots:", error);
+          fallbackToScheduleData(dateStr, dayOfWeek);
+        }
+        */
+      }
+
+      function fallbackToScheduleData(dateStr, dayOfWeek) {
+        console.log("=== DEBUGGING SCHEDULE MATCHING ===");
+        console.log("Input - dateStr:", dateStr, "dayOfWeek:", dayOfWeek);
+        console.log("Available tutorSchedules:", tutorSchedules);
+
+        const timeSelect = document.getElementById("timeSelect");
+        timeSelect.innerHTML = '<option value="">Chọn khung giờ</option>';
+
+        if (tutorSchedules.length > 0) {
+          // Get both Vietnamese and English day names for matching
+          const dayOfWeekEn = getDayOfWeekEn(new Date(dateStr).getDay());
+          console.log("Matching against - Vi:", dayOfWeek, "En:", dayOfWeekEn);
+
+          // Show all schedule days for comparison
+          tutorSchedules.forEach((schedule, index) => {
+            console.log(
+              `Schedule ${index}: dayOfWeek="${schedule.dayOfWeek}", fromTime="${schedule.fromTime}", toTime="${schedule.toTime}"`
+            );
+          });
+
+          const daySchedules = tutorSchedules.filter((schedule) => {
+            // Get all possible variations for matching
+            const variations = getAllDayVariations(new Date(dateStr).getDay());
+            console.log("All day variations:", variations);
+
+            const matches = variations.some(
+              (variation) => schedule.dayOfWeek === variation
+            );
+            console.log(
+              `Schedule "${
+                schedule.dayOfWeek
+              }" matches any of [${variations.join(", ")}]: ${matches}`
+            );
+            return matches;
+          });
+
+          console.log("Filtered schedules for this day:", daySchedules);
+
+          if (daySchedules.length > 0) {
+            daySchedules.forEach((schedule) => {
+              // Parse time format - handle both "09:00" and "09:00:00" formats
+              let fromTime = schedule.fromTime;
+              let toTime = schedule.toTime;
+
+              // If time format is "09:00:00", convert to "09:00"
+              if (fromTime && fromTime.length > 5) {
+                fromTime = fromTime.substring(0, 5);
+              }
+              if (toTime && toTime.length > 5) {
+                toTime = toTime.substring(0, 5);
+              }
+
+              const option = document.createElement("option");
+              option.value = `${fromTime}-${toTime}`;
+              option.textContent = `${fromTime} - ${toTime}`;
+              timeSelect.appendChild(option);
+              console.log(`Added time slot: ${fromTime} - ${toTime}`);
+            });
+
+            timeSelect.disabled = false;
+            console.log(
+              "Time select ENABLED with",
+              daySchedules.length,
+              "slots"
+            );
+          } else {
+            // Show all available schedules as fallback for debugging
+            console.log(
+              "No exact match - showing all available schedules for debugging"
+            );
+            if (tutorSchedules.length > 0) {
+              tutorSchedules.forEach((schedule) => {
+                let fromTime = schedule.fromTime;
+                let toTime = schedule.toTime;
+
+                if (fromTime && fromTime.length > 5) {
+                  fromTime = fromTime.substring(0, 5);
+                }
+                if (toTime && toTime.length > 5) {
+                  toTime = toTime.substring(0, 5);
+                }
+
+                const option = document.createElement("option");
+                option.value = `${fromTime}-${toTime}`;
+                option.textContent = `${fromTime} - ${toTime} (${schedule.dayOfWeek})`;
+                timeSelect.appendChild(option);
+              });
+              timeSelect.disabled = false;
+              console.log(
+                "Showing all schedules as fallback - time select ENABLED"
+              );
+            } else {
+              const option = document.createElement("option");
+              option.value = "";
+              option.textContent = "Gia sư không có lịch dạy trong ngày này";
+              option.disabled = true;
+              timeSelect.appendChild(option);
+              timeSelect.disabled = true;
+              console.log("No schedules found - time select DISABLED");
+            }
+          }
+        } else {
+          console.log("No tutorSchedules data - showing default times");
+          // Default time slots if no schedule data
+          const defaultTimes = [
+            { value: "08:00-10:00", text: "08:00 - 10:00" },
+            { value: "10:00-12:00", text: "10:00 - 12:00" },
+            { value: "14:00-16:00", text: "14:00 - 16:00" },
+            { value: "16:00-18:00", text: "16:00 - 18:00" },
+            { value: "19:00-21:00", text: "19:00 - 21:00" },
+          ];
+
+          defaultTimes.forEach((time) => {
+            const option = document.createElement("option");
+            option.value = time.value;
+            option.textContent = time.text;
+            timeSelect.appendChild(option);
+          });
+
+          timeSelect.disabled = false;
+          console.log("Default times added - time select ENABLED");
+        }
+
+        console.log("=== END DEBUGGING ===");
+      }
+
+      function getDayOfWeekEn(dayIndex) {
+        const days = [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+        ];
+        return days[dayIndex];
+      }
+
+      async function submitBooking(formData) {
+        try {
+          const response = await fetch("/api/bookings", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.ok) {
+            alert("Đặt lịch học thử thành công!");
+            bootstrap.Modal.getInstance(
+              document.getElementById("bookingModal")
+            ).hide();
+            // Optionally redirect or refresh
+          } else {
+            alert("Có lỗi xảy ra khi đặt lịch. Vui lòng thử lại.");
+          }
+        } catch (error) {
+          console.error("Error submitting booking:", error);
+          alert("Có lỗi xảy ra khi đặt lịch. Vui lòng thử lại.");
+        }
+      }
+
+      // Handle fee range selection
+      document
+        .getElementById("feeRange")
+        .addEventListener("change", function () {
+          const value = this.value;
+          const minFeeInput = document.getElementById("minFeeInput");
+          const maxFeeInput = document.getElementById("maxFeeInput");
+
+          if (value === "") {
+            minFeeInput.value = "";
+            maxFeeInput.value = "";
+          } else if (value === "500000-") {
+            minFeeInput.value = "500000";
+            maxFeeInput.value = "";
+          } else {
+            const [min, max] = value.split("-");
+            minFeeInput.value = min;
+            maxFeeInput.value = max;
+          }
+
+          // Submit form automatically
+          this.closest("form").submit();
+        });
+
+      // Auto-submit form when filters change and handle booking modal events
+      document.addEventListener("DOMContentLoaded", function () {
+        const selects = document.querySelectorAll(
+          'select[name="subject"], select[name="sortBy"]'
+        );
+        selects.forEach((select) => {
+          select.addEventListener("change", function () {
+            this.closest("form").submit();
+          });
+        });
+
+        // Set current fee range selection
+        const currentMin = document.getElementById("minFeeInput").value;
+        const currentMax = document.getElementById("maxFeeInput").value;
+        const feeRangeSelect = document.getElementById("feeRange");
+
+        if (currentMin && currentMax) {
+          feeRangeSelect.value = currentMin + "-" + currentMax;
+        } else if (currentMin && !currentMax) {
+          feeRangeSelect.value = currentMin + "-";
+        }
+
+        // Handle calendar events
+        document
+          .getElementById("dateDisplay")
+          .addEventListener("click", function () {
+            const calendar = document.getElementById("calendarContainer");
+            calendar.style.display =
+              calendar.style.display === "none" ? "block" : "none";
+          });
+
+        // Calendar navigation
+        document
+          .getElementById("prevMonth")
+          .addEventListener("click", function () {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            renderCalendar();
+          });
+
+        document
+          .getElementById("nextMonth")
+          .addEventListener("click", function () {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            renderCalendar();
+          });
+
+        // Close calendar when clicking outside
+        document.addEventListener("click", function (event) {
+          const calendar = document.getElementById("calendarContainer");
+          const dateDisplay = document.getElementById("dateDisplay");
+          const calendarContainer = calendar.parentElement;
+
+          if (
+            !calendarContainer.contains(event.target) &&
+            !dateDisplay.contains(event.target)
+          ) {
+            calendar.style.display = "none";
+          }
+        });
+
+        // Handle booking confirmation
+        document
+          .getElementById("confirmBooking")
+          .addEventListener("click", function () {
+            const form = document.getElementById("bookingForm");
+            const formData = new FormData(form);
+
+            // Validate form
+            if (
+              !selectedDateValue ||
+              !formData.get("time") ||
+              !formData.get("subjectId")
+            ) {
+              alert("Vui lòng chọn đầy đủ môn học, ngày và giờ học");
+              return;
+            }
+
+            // Validate date range (tomorrow to 1 month)
+            const selectedDate = new Date(selectedDateValue);
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const oneMonthFromNow = new Date(today);
+            oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+            if (selectedDate < tomorrow) {
+              alert("Không thể đặt lịch cho hôm nay hoặc quá khứ");
+              return;
+            }
+            if (selectedDate > oneMonthFromNow) {
+              alert("Chỉ có thể đặt lịch trong vòng 1 tháng");
+              return;
+            }
+
+            // Submit booking
+            submitBooking(formData);
+          });
+      });
+    </script>
+  </body>
+</html>

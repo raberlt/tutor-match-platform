@@ -1,0 +1,7 @@
+🏆 CERTIFICATE RECORD
+====================
+Name: Spring Professional
+Issued by: Pivotal
+Description: Spring Framework expertise
+Image: https://example.com/cert.jpg
+Processed: 2025-09-08T16:11:11.733350

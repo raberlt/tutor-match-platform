@@ -1,0 +1,8 @@
+🏫 EDUCATION RECORD
+==================
+School: University 4
+Degree: Bachelor's Degree
+Major: Major 4
+Period: 2004 - 2008
+Image: https://example.com/degree.jpg
+Processed: 2025-09-08T16:11:00.098340

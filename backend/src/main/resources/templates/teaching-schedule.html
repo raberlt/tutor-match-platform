@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lịch dạy - TutorMatch</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/css/common.css" />
+    <style>
+      :root {
+        --primary-blue: #1e40af;
+        --light-blue: #3b82f6;
+        --dark-blue: #1e3a8a;
+        --light-gray: #f8fafc;
+        --success-green: #10b981;
+        --warning-orange: #f59e0b;
+        --danger-red: #ef4444;
+        --text-dark: #1f2937;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--light-gray);
+      }
+
+      .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        height: 100%;
+      }
+
+      .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        color: white;
+      }
+
+      .stat-icon.today {
+        background: var(--success-green);
+      }
+      .stat-icon.pending {
+        background: var(--warning-orange);
+      }
+      .stat-icon.upcoming {
+        background: var(--light-blue);
+      }
+      .stat-icon.earnings {
+        background: var(--primary-blue);
+      }
+
+      .main-content {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+
+      .calendar-container {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .calendar-header {
+        background: var(--primary-blue);
+        color: white;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: between;
+      }
+
+      .calendar-nav {
+        background: none;
+        border: 2px solid white;
+        color: white;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: bold;
+        transition: all 0.3s ease;
+      }
+
+      .calendar-nav:hover {
+        background: white;
+        color: var(--primary-blue);
+      }
+
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+      }
+
+      .calendar-day-header {
+        background: #f1f5f9;
+        padding: 1rem;
+        text-align: center;
+        font-weight: 600;
+        color: var(--text-dark);
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .calendar-day {
+        min-height: 120px;
+        padding: 0.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        border-right: 1px solid #e2e8f0;
+        position: relative;
+        background: white;
+        transition: background-color 0.2s ease;
+      }
+
+      .calendar-day:hover {
+        background: #f8fafc;
+      }
+
+      .calendar-day.other-month {
+        background: #f9fafb;
+        color: #9ca3af;
+      }
+
+      .calendar-day.today {
+        background: #dbeafe;
+        border: 2px solid var(--primary-blue);
+      }
+
+      .day-number {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+      }
+
+      .schedule-item {
+        background: var(--light-blue);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        margin-bottom: 0.25rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .schedule-item:hover {
+        background: var(--dark-blue);
+        transform: translateY(-1px);
+      }
+
+      .schedule-item.pending {
+        background: var(--warning-orange);
+      }
+
+      .schedule-item.confirmed {
+        background: var(--success-green);
+      }
+
+      .booking-request-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--warning-orange);
+      }
+
+      .booking-request-card.urgent {
+        border-left-color: var(--danger-red);
+        background: #fef2f2;
+      }
+
+      .student-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+
+      .btn-accept {
+        background: var(--success-green);
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .btn-accept:hover {
+        background: #059669;
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .btn-reject {
+        background: var(--danger-red);
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .btn-reject:hover {
+        background: #dc2626;
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .sidebar {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+      }
+
+      .time-badge {
+        background: #e0f2fe;
+        color: #0284c7;
+        padding: 0.25rem 0.5rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      .subject-badge {
+        background: #f0f9ff;
+        color: #0369a1;
+        padding: 0.25rem 0.5rem;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+
+      .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: var(--danger-red);
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: bold;
+      }
+
+      .today-schedule {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .today-schedule h5 {
+        margin-bottom: 1rem;
+        font-weight: 600;
+      }
+
+      .today-item {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        backdrop-filter: blur(10px);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6b7280;
+      }
+
+      .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <div th:replace="~{fragment/header}"></div>
+
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h1 class="mb-2">
+              <i class="fas fa-calendar-alt me-3"></i>Lịch dạy của tôi
+            </h1>
+            <p class="mb-0 opacity-90">
+              Quản lý lịch dạy và xử lý yêu cầu đặt lịch từ học viên
+            </p>
+          </div>
+          <div class="col-md-4 text-end">
+            <div class="d-flex justify-content-end align-items-center">
+              <div class="me-3">
+                <small class="opacity-90">Hôm nay</small>
+                <div class="fw-bold" id="currentDate"></div>
+              </div>
+              <div class="position-relative">
+                <i class="fas fa-bell fa-2x"></i>
+                <span class="notification-badge" id="pendingCount">3</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="container">
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+          <div class="col-md-3 mb-3">
+            <div class="stat-card">
+              <div class="stat-icon today">
+                <i class="fas fa-calendar-day"></i>
+              </div>
+              <h3 class="fw-bold mb-1">4</h3>
+              <p class="text-muted mb-0">Buổi học hôm nay</p>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="stat-card">
+              <div class="stat-icon pending">
+                <i class="fas fa-clock"></i>
+              </div>
+              <h3 class="fw-bold mb-1">3</h3>
+              <p class="text-muted mb-0">Yêu cầu chờ duyệt</p>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="stat-card">
+              <div class="stat-icon upcoming">
+                <i class="fas fa-calendar-week"></i>
+              </div>
+              <h3 class="fw-bold mb-1">12</h3>
+              <p class="text-muted mb-0">Buổi học tuần tới</p>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="stat-card">
+              <div class="stat-icon earnings">
+                <i class="fas fa-coins"></i>
+              </div>
+              <h3 class="fw-bold mb-1">2.4M</h3>
+              <p class="text-muted mb-0">Thu nhập tháng này</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- Main Calendar -->
+          <div class="col-lg-8 mb-4">
+            <div class="calendar-container">
+              <div class="calendar-header">
+                <div
+                  class="d-flex align-items-center justify-content-between w-100"
+                >
+                  <button class="calendar-nav" id="prevMonth">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  <h4 class="mb-0 fw-bold" id="currentMonth">Tháng 12 2024</h4>
+                  <button class="calendar-nav" id="nextMonth">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="calendar-grid">
+                <!-- Day headers -->
+                <div class="calendar-day-header">Th 2</div>
+                <div class="calendar-day-header">Th 3</div>
+                <div class="calendar-day-header">Th 4</div>
+                <div class="calendar-day-header">Th 5</div>
+                <div class="calendar-day-header">Th 6</div>
+                <div class="calendar-day-header">Th 7</div>
+                <div class="calendar-day-header">CN</div>
+
+                <!-- Calendar days will be generated by JavaScript -->
+                <div id="calendarDays"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="col-lg-4">
+            <!-- Today's Schedule -->
+            <div class="today-schedule">
+              <h5><i class="fas fa-calendar-day me-2"></i>Lịch dạy hôm nay</h5>
+              <div id="todaySchedule">
+                <div class="today-item">
+                  <div
+                    class="d-flex justify-content-between align-items-start mb-2"
+                  >
+                    <div>
+                      <strong>08:00 - 10:00</strong>
+                      <div class="small">Toán học - Lớp 12</div>
+                    </div>
+                    <span class="subject-badge">Toán</span>
+                  </div>
+                  <div class="small opacity-90">
+                    <i class="fas fa-user me-1"></i>Nguyễn Văn An
+                  </div>
+                </div>
+
+                <div class="today-item">
+                  <div
+                    class="d-flex justify-content-between align-items-start mb-2"
+                  >
+                    <div>
+                      <strong>14:00 - 16:00</strong>
+                      <div class="small">Vật lý - Lớp 11</div>
+                    </div>
+                    <span class="subject-badge">Vật lý</span>
+                  </div>
+                  <div class="small opacity-90">
+                    <i class="fas fa-user me-1"></i>Trần Thị Bình
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Booking Requests -->
+            <div class="sidebar">
+              <h5 class="mb-3">
+                <i class="fas fa-inbox me-2"></i>Yêu cầu đặt lịch
+                <span class="badge bg-warning ms-2">3</span>
+              </h5>
+
+              <div id="bookingRequests">
+                <!-- Urgent request -->
+                <div class="booking-request-card urgent">
+                  <div class="d-flex align-items-start mb-3">
+                    <img
+                      src="https://via.placeholder.com/50x50"
+                      class="student-avatar me-3"
+                      alt="Student"
+                    />
+                    <div class="flex-grow-1">
+                      <h6 class="mb-1">Lê Minh Châu</h6>
+                      <div class="small text-muted mb-2">
+                        <i class="fas fa-clock me-1"></i>2 giờ trước
+                      </div>
+                      <div class="small">
+                        <span class="subject-badge me-2">Hóa học</span>
+                        <span class="time-badge">19:00 - 21:00</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mb-2">
+                    <strong>Thứ 5, 25/12/2024</strong>
+                  </div>
+
+                  <p class="small text-muted mb-3">
+                    "Em cần ôn tập cho kỳ thi cuối kỳ, đặc biệt là chương phản
+                    ứng hóa học..."
+                  </p>
+
+                  <div class="d-flex gap-2">
+                    <button
+                      class="btn btn-accept flex-fill"
+                      onclick="acceptBooking(1)"
+                    >
+                      <i class="fas fa-check me-1"></i>Chấp nhận
+                    </button>
+                    <button
+                      class="btn btn-reject flex-fill"
+                      onclick="rejectBooking(1)"
+                    >
+                      <i class="fas fa-times me-1"></i>Từ chối
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Normal request -->
+                <div class="booking-request-card">
+                  <div class="d-flex align-items-start mb-3">
+                    <img
+                      src="https://via.placeholder.com/50x50"
+                      class="student-avatar me-3"
+                      alt="Student"
+                    />
+                    <div class="flex-grow-1">
+                      <h6 class="mb-1">Hoàng Văn Đức</h6>
+                      <div class="small text-muted mb-2">
+                        <i class="fas fa-clock me-1"></i>5 giờ trước
+                      </div>
+                      <div class="small">
+                        <span class="subject-badge me-2">Toán học</span>
+                        <span class="time-badge">08:00 - 10:00</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mb-2">
+                    <strong>Thứ 6, 26/12/2024</strong>
+                  </div>
+
+                  <p class="small text-muted mb-3">
+                    "Em muốn học về đạo hàm và tích phân, em đang gặp khó khăn ở
+                    phần này..."
+                  </p>
+
+                  <div class="d-flex gap-2">
+                    <button
+                      class="btn btn-accept flex-fill"
+                      onclick="acceptBooking(2)"
+                    >
+                      <i class="fas fa-check me-1"></i>Chấp nhận
+                    </button>
+                    <button
+                      class="btn btn-reject flex-fill"
+                      onclick="rejectBooking(2)"
+                    >
+                      <i class="fas fa-times me-1"></i>Từ chối
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Another request -->
+                <div class="booking-request-card">
+                  <div class="d-flex align-items-start mb-3">
+                    <img
+                      src="https://via.placeholder.com/50x50"
+                      class="student-avatar me-3"
+                      alt="Student"
+                    />
+                    <div class="flex-grow-1">
+                      <h6 class="mb-1">Nguyễn Thị Em</h6>
+                      <div class="small text-muted mb-2">
+                        <i class="fas fa-clock me-1"></i>1 ngày trước
+                      </div>
+                      <div class="small">
+                        <span class="subject-badge me-2">Vật lý</span>
+                        <span class="time-badge">16:00 - 18:00</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mb-2">
+                    <strong>Thứ 7, 27/12/2024</strong>
+                  </div>
+
+                  <p class="small text-muted mb-3">
+                    "Em cần giúp đỡ về động lực học và các bài tập cơ học..."
+                  </p>
+
+                  <div class="d-flex gap-2">
+                    <button
+                      class="btn btn-accept flex-fill"
+                      onclick="acceptBooking(3)"
+                    >
+                      <i class="fas fa-check me-1"></i>Chấp nhận
+                    </button>
+                    <button
+                      class="btn btn-reject flex-fill"
+                      onclick="rejectBooking(3)"
+                    >
+                      <i class="fas fa-times me-1"></i>Từ chối
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Booking Detail Modal -->
+    <div class="modal fade" id="bookingDetailModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 15px">
+          <div class="modal-header border-0">
+            <h5 class="modal-title fw-bold">
+              <i class="fas fa-info-circle me-2"></i>Chi tiết yêu cầu đặt lịch
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="text-center mb-4">
+              <img
+                id="modalStudentAvatar"
+                src="https://via.placeholder.com/80x80"
+                class="rounded-circle mb-3"
+                style="width: 80px; height: 80px; object-fit: cover"
+              />
+              <h5 id="modalStudentName">Tên học viên</h5>
+              <p class="text-muted" id="modalStudentInfo">Thông tin liên hệ</p>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-6">
+                <label class="form-label fw-semibold">Môn học</label>
+                <div id="modalSubject" class="subject-badge">Toán học</div>
+              </div>
+              <div class="col-6">
+                <label class="form-label fw-semibold">Thời gian</label>
+                <div id="modalTime" class="time-badge">08:00 - 10:00</div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Ngày học</label>
+              <div id="modalDate" class="fw-bold">Thứ 5, 25/12/2024</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Mục tiêu học tập</label>
+              <p id="modalNote" class="text-muted">
+                Nội dung yêu cầu từ học viên...
+              </p>
+            </div>
+          </div>
+          <div class="modal-footer border-0">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-bs-dismiss="modal"
+            >
+              Đóng
+            </button>
+            <button
+              type="button"
+              class="btn btn-reject me-2"
+              id="modalRejectBtn"
+            >
+              <i class="fas fa-times me-1"></i>Từ chối
+            </button>
+            <button type="button" class="btn btn-accept" id="modalAcceptBtn">
+              <i class="fas fa-check me-1"></i>Chấp nhận
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div th:replace="~{fragment/footer}"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      let currentDate = new Date();
+      let selectedBookingId = null;
+
+      // Sample data - replace with actual data from backend
+      const scheduleData = {
+        "2024-12-23": [
+          {
+            time: "08:00-10:00",
+            subject: "Toán",
+            student: "Nguyễn Văn An",
+            type: "confirmed",
+          },
+          {
+            time: "14:00-16:00",
+            subject: "Vật lý",
+            student: "Trần Thị Bình",
+            type: "confirmed",
+          },
+        ],
+        "2024-12-24": [
+          {
+            time: "09:00-11:00",
+            subject: "Hóa",
+            student: "Lê Minh Châu",
+            type: "pending",
+          },
+        ],
+        "2024-12-25": [
+          {
+            time: "16:00-18:00",
+            subject: "Toán",
+            student: "Hoàng Văn Đức",
+            type: "confirmed",
+          },
+          {
+            time: "19:00-21:00",
+            subject: "Vật lý",
+            student: "Nguyễn Thị Em",
+            type: "pending",
+          },
+        ],
+      };
+
+      // Initialize page
+      document.addEventListener("DOMContentLoaded", function () {
+        updateCurrentDate();
+        renderCalendar();
+        loadTutorStats();
+        loadPendingBookings();
+        loadTodaySchedule();
+
+        // Calendar navigation
+        document.getElementById("prevMonth").addEventListener("click", () => {
+          currentDate.setMonth(currentDate.getMonth() - 1);
+          renderCalendar();
+        });
+
+        document.getElementById("nextMonth").addEventListener("click", () => {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          renderCalendar();
+        });
+      });
+
+      function updateCurrentDate() {
+        const today = new Date();
+        const options = {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        };
+        document.getElementById("currentDate").textContent =
+          today.toLocaleDateString("vi-VN", options);
+      }
+
+      function renderCalendar() {
+        const months = [
+          "Tháng Một",
+          "Tháng Hai",
+          "Tháng Ba",
+          "Tháng Tư",
+          "Tháng Năm",
+          "Tháng Sáu",
+          "Tháng Bảy",
+          "Tháng Tám",
+          "Tháng Chín",
+          "Tháng Mười",
+          "Tháng Mười Một",
+          "Tháng Mười Hai",
+        ];
+
+        document.getElementById("currentMonth").textContent = `${
+          months[currentDate.getMonth()]
+        } ${currentDate.getFullYear()}`;
+
+        const firstDay = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          1
+        );
+        const lastDay = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth() + 1,
+          0
+        );
+        const today = new Date();
+
+        let startDay = (firstDay.getDay() + 6) % 7; // Adjust for Monday start
+        let daysHtml = "";
+
+        // Previous month's days
+        const prevMonth = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          0
+        );
+        for (let i = startDay - 1; i >= 0; i--) {
+          const day = prevMonth.getDate() - i;
+          daysHtml += `<div class="calendar-day other-month">
+            <div class="day-number">${day}</div>
+          </div>`;
+        }
+
+        // Current month's days
+        for (let day = 1; day <= lastDay.getDate(); day++) {
+          const dateStr = `${currentDate.getFullYear()}-${String(
+            currentDate.getMonth() + 1
+          ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const isToday =
+            today.toDateString() ===
+            new Date(
+              currentDate.getFullYear(),
+              currentDate.getMonth(),
+              day
+            ).toDateString();
+          const dayClasses = `calendar-day ${isToday ? "today" : ""}`;
+
+          let scheduleItems = "";
+          if (scheduleData[dateStr]) {
+            scheduleData[dateStr].forEach((item) => {
+              const itemClass = `schedule-item ${item.type}`;
+              scheduleItems += `<div class="${itemClass}" onclick="showScheduleDetail('${dateStr}', '${item.time}')">
+                ${item.time} ${item.subject}
+              </div>`;
+            });
+          }
+
+          daysHtml += `<div class="${dayClasses}">
+            <div class="day-number">${day}</div>
+            ${scheduleItems}
+          </div>`;
+        }
+
+        // Next month's days to fill grid
+        const remainingCells = 42 - (startDay + lastDay.getDate());
+        for (let day = 1; day <= remainingCells; day++) {
+          daysHtml += `<div class="calendar-day other-month">
+            <div class="day-number">${day}</div>
+          </div>`;
+        }
+
+        document.getElementById("calendarDays").innerHTML = daysHtml;
+      }
+
+      function showScheduleDetail(date, time) {
+        const schedules = scheduleData[date];
+        const schedule = schedules.find((s) => s.time === time);
+        if (schedule) {
+          alert(
+            `Chi tiết lịch:\nThời gian: ${time}\nMôn: ${schedule.subject}\nHọc viên: ${schedule.student}\nTrạng thái: ${schedule.type}`
+          );
+        }
+      }
+
+      function acceptBooking(bookingId) {
+        if (confirm("Bạn có chắc chắn muốn chấp nhận yêu cầu này?")) {
+          // Call API to accept booking
+          console.log("Accepting booking:", bookingId);
+
+          // Show success message
+          showNotification("Đã chấp nhận yêu cầu đặt lịch!", "success");
+
+          // Update UI - remove the booking request
+          updateBookingRequestUI(bookingId, "accepted");
+        }
+      }
+
+      function rejectBooking(bookingId) {
+        if (confirm("Bạn có chắc chắn muốn từ chối yêu cầu này?")) {
+          // Call API to reject booking
+          console.log("Rejecting booking:", bookingId);
+
+          // Show success message
+          showNotification("Đã từ chối yêu cầu đặt lịch!", "error");
+
+          // Update UI - remove the booking request
+          updateBookingRequestUI(bookingId, "rejected");
+        }
+      }
+
+      function updateBookingRequestUI(bookingId, status) {
+        // Find and remove the booking request card
+        const cards = document.querySelectorAll(".booking-request-card");
+        cards.forEach((card, index) => {
+          if (index + 1 === bookingId) {
+            card.style.animation = "fadeOut 0.3s ease-out";
+            setTimeout(() => {
+              card.remove();
+              // Update notification count
+              updateNotificationCount();
+            }, 300);
+          }
+        });
+      }
+
+      function updateNotificationCount() {
+        const remainingRequests = document.querySelectorAll(
+          ".booking-request-card"
+        ).length;
+        document.getElementById("pendingCount").textContent = remainingRequests;
+        document.querySelector(".badge.bg-warning").textContent =
+          remainingRequests;
+      }
+
+      function showNotification(message, type) {
+        // Create toast notification
+        const toast = document.createElement("div");
+        toast.className = `alert alert-${
+          type === "success" ? "success" : "danger"
+        } alert-dismissible`;
+        toast.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          z-index: 9999;
+          min-width: 300px;
+          animation: slideIn 0.3s ease-out;
+        `;
+        toast.innerHTML = `
+          ${message}
+          <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+        `;
+
+        document.body.appendChild(toast);
+
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+          if (toast.parentElement) {
+            toast.remove();
+          }
+        }, 3000);
+      }
+
+      // Load functions for real data
+      async function loadTutorStats() {
+        try {
+          const response = await fetch("/api/tutor/stats");
+          if (response.ok) {
+            const stats = await response.json();
+            updateStatsDisplay(stats);
+          }
+        } catch (error) {
+          console.error("Error loading tutor stats:", error);
+        }
+      }
+
+      async function loadPendingBookings() {
+        try {
+          const response = await fetch("/api/tutor/bookings/pending");
+          if (response.ok) {
+            const bookings = await response.json();
+            updateBookingRequestsDisplay(bookings);
+          }
+        } catch (error) {
+          console.error("Error loading pending bookings:", error);
+        }
+      }
+
+      async function loadTodaySchedule() {
+        try {
+          const today = new Date().toISOString().split("T")[0];
+          const response = await fetch(`/api/tutor/schedule/${today}`);
+          if (response.ok) {
+            const schedule = await response.json();
+            updateTodayScheduleDisplay(schedule);
+          }
+        } catch (error) {
+          console.error("Error loading today schedule:", error);
+        }
+      }
+
+      function updateStatsDisplay(stats) {
+        const statCards = document.querySelectorAll(".stat-card h3");
+        if (statCards[0]) statCards[0].textContent = stats.todayClasses;
+        if (statCards[1]) statCards[1].textContent = stats.pendingRequests;
+        if (statCards[2]) statCards[2].textContent = stats.upcomingClasses;
+        if (statCards[3]) statCards[3].textContent = stats.monthlyEarnings;
+        document.getElementById("pendingCount").textContent =
+          stats.pendingRequests;
+      }
+
+      function updateBookingRequestsDisplay(bookings) {
+        const container = document.getElementById("bookingRequests");
+        if (bookings.length === 0) {
+          container.innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i><h5>Không có yêu cầu đặt lịch nào</h5><p>Tất cả yêu cầu đã được xử lý</p></div>`;
+          return;
+        }
+
+        container.innerHTML = bookings
+          .map(
+            (booking) => `
+          <div class="booking-request-card" data-booking-id="${booking.id}">
+            <div class="d-flex align-items-start mb-3">
+              <img src="${
+                booking.studentAvatar || "https://via.placeholder.com/50x50"
+              }" class="student-avatar me-3" alt="Student"/>
+              <div class="flex-grow-1">
+                <h6 class="mb-1">${booking.studentName}</h6>
+                <div class="small text-muted mb-2"><i class="fas fa-clock me-1"></i>${formatTimeAgo(
+                  booking.createdAt
+                )}</div>
+                <div class="small">
+                  <span class="subject-badge me-2">${booking.subjectName}</span>
+                  <span class="time-badge">${booking.fromTime} - ${
+              booking.toTime
+            }</span>
+                </div>
+              </div>
+            </div>
+            <div class="mb-2"><strong>${formatDate(booking.date)}</strong></div>
+            <p class="small text-muted mb-3">"${
+              booking.note || "Không có ghi chú"
+            }"</p>
+            <div class="d-flex gap-2">
+              <button class="btn btn-accept flex-fill" onclick="acceptBookingReal(${
+                booking.id
+              })">
+                <i class="fas fa-check me-1"></i>Chấp nhận
+              </button>
+              <button class="btn btn-reject flex-fill" onclick="rejectBookingReal(${
+                booking.id
+              })">
+                <i class="fas fa-times me-1"></i>Từ chối
+              </button>
+            </div>
+          </div>
+        `
+          )
+          .join("");
+      }
+
+      function updateTodayScheduleDisplay(schedule) {
+        const container = document.getElementById("todaySchedule");
+        if (schedule.length === 0) {
+          container.innerHTML = `<div class="text-center opacity-75"><i class="fas fa-calendar-times fa-2x mb-2"></i><p>Không có lịch dạy hôm nay</p></div>`;
+          return;
+        }
+        container.innerHTML = schedule
+          .map(
+            (item) => `
+          <div class="today-item">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div><strong>${item.time}</strong><div class="small">${item.subject}</div></div>
+              <span class="subject-badge">${item.subject}</span>
+            </div>
+            <div class="small opacity-90"><i class="fas fa-user me-1"></i>${item.student}</div>
+          </div>
+        `
+          )
+          .join("");
+      }
+
+      async function acceptBookingReal(bookingId) {
+        if (confirm("Bạn có chắc chắn muốn chấp nhận yêu cầu này?")) {
+          try {
+            const response = await fetch(
+              `/api/tutor/bookings/${bookingId}/accept`,
+              {
+                method: "PUT",
+                headers: {
+                  Authorization: "Bearer " + localStorage.getItem("jwt_token"),
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+            if (response.ok) {
+              showNotification("Đã chấp nhận yêu cầu đặt lịch!", "success");
+              updateBookingRequestUI(bookingId, "accepted");
+              loadTutorStats();
+              loadTodaySchedule();
+            } else {
+              showNotification("Có lỗi xảy ra khi chấp nhận yêu cầu", "error");
+            }
+          } catch (error) {
+            console.error("Error accepting booking:", error);
+            showNotification("Có lỗi xảy ra khi chấp nhận yêu cầu", "error");
+          }
+        }
+      }
+
+      async function rejectBookingReal(bookingId) {
+        if (confirm("Bạn có chắc chắn muốn từ chối yêu cầu này?")) {
+          try {
+            const response = await fetch(
+              `/api/tutor/bookings/${bookingId}/reject`,
+              {
+                method: "PUT",
+                headers: {
+                  Authorization: "Bearer " + localStorage.getItem("jwt_token"),
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+            if (response.ok) {
+              showNotification("Đã từ chối yêu cầu đặt lịch!", "success");
+              updateBookingRequestUI(bookingId, "rejected");
+              loadTutorStats();
+            } else {
+              showNotification("Có lỗi xảy ra khi từ chối yêu cầu", "error");
+            }
+          } catch (error) {
+            console.error("Error rejecting booking:", error);
+            showNotification("Có lỗi xảy ra khi từ chối yêu cầu", "error");
+          }
+        }
+      }
+
+      function formatTimeAgo(timestamp) {
+        const now = new Date();
+        const time = new Date(timestamp);
+        const diffMs = now - time;
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffHours / 24);
+        if (diffDays > 0) return `${diffDays} ngày trước`;
+        else if (diffHours > 0) return `${diffHours} giờ trước`;
+        else return "Vừa xong";
+      }
+
+      function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        const days = [
+          "Chủ nhật",
+          "Thứ 2",
+          "Thứ 3",
+          "Thứ 4",
+          "Thứ 5",
+          "Thứ 6",
+          "Thứ 7",
+        ];
+        const dayName = days[date.getDay()];
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        return `${dayName}, ${day}/${month}/${year}`;
+      }
+
+      // CSS animations
+      const style = document.createElement("style");
+      style.textContent = `
+        @keyframes fadeOut {
+          from { opacity: 1; transform: scale(1); }
+          to { opacity: 0; transform: scale(0.9); }
+        }
+        
+        @keyframes slideIn {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+      `;
+      document.head.appendChild(style);
+    </script>
+  </body>
+</html>

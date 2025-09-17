@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lịch học của tôi - TutorMatch</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --primary-blue: #1e40af;
+        --light-blue: #3b82f6;
+        --success-green: #10b981;
+        --warning-orange: #f59e0b;
+        --light-gray: #f8fafc;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--light-gray);
+      }
+
+      .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+      }
+
+      .filter-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+
+      .session-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+      }
+
+      .session-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+
+      .status-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+
+      .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .status-confirmed {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .status-completed {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+      .status-cancelled {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .tutor-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      .filter-tabs {
+        border-bottom: 2px solid #e5e7eb;
+        margin-bottom: 2rem;
+      }
+
+      .filter-tab {
+        padding: 10px 20px;
+        border: none;
+        background: none;
+        color: #6b7280;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .filter-tab.active {
+        color: var(--primary-blue);
+        border-bottom-color: var(--primary-blue);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+      }
+
+      .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <div th:replace="fragment/header :: header"></div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h1 class="mb-2">Lịch học của tôi</h1>
+            <p class="mb-0">Quản lý và theo dõi tất cả các buổi học</p>
+          </div>
+          <div class="col-md-4 text-md-end">
+            <a href="/tutor-search" class="btn btn-light">
+              <i class="fas fa-plus"></i> Đặt lịch học mới
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- Filters -->
+      <div class="filter-card">
+        <div class="row align-items-center">
+          <div class="col-md-3">
+            <label class="form-label">Trạng thái</label>
+            <select class="form-select" id="statusFilter">
+              <option value="">Tất cả trạng thái</option>
+              <option value="PENDING">Chờ xác nhận</option>
+              <option value="CONFIRMED">Đã xác nhận</option>
+              <option value="COMPLETED">Hoàn thành</option>
+              <option value="CANCELLED">Đã hủy</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Từ ngày</label>
+            <input type="date" class="form-control" id="fromDate" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Đến ngày</label>
+            <input type="date" class="form-control" id="toDate" />
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <button class="btn btn-primary me-2" onclick="applyFilters()">
+              <i class="fas fa-filter"></i> Lọc
+            </button>
+            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+              <i class="fas fa-undo"></i> Xóa
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Tabs -->
+      <div class="filter-tabs">
+        <button
+          class="filter-tab active"
+          data-status=""
+          onclick="filterByStatus('')"
+        >
+          Tất cả (<span id="countAll">0</span>)
+        </button>
+        <button
+          class="filter-tab"
+          data-status="PENDING"
+          onclick="filterByStatus('PENDING')"
+        >
+          Chờ xác nhận (<span id="countPending">0</span>)
+        </button>
+        <button
+          class="filter-tab"
+          data-status="CONFIRMED"
+          onclick="filterByStatus('CONFIRMED')"
+        >
+          Đã xác nhận (<span id="countConfirmed">0</span>)
+        </button>
+        <button
+          class="filter-tab"
+          data-status="COMPLETED"
+          onclick="filterByStatus('COMPLETED')"
+        >
+          Hoàn thành (<span id="countCompleted">0</span>)
+        </button>
+      </div>
+
+      <!-- Sessions List -->
+      <div id="sessionsContainer">
+        <div class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Đang tải...</span>
+          </div>
+          <p class="mt-3">Đang tải danh sách lịch học...</p>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div
+        class="pagination-container"
+        id="paginationContainer"
+        style="display: none"
+      >
+        <nav>
+          <ul class="pagination" id="pagination">
+            <!-- Pagination will be rendered here -->
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Session Detail Modal -->
+    <div class="modal fade" id="sessionDetailModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Chi tiết buổi học</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body" id="sessionDetailContent">
+            <!-- Content will be loaded here -->
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Đóng
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              id="cancelSessionBtn"
+              style="display: none"
+            >
+              <i class="fas fa-times"></i> Hủy buổi học
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div class="modal fade" id="cancelConfirmModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Xác nhận hủy buổi học</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p>Bạn có chắc chắn muốn hủy buổi học này?</p>
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle"></i>
+              <strong>Lưu ý:</strong> Chỉ có thể hủy buổi học trước 24 tiếng.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Không hủy
+            </button>
+            <button type="button" class="btn btn-danger" id="confirmCancelBtn">
+              <i class="fas fa-times"></i> Xác nhận hủy
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div th:replace="fragment/footer :: footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // My Sessions JavaScript
+      let currentPage = 0;
+      const pageSize = 10;
+      let totalPages = 0;
+      let currentFilters = {};
+      let selectedSessionId = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        checkAuthentication();
+        loadSessions();
+        setupEventListeners();
+      });
+
+      function checkAuthentication() {
+        const token = getAuthToken();
+        if (!token) {
+          window.location.href = "/showLogin";
+          return;
+        }
+      }
+
+      function setupEventListeners() {
+        // Filter inputs
+        document
+          .getElementById("statusFilter")
+          .addEventListener("change", applyFilters);
+        document
+          .getElementById("fromDate")
+          .addEventListener("change", applyFilters);
+        document
+          .getElementById("toDate")
+          .addEventListener("change", applyFilters);
+
+        // Cancel confirmation
+        document
+          .getElementById("confirmCancelBtn")
+          .addEventListener("click", async function () {
+            if (selectedSessionId) {
+              await cancelSession(selectedSessionId);
+            }
+          });
+      }
+
+      async function loadSessions() {
+        try {
+          showLoading();
+
+          const token = getAuthToken();
+          const url = buildApiUrl();
+
+          const response = await fetch(url, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            renderSessions(data.bookings || []);
+            updatePagination(data);
+            updateStatusCounts(data.bookings || []);
+          } else {
+            showError("Không thể tải danh sách lịch học");
+          }
+        } catch (error) {
+          console.error("Error loading sessions:", error);
+          showError("Có lỗi xảy ra khi tải lịch học");
+        }
+      }
+
+      function buildApiUrl() {
+        const baseUrl = "/api/student/bookings";
+        const params = new URLSearchParams();
+
+        params.append("page", currentPage);
+        params.append("size", pageSize);
+
+        Object.entries(currentFilters).forEach(([key, value]) => {
+          if (value) {
+            params.append(key, value);
+          }
+        });
+
+        return `${baseUrl}?${params.toString()}`;
+      }
+
+      function renderSessions(sessions) {
+        const container = document.getElementById("sessionsContainer");
+
+        if (sessions.length === 0) {
+          container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                        <h4>Không có buổi học nào</h4>
+                        <p class="text-muted">Hãy đặt lịch học đầu tiên của bạn!</p>
+                        <a href="/tutor-search" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Tìm gia sư ngay
+                        </a>
+                    </div>
+                `;
+          return;
+        }
+
+        const sessionsHtml = sessions
+          .map((session) => createSessionCard(session))
+          .join("");
+        container.innerHTML = sessionsHtml;
+      }
+
+      function createSessionCard(session) {
+        const statusClass = getStatusClass(session.status);
+        const statusText = getStatusText(session.status);
+        const canCancel =
+          session.status === "PENDING" && canCancelSession(session.date);
+
+        return `
+                <div class="session-card">
+                    <div class="row align-items-center">
+                        <div class="col-md-2 text-center">
+                            <img src="${
+                              session.tutor?.imageAvatar ||
+                              "https://via.placeholder.com/60x60?text=Tutor"
+                            }" 
+                                 class="tutor-avatar" alt="Tutor Avatar">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-2">
+                                <h5 class="mb-0 me-3">
+                                    ${session.tutor?.firstName || ""} ${
+          session.tutor?.lastName || ""
+        }
+                                </h5>
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                            </div>
+                            <p class="text-muted mb-1">
+                                <i class="fas fa-book me-2"></i>${
+                                  session.subject?.name || "N/A"
+                                }
+                            </p>
+                            <p class="text-muted mb-1">
+                                <i class="fas fa-calendar me-2"></i>${formatDate(
+                                  session.date
+                                )}
+                                <i class="fas fa-clock ms-3 me-2"></i>${
+                                  session.fromTime || ""
+                                } - ${session.toTime || ""}
+                            </p>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-map-marker-alt me-2"></i>Online hoặc tại nhà
+                            </p>
+                            ${
+                              session.note
+                                ? `<p class="text-muted mt-2 mb-0"><strong>Ghi chú:</strong> ${session.note}</p>`
+                                : ""
+                            }
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <h5 class="text-primary mb-1">${(
+                              session.totalAmount || 0
+                            ).toLocaleString("vi-VN")} VNĐ</h5>
+                            <small class="text-muted">${
+                              session.bookingType || "TRIAL"
+                            }</small>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <div class="action-buttons">
+                                <button class="btn btn-outline-primary btn-sm" onclick="showSessionDetail(${
+                                  session.id
+                                })">
+                                    <i class="fas fa-eye"></i> Chi tiết
+                                </button>
+                                ${
+                                  canCancel
+                                    ? `
+                                    <button class="btn btn-outline-danger btn-sm" onclick="confirmCancelSession(${session.id})">
+                                        <i class="fas fa-times"></i> Hủy
+                                    </button>
+                                `
+                                    : ""
+                                }
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                Đặt lúc: ${formatDateTime(session.createdAt)}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function updatePagination(data) {
+        totalPages = data.totalPages || 0;
+        currentPage = data.currentPage || 0;
+
+        const paginationContainer = document.getElementById(
+          "paginationContainer"
+        );
+        const pagination = document.getElementById("pagination");
+
+        if (totalPages <= 1) {
+          paginationContainer.style.display = "none";
+          return;
+        }
+
+        let paginationHtml = "";
+
+        // Previous button
+        paginationHtml += `
+                <li class="page-item ${currentPage === 0 ? "disabled" : ""}">
+                    <a class="page-link" href="#" onclick="goToPage(${
+                      currentPage - 1
+                    })" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            `;
+
+        // Page numbers
+        const startPage = Math.max(0, currentPage - 2);
+        const endPage = Math.min(totalPages - 1, currentPage + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+          paginationHtml += `
+                    <li class="page-item ${i === currentPage ? "active" : ""}">
+                        <a class="page-link" href="#" onclick="goToPage(${i})">${
+            i + 1
+          }</a>
+                    </li>
+                `;
+        }
+
+        // Next button
+        paginationHtml += `
+                <li class="page-item ${
+                  currentPage === totalPages - 1 ? "disabled" : ""
+                }">
+                    <a class="page-link" href="#" onclick="goToPage(${
+                      currentPage + 1
+                    })" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            `;
+
+        pagination.innerHTML = paginationHtml;
+        paginationContainer.style.display = "flex";
+      }
+
+      function updateStatusCounts(sessions) {
+        const counts = {
+          all: sessions.length,
+          pending: sessions.filter((s) => s.status === "PENDING").length,
+          confirmed: sessions.filter((s) => s.status === "CONFIRMED").length,
+          completed: sessions.filter((s) => s.status === "COMPLETED").length,
+        };
+
+        document.getElementById("countAll").textContent = counts.all;
+        document.getElementById("countPending").textContent = counts.pending;
+        document.getElementById("countConfirmed").textContent =
+          counts.confirmed;
+        document.getElementById("countCompleted").textContent =
+          counts.completed;
+      }
+
+      function applyFilters() {
+        currentFilters = {
+          status: document.getElementById("statusFilter").value,
+          fromDate: document.getElementById("fromDate").value,
+          toDate: document.getElementById("toDate").value,
+        };
+
+        currentPage = 0;
+        loadSessions();
+      }
+
+      function clearFilters() {
+        document.getElementById("statusFilter").value = "";
+        document.getElementById("fromDate").value = "";
+        document.getElementById("toDate").value = "";
+
+        currentFilters = {};
+        currentPage = 0;
+        loadSessions();
+      }
+
+      function filterByStatus(status) {
+        // Update active tab
+        document.querySelectorAll(".filter-tab").forEach((tab) => {
+          tab.classList.toggle("active", tab.dataset.status === status);
+        });
+
+        // Update status filter
+        document.getElementById("statusFilter").value = status;
+
+        // Apply filters
+        applyFilters();
+      }
+
+      function goToPage(page) {
+        if (page < 0 || page >= totalPages || page === currentPage) {
+          return;
+        }
+
+        currentPage = page;
+        loadSessions();
+
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      async function showSessionDetail(sessionId) {
+        try {
+          const modalBody = document.getElementById("sessionDetailContent");
+          modalBody.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary"></div>
+                        <p class="mt-2">Đang tải chi tiết...</p>
+                    </div>
+                `;
+
+          new bootstrap.Modal(
+            document.getElementById("sessionDetailModal")
+          ).show();
+
+          // TODO: Implement session detail API
+          const token = getAuthToken();
+          const response = await fetch(`/api/student/bookings/${sessionId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+              renderSessionDetail(data.booking);
+            } else {
+              modalBody.innerHTML = `
+                            <div class="alert alert-warning">
+                                Không thể tải chi tiết buổi học
+                            </div>
+                        `;
+            }
+          } else {
+            throw new Error("API not implemented");
+          }
+        } catch (error) {
+          console.error("Error loading session detail:", error);
+          document.getElementById("sessionDetailContent").innerHTML = `
+                    <div class="alert alert-info">
+                        <h6>Chi tiết buổi học #${sessionId}</h6>
+                        <p>API chi tiết buổi học đang được phát triển.</p>
+                        <p><strong>Cần implement:</strong> <code>GET /api/student/bookings/${sessionId}</code></p>
+                    </div>
+                `;
+        }
+      }
+
+      function renderSessionDetail(session) {
+        const content = document.getElementById("sessionDetailContent");
+        content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <img src="${
+                          session.tutor?.imageAvatar ||
+                          "https://via.placeholder.com/120x120?text=Tutor"
+                        }" 
+                             class="rounded-circle mb-3" width="120" height="120" alt="Tutor Avatar">
+                        <h5>${session.tutor?.firstName || ""} ${
+          session.tutor?.lastName || ""
+        }</h5>
+                        <p class="text-muted">${
+                          session.tutor?.headline || ""
+                        }</p>
+                    </div>
+                    <div class="col-md-8">
+                        <h6>Thông tin buổi học</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Môn học:</strong></td>
+                                <td>${session.subject?.name || "N/A"}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ngày:</strong></td>
+                                <td>${formatDate(session.date)}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Thời gian:</strong></td>
+                                <td>${session.fromTime || ""} - ${
+          session.toTime || ""
+        }</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Trạng thái:</strong></td>
+                                <td><span class="status-badge ${getStatusClass(
+                                  session.status
+                                )}">${getStatusText(session.status)}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Chi phí:</strong></td>
+                                <td class="text-primary"><strong>${(
+                                  session.totalAmount || 0
+                                ).toLocaleString("vi-VN")} VNĐ</strong></td>
+                            </tr>
+                        </table>
+                        ${
+                          session.note
+                            ? `<p><strong>Ghi chú:</strong> ${session.note}</p>`
+                            : ""
+                        }
+                    </div>
+                </div>
+            `;
+      }
+
+      function confirmCancelSession(sessionId) {
+        selectedSessionId = sessionId;
+        new bootstrap.Modal(
+          document.getElementById("cancelConfirmModal")
+        ).show();
+      }
+
+      async function cancelSession(sessionId) {
+        try {
+          const token = getAuthToken();
+          const response = await fetch(
+            `/api/student/bookings/${sessionId}/cancel`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (data.success) {
+            alert("Đã hủy buổi học thành công!");
+            bootstrap.Modal.getInstance(
+              document.getElementById("cancelConfirmModal")
+            ).hide();
+            loadSessions(); // Reload sessions
+          } else {
+            alert("Có lỗi xảy ra: " + data.message);
+          }
+        } catch (error) {
+          console.error("Error cancelling session:", error);
+          alert("Có lỗi xảy ra khi hủy buổi học");
+        }
+      }
+
+      // Utility functions
+      function getStatusClass(status) {
+        const classes = {
+          PENDING: "status-pending",
+          CONFIRMED: "status-confirmed",
+          COMPLETED: "status-completed",
+          CANCELLED: "status-cancelled",
+        };
+        return classes[status] || "status-pending";
+      }
+
+      function getStatusText(status) {
+        const texts = {
+          PENDING: "Chờ xác nhận",
+          CONFIRMED: "Đã xác nhận",
+          COMPLETED: "Hoàn thành",
+          CANCELLED: "Đã hủy",
+        };
+        return texts[status] || "Không xác định";
+      }
+
+      function formatDate(dateStr) {
+        if (!dateStr) return "N/A";
+        return new Date(dateStr).toLocaleDateString("vi-VN");
+      }
+
+      function formatDateTime(dateTimeStr) {
+        if (!dateTimeStr) return "N/A";
+        return new Date(dateTimeStr).toLocaleString("vi-VN");
+      }
+
+      function canCancelSession(dateStr) {
+        if (!dateStr) return false;
+        const sessionDate = new Date(dateStr);
+        const now = new Date();
+        const timeDiff = sessionDate.getTime() - now.getTime();
+        return timeDiff > 24 * 60 * 60 * 1000; // 24 hours
+      }
+
+      function showLoading() {
+        document.getElementById("sessionsContainer").innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p class="mt-3">Đang tải danh sách lịch học...</p>
+                </div>
+            `;
+      }
+
+      function showError(message) {
+        document.getElementById("sessionsContainer").innerHTML = `
+                <div class="alert alert-danger text-center">
+                    <i class="fas fa-exclamation-circle fa-2x mb-3"></i>
+                    <h5>Có lỗi xảy ra</h5>
+                    <p>${message}</p>
+                    <button class="btn btn-primary" onclick="loadSessions()">
+                        <i class="fas fa-redo"></i> Thử lại
+                    </button>
+                </div>
+            `;
+      }
+
+      function getAuthToken() {
+        return (
+          localStorage.getItem("jwt_token") ||
+          sessionStorage.getItem("jwt_token")
+        );
+      }
+    </script>
+  </body>
+</html>

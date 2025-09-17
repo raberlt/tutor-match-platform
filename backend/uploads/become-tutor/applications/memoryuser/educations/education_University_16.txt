@@ -1,0 +1,8 @@
+🏫 EDUCATION RECORD
+==================
+School: University 16
+Degree: Bachelor's Degree
+Major: Major 16
+Period: 2016 - 2020
+Image: https://example.com/degree.jpg
+Processed: 2025-09-08T16:11:00.096234

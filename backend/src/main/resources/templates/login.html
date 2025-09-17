@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Đăng nhập - TutorMatch</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      body {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+      .card {
+        border: none;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      }
+      .card-header {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 2rem;
+      }
+      .form-label {
+        font-weight: 600;
+        color: #374151;
+      }
+      .form-control {
+        border-radius: 10px;
+        border: 2px solid #e5e7eb;
+        padding: 12px 15px;
+      }
+      .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+      }
+      .btn-primary-custom {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border: none;
+        padding: 12px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+      .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+      }
+      .alert-custom {
+        border-radius: 10px;
+        border: none;
+      }
+      .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+      }
+      .brand-logo {
+        font-size: 2rem;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-5">
+          <div class="card shadow-lg">
+            <div class="card-header text-center">
+              <div class="brand-logo">
+                <i class="fas fa-graduation-cap"></i>
+                TutorMatch
+              </div>
+              <h4 class="mb-0">Chào mừng trở lại!</h4>
+              <p class="mb-0 opacity-75">Đăng nhập để tiếp tục</p>
+            </div>
+            <div class="card-body p-4">
+              <!-- Login Form -->
+              <form id="loginForm">
+                <div class="mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-user me-2"></i>Tên đăng nhập
+                  </label>
+                  <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    class="form-control"
+                    placeholder="Nhập tên đăng nhập"
+                    required
+                  />
+                  <div class="invalid-feedback"></div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-lock me-2"></i>Mật khẩu
+                  </label>
+                  <div class="input-group">
+                    <input
+                      type="password"
+                      id="password"
+                      name="password"
+                      class="form-control"
+                      placeholder="Nhập mật khẩu"
+                      required
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary"
+                      onclick="togglePassword()"
+                    >
+                      <i class="fas fa-eye" id="toggleIcon"></i>
+                    </button>
+                  </div>
+                  <div class="invalid-feedback"></div>
+                </div>
+
+                <div class="form-check mb-3">
+                  <input
+                    type="checkbox"
+                    class="form-check-input"
+                    id="rememberMe"
+                  />
+                  <label class="form-check-label" for="rememberMe">
+                    Ghi nhớ đăng nhập
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  class="btn btn-primary-custom w-100"
+                  id="loginBtn"
+                >
+                  <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
+                </button>
+              </form>
+
+              <!-- Alert Messages -->
+              <div id="alertContainer" class="mt-3"></div>
+
+              <!-- Links -->
+              <div class="text-center mt-4">
+                <p class="mb-2">
+                  <a href="#" class="text-decoration-none">Quên mật khẩu?</a>
+                </p>
+                <p class="mb-0">
+                  Chưa có tài khoản?
+                  <a href="/showRegister" class="text-decoration-none fw-bold"
+                    >Đăng ký ngay</a
+                  >
+                </p>
+              </div>
+
+              <!-- Demo Accounts -->
+              <div class="mt-4 pt-3 border-top">
+                <small class="text-muted d-block text-center mb-2"
+                  >Tài khoản demo:</small
+                >
+                <div class="btn-group-vertical w-100">
+                  <button
+                    type="button"
+                    class="btn btn-outline-info btn-sm"
+                    onclick="fillDemo('student')"
+                  >
+                    <i class="fas fa-user-graduate me-1"></i>Demo Student
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-success btn-sm"
+                    onclick="fillDemo('tutor')"
+                  >
+                    <i class="fas fa-chalkboard-teacher me-1"></i>Demo Tutor
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-warning btn-sm"
+                    onclick="fillDemo('admin')"
+                  >
+                    <i class="fas fa-user-shield me-1"></i>Demo Admin
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div
+      class="modal fade"
+      id="loadingModal"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-body text-center py-4">
+            <div class="spinner-border text-primary mb-3"></div>
+            <h5>Đang đăng nhập...</h5>
+            <p class="text-muted mb-0">Vui lòng chờ trong giây lát</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+      // Login page JavaScript
+      document.addEventListener("DOMContentLoaded", function () {
+        // Check if already logged in
+        if (window.authManager && window.authManager.isAuthenticated()) {
+          // Redirect to appropriate dashboard
+          window.authManager.redirectToRoleDashboard();
+          return;
+        }
+
+        // Setup form submission
+        document
+          .getElementById("loginForm")
+          .addEventListener("submit", handleLogin);
+
+        // Check for URL parameters
+        checkUrlParams();
+
+        // Focus on username field
+        document.getElementById("username").focus();
+      });
+
+      async function handleLogin(event) {
+        event.preventDefault();
+
+        // Clear previous errors
+        clearErrors();
+
+        // Get form data
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+        const rememberMe = document.getElementById("rememberMe").checked;
+
+        // Validate
+        if (!username || !password) {
+          showAlert("Vui lòng nhập đầy đủ thông tin", "danger");
+          return;
+        }
+
+        try {
+          // Show loading
+          showLoading();
+
+          // Call login API
+          const result = await window.authManager.login(
+            {
+              username: username,
+              password: password,
+            },
+            rememberMe
+          );
+
+          hideLoading();
+
+          if (result.success) {
+            showAlert("Đăng nhập thành công! Đang chuyển hướng...", "success");
+
+            // Redirect after short delay
+            setTimeout(() => {
+              window.authManager.redirectToRoleDashboard();
+            }, 1000);
+          } else {
+            showAlert(result.message || "Đăng nhập thất bại", "danger");
+          }
+        } catch (error) {
+          hideLoading();
+          console.error("Login error:", error);
+          showAlert("Có lỗi xảy ra. Vui lòng thử lại.", "danger");
+        }
+      }
+
+      function togglePassword() {
+        const passwordInput = document.getElementById("password");
+        const toggleIcon = document.getElementById("toggleIcon");
+
+        if (passwordInput.type === "password") {
+          passwordInput.type = "text";
+          toggleIcon.className = "fas fa-eye-slash";
+        } else {
+          passwordInput.type = "password";
+          toggleIcon.className = "fas fa-eye";
+        }
+      }
+
+      function fillDemo(type) {
+        const demoAccounts = {
+          student: { username: "student01@gmail.com", password: "password123" },
+          tutor: { username: "tutor01@gmail.com", password: "password123" },
+          admin: { username: "admin01@example.com", password: "password123" },
+        };
+
+        const account = demoAccounts[type];
+        if (account) {
+          document.getElementById("username").value = account.username;
+          document.getElementById("password").value = account.password;
+          document.getElementById("rememberMe").checked = true;
+        }
+      }
+
+      function showAlert(message, type) {
+        const alertContainer = document.getElementById("alertContainer");
+        alertContainer.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show alert-custom" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+      }
+
+      function clearErrors() {
+        document.querySelectorAll(".is-invalid").forEach((field) => {
+          field.classList.remove("is-invalid");
+        });
+        document.querySelectorAll(".invalid-feedback").forEach((feedback) => {
+          feedback.textContent = "";
+        });
+      }
+
+      function showLoading() {
+        const loginBtn = document.getElementById("loginBtn");
+        loginBtn.disabled = true;
+        loginBtn.innerHTML =
+          '<i class="fas fa-spinner fa-spin me-2"></i>Đang đăng nhập...';
+
+        // Also show modal for better UX
+        new bootstrap.Modal(document.getElementById("loadingModal")).show();
+      }
+
+      function hideLoading() {
+        const loginBtn = document.getElementById("loginBtn");
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Đăng nhập';
+
+        // Hide modal
+        const modalInstance = bootstrap.Modal.getInstance(
+          document.getElementById("loadingModal")
+        );
+        if (modalInstance) {
+          modalInstance.hide();
+        }
+      }
+
+      function checkUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+
+        if (urlParams.has("logout")) {
+          showAlert("Bạn đã đăng xuất thành công.", "success");
+        }
+
+        if (urlParams.has("registered")) {
+          showAlert("Đăng ký thành công! Vui lòng đăng nhập.", "success");
+        }
+
+        if (urlParams.has("error")) {
+          showAlert("Đăng nhập thất bại. Vui lòng thử lại.", "danger");
+        }
+
+        if (urlParams.has("expired")) {
+          showAlert(
+            "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+            "warning"
+          );
+        }
+      }
+
+      // Handle Enter key
+      document.addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          document
+            .getElementById("loginForm")
+            .dispatchEvent(new Event("submit"));
+        }
+      });
+    </script>
+  </body>
+</html>

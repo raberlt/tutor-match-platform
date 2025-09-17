@@ -1,0 +1,11 @@
+🎯 TUTOR APPLICATION SUMMARY
+===========================
+Generated: 2025-09-08T16:11:08.722963
+
+📝 Basic Info: 181 bytes, 10 lines
+⏰ Schedules: 1 time slots
+🎓 Educations: null/null processed
+🏆 Certificates: 3/3 processed
+
+📁 Application directory: /Users/phat_ngu.yen/Downloads/tutormatch/uploads/become-tutor/applications/user999
+💾 Total size: 867 B

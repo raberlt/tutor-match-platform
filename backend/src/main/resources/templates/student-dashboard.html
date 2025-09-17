@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Học viên - TutorMatch</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --primary-blue: #1e40af;
+        --light-blue: #3b82f6;
+        --success-green: #10b981;
+        --warning-orange: #f59e0b;
+        --light-gray: #f8fafc;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--light-gray);
+      }
+
+      .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        height: 100%;
+        transition: transform 0.3s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        color: white;
+      }
+
+      .stat-icon.bookings {
+        background: var(--primary-blue);
+      }
+      .stat-icon.pending {
+        background: var(--warning-orange);
+      }
+      .stat-icon.completed {
+        background: var(--success-green);
+      }
+      .stat-icon.tutors {
+        background: #8b5cf6;
+      }
+
+      .main-content {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+
+      .booking-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .booking-card:hover {
+        border-color: var(--primary-blue);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+
+      .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .status-confirmed {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .status-completed {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+      .status-cancelled {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .quick-action-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: transform 0.3s ease;
+        cursor: pointer;
+      }
+
+      .quick-action-card:hover {
+        transform: translateY(-3px);
+      }
+
+      .recent-activity {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .activity-item {
+        padding: 1rem;
+        border-bottom: 1px solid #f3f4f6;
+      }
+
+      .activity-item:last-child {
+        border-bottom: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <div th:replace="fragment/header :: header"></div>
+
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h1 class="mb-2">Chào mừng trở lại!</h1>
+            <p class="mb-0" id="welcomeMessage">
+              Sẵn sàng bắt đầu hành trình học tập mới?
+            </p>
+          </div>
+          <div class="col-md-4 text-md-end">
+            <div class="d-flex align-items-center justify-content-md-end">
+              <img
+                id="userAvatar"
+                src="https://via.placeholder.com/60x60?text=User"
+                class="rounded-circle me-3"
+                width="60"
+                height="60"
+                alt="Avatar"
+              />
+              <div class="text-start">
+                <h5 class="mb-0" id="userName">Người dùng</h5>
+                <small id="userRole">Học viên</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- Stats Cards -->
+      <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+          <div class="stat-card">
+            <div class="stat-icon bookings">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <h3 class="mb-1" id="totalBookings">0</h3>
+            <p class="text-muted mb-0">Tổng lịch học</p>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+          <div class="stat-card">
+            <div class="stat-icon pending">
+              <i class="fas fa-clock"></i>
+            </div>
+            <h3 class="mb-1" id="pendingBookings">0</h3>
+            <p class="text-muted mb-0">Chờ xác nhận</p>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+          <div class="stat-card">
+            <div class="stat-icon completed">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <h3 class="mb-1" id="completedBookings">0</h3>
+            <p class="text-muted mb-0">Đã hoàn thành</p>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+          <div class="stat-card">
+            <div class="stat-icon tutors">
+              <i class="fas fa-user-graduate"></i>
+            </div>
+            <h3 class="mb-1" id="totalTutors">0</h3>
+            <p class="text-muted mb-0">Gia sư đã học</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+          <!-- Quick Actions -->
+          <div class="main-content">
+            <h4 class="mb-4">Thao tác nhanh</h4>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <div
+                  class="quick-action-card"
+                  onclick="window.location.href='/tutor-search'"
+                >
+                  <i class="fas fa-search fa-2x text-primary mb-3"></i>
+                  <h6>Tìm gia sư</h6>
+                  <p class="text-muted small">Tìm gia sư phù hợp với nhu cầu</p>
+                </div>
+              </div>
+              <div class="col-md-4 mb-3">
+                <div
+                  class="quick-action-card"
+                  onclick="window.location.href='/become-tutor'"
+                >
+                  <i
+                    class="fas fa-chalkboard-teacher fa-2x text-success mb-3"
+                  ></i>
+                  <h6>Trở thành gia sư</h6>
+                  <p class="text-muted small">
+                    Chia sẻ kiến thức và kiếm thu nhập
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-4 mb-3">
+                <div class="quick-action-card" onclick="loadBookings()">
+                  <i class="fas fa-calendar-check fa-2x text-warning mb-3"></i>
+                  <h6>Lịch học của tôi</h6>
+                  <p class="text-muted small">Xem và quản lý lịch học</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Bookings -->
+          <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h4 class="mb-0">Lịch học gần đây</h4>
+              <button
+                class="btn btn-outline-primary btn-sm"
+                onclick="loadBookings()"
+              >
+                <i class="fas fa-sync-alt"></i> Làm mới
+              </button>
+            </div>
+
+            <div id="bookingsContainer">
+              <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Đang tải...</span>
+                </div>
+                <p class="mt-2">Đang tải lịch học...</p>
+              </div>
+            </div>
+
+            <div class="text-center mt-3">
+              <button
+                class="btn btn-primary"
+                onclick="window.location.href='/my-sessions'"
+              >
+                Xem tất cả lịch học
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+          <!-- Tutor Application Status -->
+          <div
+            class="main-content"
+            id="tutorApplicationCard"
+            style="display: none"
+          >
+            <h5 class="mb-3">Đăng ký gia sư</h5>
+            <div id="applicationStatus"></div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="main-content">
+            <h5 class="mb-3">Hoạt động gần đây</h5>
+            <div class="recent-activity" id="recentActivity">
+              <div class="text-center py-3">
+                <i class="fas fa-history fa-2x text-muted mb-2"></i>
+                <p class="text-muted">Chưa có hoạt động nào</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="main-content">
+            <h5 class="mb-3">Thống kê học tập</h5>
+            <div class="row text-center">
+              <div class="col-6 mb-3">
+                <h4 class="text-primary" id="totalHours">0</h4>
+                <small class="text-muted">Giờ học</small>
+              </div>
+              <div class="col-6 mb-3">
+                <h4 class="text-success" id="totalSpent">0</h4>
+                <small class="text-muted">Chi phí</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Booking Detail Modal -->
+    <div class="modal fade" id="bookingDetailModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Chi tiết lịch học</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body" id="bookingDetailContent">
+            <!-- Content will be loaded here -->
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Đóng
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              id="cancelBookingBtn"
+              style="display: none"
+            >
+              Hủy lịch học
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div th:replace="fragment/footer :: footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Dashboard JavaScript
+      document.addEventListener("DOMContentLoaded", function () {
+        checkAuthentication();
+        loadUserProfile();
+        loadDashboardStats();
+        loadBookings();
+        checkTutorApplicationStatus();
+      });
+
+      function checkAuthentication() {
+        const token = getAuthToken();
+        if (!token) {
+          window.location.href = "/showLogin";
+          return;
+        }
+      }
+
+      async function loadUserProfile() {
+        try {
+          const token = getAuthToken();
+          const response = await fetch("/api/profile/me", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            const user = data.user;
+            document.getElementById("userName").textContent =
+              `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+              "Người dùng";
+            document.getElementById("userRole").textContent = "Học viên";
+
+            const welcomeMsg = `Chào ${
+              user.firstName || "bạn"
+            }! Sẵn sàng bắt đầu hành trình học tập mới?`;
+            document.getElementById("welcomeMessage").textContent = welcomeMsg;
+          }
+        } catch (error) {
+          console.error("Error loading user profile:", error);
+        }
+      }
+
+      async function loadDashboardStats() {
+        try {
+          const token = getAuthToken();
+          const response = await fetch("/api/student/bookings?size=1000", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            const bookings = data.bookings || [];
+
+            document.getElementById("totalBookings").textContent =
+              bookings.length;
+            document.getElementById("pendingBookings").textContent =
+              bookings.filter((b) => b.status === "PENDING").length;
+            document.getElementById("completedBookings").textContent =
+              bookings.filter((b) => b.status === "COMPLETED").length;
+
+            // Count unique tutors
+            const uniqueTutors = [...new Set(bookings.map((b) => b.tutor?.id))]
+              .length;
+            document.getElementById("totalTutors").textContent = uniqueTutors;
+
+            // Calculate total hours and spending
+            let totalHours = 0;
+            let totalSpent = 0;
+            bookings.forEach((booking) => {
+              if (booking.status === "COMPLETED") {
+                totalHours += 2; // Assume 2 hours per session
+                totalSpent += booking.totalAmount || 0;
+              }
+            });
+
+            document.getElementById("totalHours").textContent = totalHours;
+            document.getElementById("totalSpent").textContent =
+              totalSpent.toLocaleString("vi-VN") + " VNĐ";
+          }
+        } catch (error) {
+          console.error("Error loading dashboard stats:", error);
+        }
+      }
+
+      async function loadBookings() {
+        try {
+          const container = document.getElementById("bookingsContainer");
+          container.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2">Đang tải lịch học...</p>
+                    </div>
+                `;
+
+          const token = getAuthToken();
+          const response = await fetch("/api/student/bookings?page=0&size=5", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            renderBookings(data.bookings || []);
+          } else {
+            container.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Không thể tải danh sách lịch học
+                        </div>
+                    `;
+          }
+        } catch (error) {
+          console.error("Error loading bookings:", error);
+          document.getElementById("bookingsContainer").innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Có lỗi xảy ra khi tải lịch học
+                    </div>
+                `;
+        }
+      }
+
+      function renderBookings(bookings) {
+        const container = document.getElementById("bookingsContainer");
+
+        if (bookings.length === 0) {
+          container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <h5>Chưa có lịch học nào</h5>
+                        <p class="text-muted">Hãy tìm kiếm gia sư và đặt lịch học đầu tiên của bạn!</p>
+                        <a href="/tutor-search" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Tìm gia sư ngay
+                        </a>
+                    </div>
+                `;
+          return;
+        }
+
+        const bookingsHtml = bookings
+          .map((booking) => createBookingCard(booking))
+          .join("");
+        container.innerHTML = bookingsHtml;
+      }
+
+      function createBookingCard(booking) {
+        const statusClass = getStatusClass(booking.status);
+        const statusText = getStatusText(booking.status);
+
+        return `
+                <div class="booking-card" onclick="showBookingDetail(${
+                  booking.id
+                })">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center mb-2">
+                                <h6 class="mb-0 me-3">${
+                                  booking.tutor?.firstName || ""
+                                } ${booking.tutor?.lastName || ""}</h6>
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                            </div>
+                            <p class="text-muted mb-1">
+                                <i class="fas fa-book me-2"></i>${
+                                  booking.subject?.name || "N/A"
+                                }
+                            </p>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-calendar me-2"></i>${formatDate(
+                                  booking.date
+                                )} 
+                                <i class="fas fa-clock ms-3 me-2"></i>${
+                                  booking.fromTime || ""
+                                } - ${booking.toTime || ""}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <h6 class="text-primary mb-2">${(
+                              booking.totalAmount || 0
+                            ).toLocaleString("vi-VN")} VNĐ</h6>
+                            <small class="text-muted">Đặt lúc: ${formatDateTime(
+                              booking.createdAt
+                            )}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      async function showBookingDetail(bookingId) {
+        try {
+          // This is a placeholder - implement booking detail API
+          const modalBody = document.getElementById("bookingDetailContent");
+          modalBody.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary"></div>
+                        <p class="mt-2">Đang tải chi tiết...</p>
+                    </div>
+                `;
+
+          new bootstrap.Modal(
+            document.getElementById("bookingDetailModal")
+          ).show();
+
+          // Mock detail - replace with actual API call
+          setTimeout(() => {
+            modalBody.innerHTML = `
+                        <div class="alert alert-info">
+                            <h6>Mã booking: ${bookingId}</h6>
+                            <p>Chi tiết booking sẽ được hiển thị ở đây.</p>
+                            <p><strong>Ghi chú:</strong> Cần implement API <code>GET /api/student/bookings/${bookingId}</code></p>
+                        </div>
+                    `;
+          }, 1000);
+        } catch (error) {
+          console.error("Error loading booking detail:", error);
+        }
+      }
+
+      async function checkTutorApplicationStatus() {
+        try {
+          const token = getAuthToken();
+          const response = await fetch("/api/student/become-tutor/status", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await response.json();
+          if (data.success && data.hasApplication) {
+            showTutorApplicationStatus(data);
+          }
+        } catch (error) {
+          console.error("Error checking tutor application status:", error);
+        }
+      }
+
+      function showTutorApplicationStatus(data) {
+        const card = document.getElementById("tutorApplicationCard");
+        const statusContainer = document.getElementById("applicationStatus");
+
+        let statusHtml = "";
+        switch (data.status) {
+          case "PENDING_VERIFICATION":
+            statusHtml = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-clock"></i>
+                            <strong>Chờ duyệt</strong>
+                            <p class="mb-0">Đơn ứng tuyển đang được xem xét</p>
+                        </div>
+                    `;
+            break;
+          case "ACTIVE":
+            statusHtml = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            <strong>Đã được duyệt</strong>
+                            <p class="mb-2">Chúc mừng! Bạn đã trở thành gia sư</p>
+                            <a href="/teaching-schedule" class="btn btn-sm btn-success">Đến trang gia sư</a>
+                        </div>
+                    `;
+            break;
+          case "REJECTED":
+            statusHtml = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle"></i>
+                            <strong>Bị từ chối</strong>
+                            <p class="mb-0">Có thể nộp lại sau khi khắc phục</p>
+                        </div>
+                    `;
+            break;
+        }
+
+        statusContainer.innerHTML = statusHtml;
+        card.style.display = "block";
+      }
+
+      // Utility functions
+      function getStatusClass(status) {
+        const classes = {
+          PENDING: "status-pending",
+          CONFIRMED: "status-confirmed",
+          COMPLETED: "status-completed",
+          CANCELLED: "status-cancelled",
+        };
+        return classes[status] || "status-pending";
+      }
+
+      function getStatusText(status) {
+        const texts = {
+          PENDING: "Chờ xác nhận",
+          CONFIRMED: "Đã xác nhận",
+          COMPLETED: "Hoàn thành",
+          CANCELLED: "Đã hủy",
+        };
+        return texts[status] || "Không xác định";
+      }
+
+      function formatDate(dateStr) {
+        if (!dateStr) return "N/A";
+        return new Date(dateStr).toLocaleDateString("vi-VN");
+      }
+
+      function formatDateTime(dateTimeStr) {
+        if (!dateTimeStr) return "N/A";
+        return new Date(dateTimeStr).toLocaleString("vi-VN");
+      }
+
+      function getAuthToken() {
+        return (
+          localStorage.getItem("jwt_token") ||
+          sessionStorage.getItem("jwt_token")
+        );
+      }
+    </script>
+  </body>
+</html>

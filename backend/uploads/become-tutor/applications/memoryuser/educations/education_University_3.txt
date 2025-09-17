@@ -1,0 +1,8 @@
+🏫 EDUCATION RECORD
+==================
+School: University 3
+Degree: Bachelor's Degree
+Major: Major 3
+Period: 2003 - 2007
+Image: https://example.com/degree.jpg
+Processed: 2025-09-08T16:11:00.098806

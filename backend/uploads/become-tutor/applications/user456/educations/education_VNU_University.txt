@@ -1,0 +1,8 @@
+🏫 EDUCATION RECORD
+==================
+School: VNU University
+Degree: Bachelor's Degree
+Major: Computer Science
+Period: 2015 - 2019
+Image: https://example.com/degree.jpg
+Processed: 2025-09-08T16:11:11.608656

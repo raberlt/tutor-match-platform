@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Gia sư - TutorMatch</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --primary-blue: #1e40af;
+        --light-blue: #3b82f6;
+        --success-green: #10b981;
+        --warning-orange: #f59e0b;
+        --light-gray: #f8fafc;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--light-gray);
+      }
+
+      .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        height: 100%;
+        transition: transform 0.3s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        color: white;
+      }
+
+      .stat-icon.today {
+        background: var(--success-green);
+      }
+      .stat-icon.pending {
+        background: var(--warning-orange);
+      }
+      .stat-icon.upcoming {
+        background: var(--light-blue);
+      }
+      .stat-icon.earnings {
+        background: var(--primary-blue);
+      }
+
+      .main-content {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+
+      .request-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .request-card:hover {
+        border-color: var(--primary-blue);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn-accept {
+        background: var(--success-green);
+        border: none;
+        color: white;
+      }
+
+      .btn-reject {
+        background: #ef4444;
+        border: none;
+        color: white;
+      }
+
+      .schedule-item {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 10px;
+      }
+
+      .schedule-confirmed {
+        border-color: var(--success-green);
+        background: #f0fdf4;
+      }
+
+      .notification-card {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <div th:replace="fragment/header :: header"></div>
+
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h1 class="mb-2">Dashboard Gia sư</h1>
+            <p class="mb-0" id="welcomeMessage">
+              Hôm nay bạn có thể giúp bao nhiêu học viên?
+            </p>
+          </div>
+          <div class="col-md-4 text-md-end">
+            <div class="d-flex align-items-center justify-content-md-end">
+              <img
+                id="userAvatar"
+                src="https://via.placeholder.com/60x60?text=Tutor"
+                class="rounded-circle me-3"
+                width="60"
+                height="60"
+                alt="Avatar"
+              />
+              <div class="text-start">
+                <h5 class="mb-0" id="userName">Gia sư</h5>
+                <small id="userRole">Giảng viên</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- Stats Cards -->
+      <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+          <div class="stat-card">
+            <div class="stat-icon today">
+              <i class="fas fa-calendar-day"></i>
+            </div>
+            <h3 class="mb-1" id="todayClasses">0</h3>
+            <p class="text-muted mb-0">Lớp hôm nay</p>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+          <div class="stat-card">
+            <div class="stat-icon pending">
+              <i class="fas fa-clock"></i>
+            </div>
+            <h3 class="mb-1" id="pendingRequests">0</h3>
+            <p class="text-muted mb-0">Yêu cầu chờ duyệt</p>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+          <div class="stat-card">
+            <div class="stat-icon upcoming">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <h3 class="mb-1" id="upcomingClasses">0</h3>
+            <p class="text-muted mb-0">Lớp sắp tới</p>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+          <div class="stat-card">
+            <div class="stat-icon earnings">
+              <i class="fas fa-dollar-sign"></i>
+            </div>
+            <h3 class="mb-1" id="monthlyEarnings">0</h3>
+            <p class="text-muted mb-0">Thu nhập tháng</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+          <!-- Pending Requests -->
+          <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h4 class="mb-0">Yêu cầu đặt lịch</h4>
+              <button
+                class="btn btn-outline-primary btn-sm"
+                onclick="loadPendingRequests()"
+              >
+                <i class="fas fa-sync-alt"></i> Làm mới
+              </button>
+            </div>
+
+            <div id="pendingRequestsContainer">
+              <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Đang tải...</span>
+                </div>
+                <p class="mt-2">Đang tải yêu cầu...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Today's Schedule -->
+          <div class="main-content">
+            <h4 class="mb-4">Lịch dạy hôm nay</h4>
+            <div id="todayScheduleContainer">
+              <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2">Đang tải lịch dạy...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+          <!-- Quick Actions -->
+          <div class="main-content">
+            <h5 class="mb-3">Thao tác nhanh</h5>
+            <div class="d-grid gap-2">
+              <button
+                class="btn btn-primary"
+                onclick="window.location.href='/teaching-schedule'"
+              >
+                <i class="fas fa-calendar"></i> Xem lịch dạy đầy đủ
+              </button>
+              <button
+                class="btn btn-outline-primary"
+                onclick="loadPendingRequests()"
+              >
+                <i class="fas fa-bell"></i> Kiểm tra yêu cầu mới
+              </button>
+              <button
+                class="btn btn-outline-success"
+                onclick="window.location.href='/profile'"
+              >
+                <i class="fas fa-user-edit"></i> Cập nhật hồ sơ
+              </button>
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="main-content">
+            <h5 class="mb-3">Thông báo</h5>
+            <div id="notificationsContainer">
+              <div class="notification-card">
+                <i class="fas fa-info-circle text-warning me-2"></i>
+                <small>Chào mừng đến với dashboard gia sư!</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="main-content">
+            <h5 class="mb-3">Thống kê nhanh</h5>
+            <div class="row text-center">
+              <div class="col-6 mb-3">
+                <h4 class="text-primary" id="totalStudents">0</h4>
+                <small class="text-muted">Học viên</small>
+              </div>
+              <div class="col-6 mb-3">
+                <h4 class="text-success" id="completedSessions">0</h4>
+                <small class="text-muted">Buổi đã dạy</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Modals -->
+    <div class="modal fade" id="requestActionModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="actionModalTitle">
+              Xác nhận hành động
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body" id="actionModalBody">
+            <!-- Content will be loaded here -->
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Hủy
+            </button>
+            <button type="button" class="btn btn-primary" id="confirmActionBtn">
+              Xác nhận
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div th:replace="fragment/footer :: footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Tutor Dashboard JavaScript
+      document.addEventListener("DOMContentLoaded", function () {
+        checkAuthentication();
+        loadUserProfile();
+        loadDashboardStats();
+        loadPendingRequests();
+        loadTodaySchedule();
+      });
+
+      function checkAuthentication() {
+        const token = getAuthToken();
+        if (!token) {
+          window.location.href = "/showLogin";
+          return;
+        }
+      }
+
+      async function loadUserProfile() {
+        try {
+          const token = getAuthToken();
+          const response = await fetch("/api/profile/me", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            const user = data.user;
+            document.getElementById("userName").textContent =
+              `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+              "Gia sư";
+            document.getElementById("userRole").textContent = "Giảng viên";
+
+            const welcomeMsg = `Chào ${
+              user.firstName || "bạn"
+            }! Hôm nay bạn có thể giúp bao nhiêu học viên?`;
+            document.getElementById("welcomeMessage").textContent = welcomeMsg;
+          }
+        } catch (error) {
+          console.error("Error loading user profile:", error);
+        }
+      }
+
+      async function loadDashboardStats() {
+        try {
+          const token = getAuthToken();
+          const response = await fetch("/api/tutor/dashboard/stats", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            const stats = data.stats;
+            document.getElementById("todayClasses").textContent =
+              stats.todayClasses || 0;
+            document.getElementById("pendingRequests").textContent =
+              stats.pendingRequests || 0;
+            document.getElementById("upcomingClasses").textContent =
+              stats.upcomingClasses || 0;
+            document.getElementById("monthlyEarnings").textContent =
+              (stats.monthlyEarnings || 0).toLocaleString("vi-VN") + " VNĐ";
+          }
+        } catch (error) {
+          console.error("Error loading dashboard stats:", error);
+        }
+      }
+
+      async function loadPendingRequests() {
+        try {
+          const container = document.getElementById("pendingRequestsContainer");
+          container.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2">Đang tải yêu cầu...</p>
+                    </div>
+                `;
+
+          const token = getAuthToken();
+          const response = await fetch(
+            "/api/tutor/dashboard/pending-requests?page=0&size=5",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          const data = await response.json();
+          if (data.success) {
+            renderPendingRequests(data.requests || []);
+          } else {
+            container.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Không thể tải danh sách yêu cầu
+                        </div>
+                    `;
+          }
+        } catch (error) {
+          console.error("Error loading pending requests:", error);
+          document.getElementById("pendingRequestsContainer").innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Có lỗi xảy ra khi tải yêu cầu
+                    </div>
+                `;
+        }
+      }
+
+      function renderPendingRequests(requests) {
+        const container = document.getElementById("pendingRequestsContainer");
+
+        if (requests.length === 0) {
+          container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <h5>Không có yêu cầu nào</h5>
+                        <p class="text-muted">Tất cả yêu cầu đã được xử lý!</p>
+                    </div>
+                `;
+          return;
+        }
+
+        const requestsHtml = requests
+          .map((request) => createRequestCard(request))
+          .join("");
+        container.innerHTML = requestsHtml;
+      }
+
+      function createRequestCard(request) {
+        return `
+                <div class="request-card">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-2">
+                                <i class="fas fa-user me-2"></i>
+                                ${request.student?.firstName || ""} ${
+          request.student?.lastName || ""
+        }
+                            </h6>
+                            <p class="text-muted mb-1">
+                                <i class="fas fa-book me-2"></i>${
+                                  request.subject?.name || "N/A"
+                                }
+                            </p>
+                            <p class="text-muted mb-1">
+                                <i class="fas fa-calendar me-2"></i>${formatDate(
+                                  request.date
+                                )}
+                                <i class="fas fa-clock ms-3 me-2"></i>${
+                                  request.fromTime || ""
+                                } - ${request.toTime || ""}
+                            </p>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-money-bill me-2"></i>${(
+                                  request.totalAmount || 0
+                                ).toLocaleString("vi-VN")} VNĐ
+                            </p>
+                            ${
+                              request.note
+                                ? `<p class="text-muted mt-2 mb-0"><strong>Ghi chú:</strong> ${request.note}</p>`
+                                : ""
+                            }
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <div class="action-buttons">
+                                <button class="btn btn-accept btn-sm" onclick="handleBookingAction(${
+                                  request.id
+                                }, 'accept')">
+                                    <i class="fas fa-check"></i> Chấp nhận
+                                </button>
+                                <button class="btn btn-reject btn-sm" onclick="handleBookingAction(${
+                                  request.id
+                                }, 'reject')">
+                                    <i class="fas fa-times"></i> Từ chối
+                                </button>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                Yêu cầu lúc: ${formatDateTime(
+                                  request.createdAt
+                                )}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      async function loadTodaySchedule() {
+        try {
+          const container = document.getElementById("todayScheduleContainer");
+          container.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2">Đang tải lịch dạy...</p>
+                    </div>
+                `;
+
+          const token = getAuthToken();
+          const today = new Date().toISOString().split("T")[0];
+          const response = await fetch(
+            `/api/tutor/dashboard/schedule?fromDate=${today}&toDate=${today}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          const data = await response.json();
+          if (data.success) {
+            renderTodaySchedule(data.schedule || []);
+          } else {
+            container.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Không thể tải lịch dạy hôm nay
+                        </div>
+                    `;
+          }
+        } catch (error) {
+          console.error("Error loading today schedule:", error);
+          document.getElementById("todayScheduleContainer").innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Có lỗi xảy ra khi tải lịch dạy
+                    </div>
+                `;
+        }
+      }
+
+      function renderTodaySchedule(schedule) {
+        const container = document.getElementById("todayScheduleContainer");
+
+        if (schedule.length === 0) {
+          container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <h5>Không có lớp hôm nay</h5>
+                        <p class="text-muted">Hãy nghỉ ngơi hoặc cập nhật lịch dạy!</p>
+                    </div>
+                `;
+          return;
+        }
+
+        const scheduleHtml = schedule
+          .map((item) => createScheduleItem(item))
+          .join("");
+        container.innerHTML = scheduleHtml;
+      }
+
+      function createScheduleItem(item) {
+        return `
+                <div class="schedule-item schedule-confirmed">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">
+                                <i class="fas fa-user me-2"></i>
+                                ${item.student?.firstName || ""} ${
+          item.student?.lastName || ""
+        }
+                            </h6>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-book me-2"></i>${
+                                  item.subject?.name || "N/A"
+                                }
+                                <i class="fas fa-clock ms-3 me-2"></i>${
+                                  item.fromTime || ""
+                                } - ${item.toTime || ""}
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success">Đã xác nhận</span>
+                            <div class="mt-1">
+                                <small class="text-muted">${(
+                                  item.totalAmount || 0
+                                ).toLocaleString("vi-VN")} VNĐ</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      async function handleBookingAction(bookingId, action) {
+        const actionText = action === "accept" ? "chấp nhận" : "từ chối";
+
+        if (!confirm(`Bạn có chắc muốn ${actionText} yêu cầu này?`)) {
+          return;
+        }
+
+        try {
+          const token = getAuthToken();
+          const response = await fetch(
+            `/api/tutor/dashboard/bookings/${bookingId}/${action}`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (data.success) {
+            alert(`Đã ${actionText} yêu cầu thành công!`);
+            loadPendingRequests(); // Reload requests
+            loadDashboardStats(); // Reload stats
+            loadTodaySchedule(); // Reload schedule if accepted
+          } else {
+            alert(`Có lỗi xảy ra: ${data.message}`);
+          }
+        } catch (error) {
+          console.error(`Error ${action}ing booking:`, error);
+          alert(`Có lỗi xảy ra khi ${actionText} yêu cầu`);
+        }
+      }
+
+      // Utility functions
+      function formatDate(dateStr) {
+        if (!dateStr) return "N/A";
+        return new Date(dateStr).toLocaleDateString("vi-VN");
+      }
+
+      function formatDateTime(dateTimeStr) {
+        if (!dateTimeStr) return "N/A";
+        return new Date(dateTimeStr).toLocaleString("vi-VN");
+      }
+
+      function getAuthToken() {
+        return (
+          localStorage.getItem("jwt_token") ||
+          sessionStorage.getItem("jwt_token")
+        );
+      }
+
+      // Auto refresh every 5 minutes
+      setInterval(() => {
+        loadDashboardStats();
+        loadPendingRequests();
+      }, 5 * 60 * 1000);
+    </script>
+  </body>
+</html>

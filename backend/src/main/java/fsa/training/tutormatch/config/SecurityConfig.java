@@ -71,6 +71,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/refresh", "/api/auth/change-password", "/api/auth/logout").authenticated()
                 .requestMatchers("/api/profile/**").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/tutor/draft/**").permitAll()
                 .requestMatchers("/api/tutor/**").hasRole("TUTOR")
                 .requestMatchers("/api/student/**").hasRole("STUDENT")
                 .requestMatchers("/api/tutors/**").hasRole("STUDENT")

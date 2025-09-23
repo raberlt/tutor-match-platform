@@ -1,6 +1,7 @@
 package fsa.training.tutormatch.repository;
 
 import fsa.training.tutormatch.entity.TutorProfile;
+import fsa.training.tutormatch.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,9 +31,7 @@ public interface TutorProfileRepository extends JpaRepository<TutorProfile, Inte
     @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'ACTIVE'")
     List<TutorProfile> findByKeyword(@Param("keyword") String keyword);
     
-    // Find tutors by location
-    @Query("SELECT p FROM TutorProfile p WHERE p.city = :city AND p.profileStatus = 'ACTIVE'")
-    List<TutorProfile> findByCity(@Param("city") String city);
+    // REMOVED: findByCity - city field no longer exists
     
     // Methods for TutorSearchService
     @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'ACTIVE'")
@@ -41,8 +40,7 @@ public interface TutorProfileRepository extends JpaRepository<TutorProfile, Inte
     @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.subject.name = :subject AND p.profileStatus = 'ACTIVE'")
     List<TutorProfile> findTutorsBySubject(@Param("subject") String subject);
     
-    @Query("SELECT p FROM TutorProfile p WHERE p.city = :location AND p.profileStatus = 'ACTIVE'")
-    List<TutorProfile> findTutorsByLocation(@Param("location") String location);
+    // REMOVED: findTutorsByLocation - city field no longer exists
     
     @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'ACTIVE'")
     Page<TutorProfile> findTutorsByKeywordPaged(@Param("keyword") String keyword, Pageable pageable);
@@ -53,10 +51,25 @@ public interface TutorProfileRepository extends JpaRepository<TutorProfile, Inte
     @Query("SELECT p FROM TutorProfile p WHERE p.profileStatus = 'ACTIVE' ORDER BY p.ratePointAverage DESC")
     List<TutorProfile> findTopRatedTutors(@Param("limit") int limit);
     
-    @Query("SELECT p FROM TutorProfile p WHERE p.fees BETWEEN :minPrice AND :maxPrice AND p.profileStatus = 'ACTIVE'")
+    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.fees BETWEEN :minPrice AND :maxPrice AND p.profileStatus = 'ACTIVE'")
     List<TutorProfile> findTutorsByPriceRange(@Param("minPrice") Double minPrice, @Param("maxPrice") Double maxPrice);
     
     // Count methods for dashboard
     @Query("SELECT COUNT(p) FROM TutorProfile p WHERE p.profileStatus = 'ACTIVE'")
     long countApprovedTutors();
+    
+    // Draft management methods
+    Optional<TutorProfile> findByUserAndIsDraft(User user, boolean isDraft);
+    
+    // Find all pending drafts for admin review
+    @Query("SELECT p FROM TutorProfile p WHERE p.isDraft = true AND p.profileStatus = 'PENDING_VERIFICATION'")
+    List<TutorProfile> findAllPendingDrafts();
+    
+    // Find public profiles only (for student search)
+    @Query("SELECT p FROM TutorProfile p WHERE p.isDraft = false AND p.profileStatus = 'ACTIVE'")
+    List<TutorProfile> findAllPublicProfiles();
+    
+    // Check if user has both draft and public profiles
+    @Query("SELECT COUNT(p) FROM TutorProfile p WHERE p.user = :user")
+    long countByUser(@Param("user") User user);
 }

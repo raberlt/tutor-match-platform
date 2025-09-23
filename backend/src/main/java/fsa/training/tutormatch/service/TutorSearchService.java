@@ -29,10 +29,6 @@ public class TutorSearchService {
         return profileRepository.findTutorsBySubject(subject);
     }
     
-    public List<TutorProfile> searchByLocation(String location) {
-        // Implementation for location search
-        return profileRepository.findTutorsByLocation(location);
-    }
     
     public Page<TutorProfile> searchTutors(String keyword, String subject, String location, Pageable pageable) {
         // Implementation for advanced search

@@ -1,6 +1,7 @@
 package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.entity.User;
+import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.repository.UserRepository;
 import fsa.training.tutormatch.service.interfaces.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,14 +30,14 @@ public class UserServiceImpl implements IUserService {
 
         // Default role
         if (user.getRole() == null) {
-            user.setRole(User.Role.STUDENT); // Hoặc default role khác
+            user.setRole(UserRole.STUDENT); // Hoặc default role khác
         }
 
         return userRepository.save(user);
     }
     
     public List<User> getAllTutors() {
-        return userRepository.findByRole(User.Role.TUTOR);
+        return userRepository.findByRole(UserRole.TUTOR);
     }
 
     @Override
@@ -96,7 +97,7 @@ public class UserServiceImpl implements IUserService {
     }
     
     @Override
-    public User createUser(String username, String email, String password, String firstName, String lastName, User.Role role) {
+    public User createUser(String username, String email, String password, String firstName, String lastName, UserRole role) {
         User user = new User();
         user.setUsername(username);
         user.setEmail(email);

@@ -4,10 +4,14 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import fsa.training.tutormatch.enums.DiscountType;
+import fsa.training.tutormatch.enums.CouponStatus;
+import fsa.training.tutormatch.enums.BookingType;
 
 import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Data
@@ -18,7 +22,7 @@ public class Coupon {
     private Integer id;
 
     @Column(nullable = false, unique = true, columnDefinition = "NVARCHAR(50)")
-    private String code; // Mã giảm giá (SUMMER2024, TRIAL50, etc.)
+    private String code; // Mã giảm giá (SUMMER2024, SINGLE50, etc.)
 
     @Column(nullable = false, columnDefinition = "NVARCHAR(255)")
     private String name; // Tên chương trình giảm giá
@@ -39,10 +43,10 @@ public class Coupon {
     private BigDecimal minOrderAmount; // Giá trị đơn hàng tối thiểu
 
     @Column(nullable = false)
-    private Date startDate; // Ngày bắt đầu
+    private LocalDate startDate; // Ngày bắt đầu
 
     @Column(nullable = false)
-    private Date endDate; // Ngày kết thúc
+    private LocalDate endDate; // Ngày kết thúc
 
     @Column(nullable = false)
     private Integer usageLimit; // Số lần sử dụng tối đa
@@ -57,7 +61,7 @@ public class Coupon {
     private CouponStatus status = CouponStatus.ACTIVE;
 
     @Enumerated(EnumType.STRING)
-    private ApplicableBookingType applicableBookingType; // Áp dụng cho loại booking nào
+    private BookingType applicableBookingType; // Áp dụng cho loại booking nào
 
     @ManyToOne
     @JoinColumn(name = "created_by")
@@ -65,27 +69,17 @@ public class Coupon {
 
     @CreationTimestamp
     @Column(updatable = false)
-    private Timestamp createdAt;
+    private ZonedDateTime createdAt;
 
     @UpdateTimestamp
-    private Timestamp updatedAt;
-
-    public enum DiscountType {
-        PERCENTAGE, // Giảm theo %
-        FIXED_AMOUNT // Giảm số tiền cố định
+    private ZonedDateTime updatedAt;
+    
+    // Helper methods for timezone handling
+    public ZonedDateTime getCreatedAtInTimezone(String timezoneId) {
+        return createdAt != null ? createdAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
     }
-
-    public enum CouponStatus {
-        ACTIVE,   // Đang hoạt động
-        INACTIVE, // Tạm dừng
-        EXPIRED,  // Hết hạn
-        DELETED   // Đã xóa
+    
+    public ZonedDateTime getUpdatedAtInTimezone(String timezoneId) {
+        return updatedAt != null ? updatedAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
     }
-
-    public enum ApplicableBookingType {
-        ALL,        // Tất cả loại booking
-        TRIAL,      // Chỉ học thử
-        MONTHLY,    // Chỉ hàng tháng
-        CONTRACT    // Chỉ hợp đồng
-    }
-} 
+}

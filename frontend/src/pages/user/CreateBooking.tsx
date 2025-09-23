@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { bookingService } from "../../services/bookingService";
-import { tutorService } from "../../services/tutorService";
+import { TutorService } from "../../services/tutorService";
 import type {
   BookingRequestCreateDTO,
   BookingSystemInfo,
@@ -66,7 +66,7 @@ const CreateBooking: React.FC = () => {
 
   const loadSubjects = async () => {
     try {
-      const subjectsData = await tutorService.getSubjects();
+      const subjectsData = await TutorService.getSubjects();
       setSubjects(subjectsData);
     } catch (error) {
       console.error("Error loading subjects:", error);

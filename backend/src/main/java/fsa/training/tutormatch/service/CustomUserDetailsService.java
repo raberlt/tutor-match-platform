@@ -1,7 +1,6 @@
 package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.entity.CustomUserDetails;
-import fsa.training.tutormatch.entity.BaseProfile;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +25,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + email));
 
         List<GrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_" + user.getRole())
+                new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
         );
 
         // With multi-profiles, we may not have a single profileId to attach

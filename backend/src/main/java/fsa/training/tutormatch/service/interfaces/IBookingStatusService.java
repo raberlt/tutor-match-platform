@@ -1,8 +1,8 @@
 package fsa.training.tutormatch.service.interfaces;
 
 import fsa.training.tutormatch.entity.Booking;
-import fsa.training.tutormatch.entity.BookingStatus;
-import fsa.training.tutormatch.entity.BookingType;
+import fsa.training.tutormatch.enums.BookingStatus;
+
 public interface IBookingStatusService {
     
     // Status transitions

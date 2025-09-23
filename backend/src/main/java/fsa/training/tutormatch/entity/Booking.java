@@ -1,5 +1,8 @@
 package fsa.training.tutormatch.entity;
 
+import fsa.training.tutormatch.enums.BookingStatus;
+import fsa.training.tutormatch.enums.BookingType;
+import fsa.training.tutormatch.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -7,9 +10,10 @@ import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Data
@@ -23,33 +27,32 @@ public class Booking {
 
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
-    private StudentProfile student;   // ✅ đổi User -> StudentProfile
+    private StudentProfile student;
 
     @ManyToOne
     @JoinColumn(name = "tutor_id", nullable = false)
-    private TutorProfile tutor;       // ✅ đổi User -> TutorProfile
+    private TutorProfile tutor;
 
     @ManyToOne
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
 
-    private Date date;
-    private Time fromTime;
-    private Time toTime;
+    private LocalDate date;
+    private LocalTime fromTime;
+    private LocalTime toTime;
     
     @Column(columnDefinition = "NVARCHAR(100)")
-    private String time; // Time slot as string for backward compatibility
+    private String time;
 
     @Enumerated(EnumType.STRING)
     private BookingStatus status = BookingStatus.PENDING;
 
     @Enumerated(EnumType.STRING)
-    private BookingType bookingType = BookingType.TRIAL;
+    private BookingType bookingType;
 
     @Column(columnDefinition = "NVARCHAR(500)")
     private String note;
 
-    // Payment fields
     @Column(name = "amount", nullable = false)
     private Double amount;
     
@@ -64,13 +67,12 @@ public class Booking {
     private String paymentReference;
     
     @Column(name = "payment_date")
-    private Timestamp paymentDate;
+    private ZonedDateTime paymentDate;
 
-    // Contract fields (for package booking)
     @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Contract contract;
     
-    @Column(name = "contract_duration") // Số tháng
+    @Column(name = "contract_duration")
     private Integer contractDuration;
     
     @Column(name = "sessions_per_week")
@@ -78,10 +80,10 @@ public class Booking {
 
     @CreationTimestamp
     @Column(updatable = false)
-    private Timestamp createdAt;
+    private ZonedDateTime createdAt;
 
     @UpdateTimestamp
-    private Timestamp updatedAt;
+    private ZonedDateTime updatedAt;
     
     // Helper method for backward compatibility
     public Double getTotalAmount() {
@@ -92,21 +94,16 @@ public class Booking {
         this.amount = totalAmount;
     }
     
-    // Payment status enum
-    public enum PaymentStatus {
-        PENDING("Chờ thanh toán"),
-        COMPLETED("Đã thanh toán"),
-        FAILED("Thanh toán thất bại"),
-        REFUNDED("Đã hoàn tiền");
-        
-        private final String displayName;
-        
-        PaymentStatus(String displayName) {
-            this.displayName = displayName;
-        }
-        
-        public String getDisplayName() {
-            return displayName;
-        }
+    // Helper methods for timezone handling
+    public ZonedDateTime getCreatedAtInTimezone(String timezoneId) {
+        return createdAt != null ? createdAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
+    }
+    
+    public ZonedDateTime getUpdatedAtInTimezone(String timezoneId) {
+        return updatedAt != null ? updatedAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
+    }
+    
+    public ZonedDateTime getPaymentDateInTimezone(String timezoneId) {
+        return paymentDate != null ? paymentDate.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
     }
 }

@@ -135,7 +135,7 @@ public class TutorServiceImpl implements ITutorService {
         dto.setExperience(tutorProfile.getExperience());
         dto.setTeachingLevel(tutorProfile.getTeachingLevel());
         dto.setFees(tutorProfile.getFees());
-        dto.setCity(tutorProfile.getCity());
+        // dto.setCity(tutorProfile.getCity()); // city field removed
         dto.setRatePointAverage(tutorProfile.getRatePointAverage());
         return dto;
     }
@@ -152,7 +152,7 @@ public class TutorServiceImpl implements ITutorService {
         dto.setId(tutorProfile.getId());
         dto.setHeadline(tutorProfile.getHeadline());
         dto.setFees(tutorProfile.getFees());
-        dto.setCity(tutorProfile.getCity());
+        // dto.setCity(tutorProfile.getCity()); // city field removed
         dto.setRatePointAverage(tutorProfile.getRatePointAverage());
         return dto;
     }

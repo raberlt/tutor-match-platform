@@ -1,5 +1,7 @@
 package fsa.training.tutormatch.entity;
 
+import fsa.training.tutormatch.enums.EducationLevel;
+import fsa.training.tutormatch.enums.ProfileStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -12,52 +14,77 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true, exclude = {"bookingsAsStudent"})  // ✅ Exclude collections
 @ToString(exclude = {"bookingsAsStudent"})                            // ✅ Exclude collections
 @Table(name = "student_profiles")
-public class StudentProfile extends BaseProfile {
+public class StudentProfile extends Profile {
+    
+    public StudentProfile() {
+        super();
+        // Mặc định StudentProfile có status ACTIVE
+        this.setProfileStatus(ProfileStatus.ACTIVE);
+    }
 
     // Student-specific fields
-    @Column(columnDefinition = "NVARCHAR(500)")
-    private String learningGoals;
-
-    @Column(columnDefinition = "NVARCHAR(1000)")
-    private String preferredSubjects;
-
-    @Column(columnDefinition = "NVARCHAR(500)")
-    private String learningStyle;
-
-    private Integer budgetMin;
-    private Integer budgetMax;
-
-    @Column(columnDefinition = "NVARCHAR(100)")
-    private String preferredTimeSlots;
+    @Enumerated(EnumType.STRING)
+    private EducationLevel educationLevel;
+    
+    // Personal information fields (moved from User for admin approval)
+    @Column(columnDefinition = "NVARCHAR(50)")
+    private String firstName;
+    
+    @Column(columnDefinition = "NVARCHAR(50)")
+    private String lastName;
+    
+    @Column(columnDefinition = "NVARCHAR(255)")
+    private String imageAvatar;
 
     // Student bookings (as student)
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Booking> bookingsAsStudent;
 
-    // ❌ Bỏ: Quan hệ trực tiếp với Rate (ratingsGiven)
-    // Vì Rate → Booking → Student đã đủ
-
     @Override
     public String getDisplayName() {
         return "Student Profile";
     }
+    
+    // Override methods from parent to ensure they're accessible
+    @Override
+    public void setUser(User user) {
+        super.setUser(user);
+    }
+    
+    @Override
+    public void setCreatedAt(java.time.ZonedDateTime createdAt) {
+        super.setCreatedAt(createdAt);
+    }
+    
+    @Override
+    public void setUpdatedAt(java.time.ZonedDateTime updatedAt) {
+        super.setUpdatedAt(updatedAt);
+    }
+    
+    @Override
+    public void setProfileStatus(fsa.training.tutormatch.enums.ProfileStatus profileStatus) {
+        super.setProfileStatus(profileStatus);
+    }
+    
+    @Override
+    public User getUser() {
+        return super.getUser();
+    }
 
     @Override
     public boolean canBePromoted() {
-        return super.isVerified() &&
-                super.getProfileStatus() == ProfileStatus.ACTIVE &&
-                super.getEducationLevel() != null &&
-                !super.getEducationLevel().isEmpty();
+        return super.getProfileStatus() == ProfileStatus.ACTIVE &&
+                educationLevel != null &&
+                (educationLevel == EducationLevel.COLLEGE_UNIVERSITY || 
+                 educationLevel == EducationLevel.POSTGRADUATE);
     }
 
     // Business methods
-    public boolean hasActiveLearningGoals() {
-        return learningGoals != null && !learningGoals.trim().isEmpty();
+    public boolean hasValidEducationLevel() {
+        return educationLevel != null;
     }
 
-    public boolean isWithinBudget(Integer fees) {
-        if (budgetMin != null && fees < budgetMin) return false;
-        if (budgetMax != null && fees > budgetMax) return false;
-        return true;
+    public String getEducationLevelDisplayName() {
+        return educationLevel != null ? educationLevel.getDisplayName() : "Chưa xác định";
     }
 }

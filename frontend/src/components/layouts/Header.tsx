@@ -35,7 +35,7 @@ export const Header: React.FC = () => {
     // Navigation for public pages
     if (!user) {
       return [
-        { label: "Tìm gia sư", href: "/tutors" },
+        { label: "Tìm gia sư", href: "/find-tutor" },
         { label: "Trở thành gia sư", href: "/become-tutor" },
         { label: "Hộp thư", href: "/login" },
         { label: "Buổi học của tôi", href: "/login" },
@@ -44,7 +44,7 @@ export const Header: React.FC = () => {
 
     // User navigation for logged-in users
     const baseNav = [
-      { label: "Tìm gia sư", href: "/tutors" },
+      { label: "Tìm gia sư", href: "/find-tutor" },
       { label: "Trở thành gia sư", href: "/become-tutor" },
       { label: "Hộp thư", href: "/messages" },
     ];
@@ -70,13 +70,21 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b">
+    <header className="sticky top-0 z-50 bg-white shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">TM</span>
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: "#94cce6" }}
+            >
+              <span
+                className="font-black text-sm"
+                style={{ color: "oklch(0.97 0.01 0)" }}
+              >
+                TM
+              </span>
             </div>
             <span className="text-xl font-semibold text-gray-900">
               TutorMatch
@@ -89,7 +97,19 @@ export const Header: React.FC = () => {
               <Link
                 key={index}
                 to={item.href}
-                className="text-gray-600 hover:text-blue-600 transition-colors"
+                className="text-gray-600 hover:opacity-80 transition-colors px-3 py-2 rounded-lg hover:bg-opacity-10"
+                style={
+                  {
+                    "--hover-bg": "#94cce6",
+                  } as React.CSSProperties
+                }
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(148, 204, 230, 0.1)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
               >
                 {item.label}
               </Link>
@@ -105,7 +125,10 @@ export const Header: React.FC = () => {
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="flex items-center space-x-2 hover:bg-gray-50 rounded-lg p-2 transition-colors"
                 >
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: "#94cce6" }}
+                  >
                     {user.imageAvatar ? (
                       <img
                         src={user.imageAvatar}
@@ -113,7 +136,10 @@ export const Header: React.FC = () => {
                         className="w-8 h-8 rounded-full object-cover"
                       />
                     ) : (
-                      <span className="text-blue-600 font-medium text-sm">
+                      <span
+                        className="font-medium text-sm"
+                        style={{ color: "oklch(0.97 0.01 0)" }}
+                      >
                         {user.firstName?.charAt(0)?.toUpperCase() || ""}
                         {user.lastName?.charAt(0)?.toUpperCase() || ""}
                       </span>
@@ -205,7 +231,11 @@ export const Header: React.FC = () => {
             ) : (
               <Link
                 to="/register"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 rounded-lg hover:opacity-80 transition-colors"
+                style={{
+                  backgroundColor: "#94cce6",
+                  color: "oklch(0.97 0.01 0)",
+                }}
               >
                 Đăng ký
               </Link>

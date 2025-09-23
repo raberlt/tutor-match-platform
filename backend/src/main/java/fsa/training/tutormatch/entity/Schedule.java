@@ -7,8 +7,9 @@ import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Data
@@ -22,24 +23,33 @@ public class Schedule {
     @JoinColumn(name = "profile_id", nullable = false)
     @JsonIgnore
     @ToString.Exclude
-    private BaseProfile profile;
+    private Profile profile;
 
     @Column(nullable = false, columnDefinition = "NVARCHAR(50)")
     private String dayOfWeek;
 
     @Column(nullable = false)
-    private Time fromTime;
+    private LocalTime fromTime;
 
     @Column(nullable = false)
-    private Time toTime;
+    private LocalTime toTime;
 
     private Boolean enable = true;
 
 
     @CreationTimestamp
     @Column(updatable = false)
-    private Timestamp createdAt;
+    private ZonedDateTime createdAt;
 
     @UpdateTimestamp
-    private Timestamp updatedAt;
+    private ZonedDateTime updatedAt;
+    
+    // Helper methods for timezone handling
+    public ZonedDateTime getCreatedAtInTimezone(String timezoneId) {
+        return createdAt != null ? createdAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
+    }
+    
+    public ZonedDateTime getUpdatedAtInTimezone(String timezoneId) {
+        return updatedAt != null ? updatedAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
+    }
 }

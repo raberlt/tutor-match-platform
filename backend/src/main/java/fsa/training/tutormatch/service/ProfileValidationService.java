@@ -1,6 +1,6 @@
 package fsa.training.tutormatch.service;
 
-import fsa.training.tutormatch.entity.BaseProfile;
+import fsa.training.tutormatch.entity.Profile;
 import fsa.training.tutormatch.entity.StudentProfile;
 import fsa.training.tutormatch.entity.TutorProfile;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ public class ProfileValidationService {
     /**
      * Validate profile
      */
-    public ValidationResult validateProfile(BaseProfile profile) {
+    public ValidationResult validateProfile(Profile profile) {
         if (profile instanceof StudentProfile) {
             return validateStudentProfile((StudentProfile) profile);
         } else if (profile instanceof TutorProfile) {
@@ -27,14 +27,14 @@ public class ProfileValidationService {
     /**
      * Check if profile is valid
      */
-    public boolean isProfileValid(BaseProfile profile) {
+    public boolean isProfileValid(Profile profile) {
         return validateProfile(profile).isValid();
     }
     
     /**
      * Get validation message
      */
-    public String getValidationMessage(BaseProfile profile) {
+    public String getValidationMessage(Profile profile) {
         return validateProfile(profile).getMessage();
     }
     
@@ -64,12 +64,12 @@ public class ProfileValidationService {
     /**
      * Bulk validation for multiple profiles
      */
-    public ValidationSummary validateMultipleProfiles(java.util.List<BaseProfile> profiles) {
+    public ValidationSummary validateMultipleProfiles(java.util.List<Profile> profiles) {
         int validCount = 0;
         int invalidCount = 0;
         java.util.List<String> errors = new java.util.ArrayList<>();
         
-        for (BaseProfile profile : profiles) {
+        for (Profile profile : profiles) {
             ValidationResult result = validateProfile(profile);
             if (result.isValid()) {
                 validCount++;

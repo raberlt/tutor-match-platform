@@ -2,7 +2,8 @@ package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.dto.BecomeTutorRequest;
 import fsa.training.tutormatch.entity.*;
-import fsa.training.tutormatch.entity.BaseProfile;
+import fsa.training.tutormatch.enums.*;
+import fsa.training.tutormatch.entity.Profile;
 import fsa.training.tutormatch.entity.TutorProfile;
 import fsa.training.tutormatch.repository.*;
 import fsa.training.tutormatch.service.interfaces.ITutorApplicationService;
@@ -60,13 +61,14 @@ public class TutorApplicationServiceImpl implements ITutorApplicationService {
         // Dựa trên TutorProfile thay vì Profile đơn lẻ
         java.util.Optional<TutorProfile> tp = user.getTutorProfile();
         if (tp.isPresent()) {
-            BaseProfile profile = tp.get();
+            Profile profile = tp.get();
             response.put("hasApplication", true);
             response.put("status", profile.getProfileStatus().toString());
             response.put("profileType", profile.getClass().getSimpleName());
-            response.put("isVerified", profile.isVerified());
-            if (profile.getProfileStatus() == BaseProfile.ProfileStatus.REJECTED) {
-                response.put("adminNote", profile.getAdminNote());
+            // isVerified giờ ở User entity
+            response.put("isVerified", profile.getUser().isVerified());
+            if (profile.getProfileStatus() == ProfileStatus.INACTIVE) {
+                response.put("adminNote", ((TutorProfile) profile).getAdminNote());
             }
         } else {
             response.put("hasApplication", false);
@@ -89,24 +91,22 @@ public class TutorApplicationServiceImpl implements ITutorApplicationService {
             throw new IllegalArgumentException("No application found");
         }
 
-        BaseProfile profile = tp.get();
+        Profile profile = tp.get();
         Map<String, Object> response = new HashMap<>();
         
         // Basic profile info
         response.put("id", profile.getId());
-        response.put("city", profile.getCity());
+        // response.put("city", profile.getCity()); // city field removed
         response.put("profileStatus", profile.getProfileStatus().toString());
-        response.put("isVerified", profile.isVerified());
-        response.put("adminNote", profile.getAdminNote());
+        response.put("isVerified", profile.getUser().isVerified());
+        response.put("adminNote", ((TutorProfile) profile).getAdminNote());
         
         // Personal details
-        response.put("dateOfBirth", profile.getDateOfBirth());
-        response.put("gender", profile.getGender());
-        response.put("phoneNumber", profile.getPhoneNumber());
-        response.put("addressLine1", profile.getAddressLine1());
-        response.put("educationLevel", profile.getEducationLevel());
-        response.put("university", profile.getUniversity());
-        response.put("major", profile.getMajor());
+        response.put("dateOfBirth", profile.getUser().getDateOfBirth());
+        response.put("gender", profile.getUser().getGender());
+        response.put("phoneNumber", profile.getUser().getPhoneNumber());
+        response.put("addressLine1", profile.getUser().getAddress());
+        // Removed fields: educationLevel, university, major
         
         // Tutor-specific info if available
         if (profile instanceof TutorProfile) {
@@ -129,7 +129,7 @@ public class TutorApplicationServiceImpl implements ITutorApplicationService {
 
     @Override
     @Transactional
-    public BaseProfile submitTutorApplication(String studentUsername, BecomeTutorRequest request) {
+    public Profile submitTutorApplication(String studentUsername, BecomeTutorRequest request) {
         Optional<User> userOpt = userRepository.findByUsername(studentUsername);
         if (userOpt.isEmpty()) {
             throw new IllegalArgumentException("User not found");
@@ -154,7 +154,7 @@ public class TutorApplicationServiceImpl implements ITutorApplicationService {
 
         // Clear existing related data và save mới
         clearExistingRelatedData(profile);
-        saveProfileSubjects(profile, request.getSubjectIds());
+        saveProfileSubjects(profile, request.getSubjectFees());
         saveSchedules(profile, request.getSchedules());
 
         return profile;
@@ -162,7 +162,7 @@ public class TutorApplicationServiceImpl implements ITutorApplicationService {
 
     @Override
     @Transactional
-    public BaseProfile updateTutorApplication(String username, BecomeTutorRequest request) {
+    public Profile updateTutorApplication(String username, BecomeTutorRequest request) {
         return submitTutorApplication(username, request); // Same logic for now
     }
 
@@ -180,7 +180,7 @@ public class TutorApplicationServiceImpl implements ITutorApplicationService {
         // Không xóa toàn bộ profile nữa. Chỉ xóa dữ liệu liên quan của TutorProfile nếu tồn tại
         java.util.Optional<TutorProfile> tutorProfileOpt = user.getTutorProfile();
         if (tutorProfileOpt.isPresent()) {
-            BaseProfile profile = tutorProfileOpt.get();
+            Profile profile = tutorProfileOpt.get();
             clearExistingRelatedData(profile);
             profileRepository.delete(profile);
             profileRepository.flush();
@@ -207,40 +207,42 @@ public class TutorApplicationServiceImpl implements ITutorApplicationService {
             return false;
         }
         User user = userOpt.get();
-        // Có thể submit nếu chưa có TutorProfile, hoặc TutorProfile trước đó bị REJECTED
-        return user.getTutorProfile().map(p -> p.getProfileStatus() == BaseProfile.ProfileStatus.REJECTED).orElse(true);
+        // Có thể submit nếu chưa có TutorProfile, hoặc TutorProfile trước đó bị INACTIVE
+        return user.getTutorProfile().map(p -> p.getProfileStatus() == ProfileStatus.INACTIVE).orElse(true);
     }
 
     // Private helper methods
     private TutorProfile createProfileFromRequest(User user, BecomeTutorRequest request) {
         TutorProfile profile = new TutorProfile();
         profile.setUser(user);
-        profile.setProfileStatus(BaseProfile.ProfileStatus.PENDING_VERIFICATION);
-        profile.setVerified(false);
+        profile.setProfileStatus(ProfileStatus.PENDING_VERIFICATION);
+        // isVerified giờ ở User entity
+        user.setVerified(false);
 
         // Basic info
         if (request.getBio() != null) profile.setBio(request.getBio().trim());
         if (request.getHeadline() != null) profile.setHeadline(request.getHeadline().trim());
         if (request.getExperience() != null) profile.setExperience(request.getExperience().trim());
-        if (request.getTeachingLevel() != null) profile.setTeachingLevel(request.getTeachingLevel().trim());
-        if (request.getFees() != null && request.getFees() >= 0) profile.setFees(request.getFees());
+        if (request.getTeachingLevel() != null) profile.setTeachingLevel(request.getTeachingLevel().getDisplayName());
 
         // Personal details
-        profile.setDateOfBirth(request.getDateOfBirth());
+        if (request.getFirstName() != null) profile.getUser().setFirstName(request.getFirstName().trim());
+        if (request.getLastName() != null) profile.getUser().setLastName(request.getLastName().trim());
+        profile.getUser().setDateOfBirth(request.getDateOfBirth());
         if (request.getGender() != null) {
-            profile.setGender(BaseProfile.Gender.valueOf(request.getGender()));
+            profile.getUser().setGender(Gender.valueOf(request.getGender()));
         }
-        if (request.getPhoneNumber() != null) profile.setPhoneNumber(request.getPhoneNumber().trim());
-        if (request.getAddressLine1() != null) profile.setAddressLine1(request.getAddressLine1().trim());
-        if (request.getEducationLevel() != null) profile.setEducationLevel(request.getEducationLevel().trim());
-        if (request.getUniversity() != null) profile.setUniversity(request.getUniversity().trim());
-        if (request.getMajor() != null) profile.setMajor(request.getMajor().trim());
+        if (request.getPhoneNumber() != null) profile.getUser().setPhoneNumber(request.getPhoneNumber().trim());
+        if (request.getAddress() != null) profile.getUser().setAddress(request.getAddress().trim());
+        if (request.getTimezone() != null) profile.getUser().setTimezone(request.getTimezone().trim());
+        if (request.getAvatar() != null) profile.getUser().setImageAvatar(request.getAvatar().trim());
+        if (request.getCvUrl() != null) profile.setCvUrl(request.getCvUrl().trim());
 
         return profile;
     }
 
 
-    private void deleteExistingProfileData(BaseProfile profile) {
+    private void deleteExistingProfileData(Profile profile) {
         // Delete related entities first (foreign key constraints)
         profileSubjectRepository.deleteByProfileId(profile.getId());
         scheduleRepository.deleteByProfileId(profile.getId()); //  Uncomment này
@@ -256,7 +258,7 @@ public class TutorApplicationServiceImpl implements ITutorApplicationService {
     }
 
     //  Method delete hoàn toàn và flush session
-    private void deleteExistingProfileDataCompletely(BaseProfile profile) {
+    private void deleteExistingProfileDataCompletely(Profile profile) {
         // Delete related entities first
         profileSubjectRepository.deleteByProfileId(profile.getId());
         scheduleRepository.deleteByProfileId(profile.getId());
@@ -271,29 +273,30 @@ public class TutorApplicationServiceImpl implements ITutorApplicationService {
         profileRepository.flush();
     }
 
-    private void saveProfileSubjects(BaseProfile profile, List<Integer> subjectIds) {
-        if (subjectIds != null && !subjectIds.isEmpty()) {
-            for (Integer subjectId : subjectIds) {
-                subjectRepository.findById(subjectId).ifPresent(subject -> {
-                    ProfileSubject ps = new ProfileSubject();
-                    ps.setProfile(profile); // giờ là BaseProfile
+    private void saveProfileSubjects(Profile profile, List<BecomeTutorRequest.SubjectFeeRequest> subjectFees) {
+        if (subjectFees != null && !subjectFees.isEmpty()) {
+            for (BecomeTutorRequest.SubjectFeeRequest subjectFee : subjectFees) {
+                subjectRepository.findById(subjectFee.getSubjectId()).ifPresent(subject -> {
+                    TutorProfileSubject ps = new TutorProfileSubject();
+                    ps.setProfile(profile);
                     ps.setSubject(subject);
+                    ps.setFees(subjectFee.getFees()); // Set fees cho từng môn
                     profileSubjectRepository.save(ps);
                 });
             }
         }
     }
 
-    private void saveSchedules(BaseProfile profile, List<BecomeTutorRequest.ScheduleRequest> scheduleRequests) {
+    private void saveSchedules(Profile profile, List<BecomeTutorRequest.ScheduleRequest> scheduleRequests) {
         if (scheduleRequests != null && !scheduleRequests.isEmpty()) {
             for (BecomeTutorRequest.ScheduleRequest scheduleReq : scheduleRequests) {
                 Schedule schedule = new Schedule();
                 schedule.setProfile(profile); // giờ là BaseProfile
                 schedule.setDayOfWeek(scheduleReq.getDayOfWeek());
 
-                // Convert String -> java.sql.Time
-                schedule.setFromTime(Time.valueOf(scheduleReq.getFromTime() + ":00"));
-                schedule.setToTime(Time.valueOf(scheduleReq.getToTime() + ":00"));
+                // Convert String -> java.time.LocalTime
+                schedule.setFromTime(java.time.LocalTime.parse(scheduleReq.getFromTime()));
+                schedule.setToTime(java.time.LocalTime.parse(scheduleReq.getToTime()));
 
                 scheduleRepository.save(schedule);
             }
@@ -302,7 +305,7 @@ public class TutorApplicationServiceImpl implements ITutorApplicationService {
 
 
     // Conversion helpers - simplified for now
-    private List<Map<String, Object>> convertSubjectsToMap(List<ProfileSubject> profileSubjects) {
+    private List<Map<String, Object>> convertSubjectsToMap(List<TutorProfileSubject> profileSubjects) {
         if (profileSubjects == null) return new ArrayList<>();
         
         return profileSubjects.stream().map(ps -> {
@@ -354,7 +357,7 @@ public class TutorApplicationServiceImpl implements ITutorApplicationService {
         }).toList();
     }
 
-    private void clearExistingRelatedData(BaseProfile profile) {
+    private void clearExistingRelatedData(Profile profile) {
         profileSubjectRepository.deleteByProfileId(profile.getId());
         scheduleRepository.deleteByProfileId(profile.getId());
         educationRepository.deleteByProfileId(profile.getId());
@@ -366,23 +369,23 @@ public class TutorApplicationServiceImpl implements ITutorApplicationService {
         if (request.getBio() != null) profile.setBio(request.getBio().trim());
         if (request.getHeadline() != null) profile.setHeadline(request.getHeadline().trim());
         if (request.getExperience() != null) profile.setExperience(request.getExperience().trim());
-        if (request.getTeachingLevel() != null) profile.setTeachingLevel(request.getTeachingLevel().trim());
-        if (request.getFees() != null && request.getFees() >= 0) profile.setFees(request.getFees());
+        if (request.getTeachingLevel() != null) profile.setTeachingLevel(request.getTeachingLevel().getDisplayName());
 
         // Update personal details
-        profile.setDateOfBirth(request.getDateOfBirth());
+        if (request.getFirstName() != null) profile.getUser().setFirstName(request.getFirstName().trim());
+        if (request.getLastName() != null) profile.getUser().setLastName(request.getLastName().trim());
+        profile.getUser().setDateOfBirth(request.getDateOfBirth());
         if (request.getGender() != null) {
-            profile.setGender(BaseProfile.Gender.valueOf(request.getGender()));
+            profile.getUser().setGender(Gender.valueOf(request.getGender()));
         }
-        if (request.getPhoneNumber() != null) profile.setPhoneNumber(request.getPhoneNumber().trim());
-        if (request.getAddressLine1() != null) profile.setAddressLine1(request.getAddressLine1().trim());
-        if (request.getCity() != null) profile.setCity(request.getCity().trim());
-        if (request.getEducationLevel() != null) profile.setEducationLevel(request.getEducationLevel().trim());
-        if (request.getUniversity() != null) profile.setUniversity(request.getUniversity().trim());
-        if (request.getMajor() != null) profile.setMajor(request.getMajor().trim());
+        if (request.getPhoneNumber() != null) profile.getUser().setPhoneNumber(request.getPhoneNumber().trim());
+        if (request.getAddress() != null) profile.getUser().setAddress(request.getAddress().trim());
+        if (request.getTimezone() != null) profile.getUser().setTimezone(request.getTimezone().trim());
+        if (request.getAvatar() != null) profile.getUser().setImageAvatar(request.getAvatar().trim());
+        if (request.getCvUrl() != null) profile.setCvUrl(request.getCvUrl().trim());
         
         // Reset status về PENDING_VERIFICATION
-        profile.setProfileStatus(BaseProfile.ProfileStatus.PENDING_VERIFICATION);
+        profile.setProfileStatus(ProfileStatus.PENDING_VERIFICATION);
     }
 
     //  Xóa method convertToTutorProfile (không dùng nữa)

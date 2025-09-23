@@ -2,7 +2,7 @@ package fsa.training.tutormatch.service.interfaces;
 
 import fsa.training.tutormatch.entity.Booking;
 
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,9 +18,9 @@ public interface IBookingQueryService {
     List<Booking> getConfirmedBookings(String tutorUsername);
     List<Booking> getCancelledBookings(String username);
     
-    // Date-based queries
-    List<Booking> getConfirmedBookingsByDate(String tutorUsername, Date date);
-    List<Booking> getBookingsBetweenDates(String tutorUsername, Date startDate, Date endDate);
+    // LocalDate-based queries
+    List<Booking> getConfirmedBookingsByLocalDate(String tutorUsername, LocalDate date);
+    List<Booking> getBookingsBetweenLocalDates(String tutorUsername, LocalDate startLocalDate, LocalDate endLocalDate);
     
     // Statistics queries
     long countPendingBookings(String tutorUsername);

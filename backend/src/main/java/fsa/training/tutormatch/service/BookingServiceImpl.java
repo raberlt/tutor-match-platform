@@ -2,14 +2,14 @@ package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.entity.Booking;
-import fsa.training.tutormatch.entity.BookingStatus;import fsa.training.tutormatch.service.interfaces.IBookingService;
-import fsa.training.tutormatch.entity.BookingType;import fsa.training.tutormatch.service.interfaces.IBookingCreationService;
+import fsa.training.tutormatch.service.interfaces.IBookingService;
+import fsa.training.tutormatch.service.interfaces.IBookingCreationService;
 import fsa.training.tutormatch.service.interfaces.IBookingStatusService;
 import fsa.training.tutormatch.service.interfaces.IBookingQueryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -36,7 +36,7 @@ public class BookingServiceImpl implements IBookingService {
         request.setDate(date);
         request.setTime(time);
         request.setNote(note);
-        request.setBookingType("TRIAL"); // Default to trial
+        request.setBookingType("SINGLE"); // Default to single
         
         return createBooking(studentUsername, request);
     }
@@ -86,15 +86,15 @@ public class BookingServiceImpl implements IBookingService {
      * Get confirmed bookings for tutor on specific date - Facade pattern
      */
     @Override
-    public List<Booking> getConfirmedBookingsByDate(String tutorUsername, Date date) {
-        return queryService.getConfirmedBookingsByDate(tutorUsername, date);
+    public List<Booking> getConfirmedBookingsByLocalDate(String tutorUsername, LocalDate date) {
+        return queryService.getConfirmedBookingsByLocalDate(tutorUsername, date);
     }
 
     /**
      * Get bookings between dates for statistics - Facade pattern
      */
     @Override
-    public List<Booking> getBookingsBetweenDates(String tutorUsername, Date startDate, Date endDate) {
-        return queryService.getBookingsBetweenDates(tutorUsername, startDate, endDate);
+    public List<Booking> getBookingsBetweenLocalDates(String tutorUsername, LocalDate startLocalDate, LocalDate endLocalDate) {
+        return queryService.getBookingsBetweenLocalDates(tutorUsername, startLocalDate, endLocalDate);
     }
 } 

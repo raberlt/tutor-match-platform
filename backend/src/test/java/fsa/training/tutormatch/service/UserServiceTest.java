@@ -1,6 +1,7 @@
 package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.entity.User;
+import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,7 +53,7 @@ class UserServiceTest {
         testUser.setFirstName("Test");
         testUser.setLastName("User");
         testUser.setPassword("plainPassword");
-        testUser.setRole(User.Role.STUDENT);
+        testUser.setRole(UserRole.STUDENT);
 
         testTutor = new User();
         testTutor.setId(2);
@@ -61,7 +62,7 @@ class UserServiceTest {
         testTutor.setFirstName("Test");
         testTutor.setLastName("Tutor");
         testTutor.setPassword("plainPassword");
-        testTutor.setRole(User.Role.TUTOR);
+        testTutor.setRole(UserRole.TUTOR);
     }
 
     // =============== TEST CASE 1: save() method ===============
@@ -83,7 +84,7 @@ class UserServiceTest {
         assertThat(savedUser).isNotNull();
         assertThat(savedUser.getId()).isEqualTo(1);
         assertThat(savedUser.getEmail()).isEqualTo("test@example.com");
-        assertThat(savedUser.getRole()).isEqualTo(User.Role.STUDENT);
+        assertThat(savedUser.getRole()).isEqualTo(UserRole.STUDENT);
 
         // Verify interactions
         verify(passwordEncoder, times(1)).encode("plainPassword");
@@ -108,7 +109,7 @@ class UserServiceTest {
         User savedUser = userService.save(testUser);
 
         // Then
-        assertThat(savedUser.getRole()).isEqualTo(User.Role.STUDENT);
+        assertThat(savedUser.getRole()).isEqualTo(UserRole.STUDENT);
         verify(userRepository, times(1)).save(testUser);
     }
 
@@ -281,22 +282,22 @@ class UserServiceTest {
         // Given
         User tutor1 = new User();
         tutor1.setId(1);
-        tutor1.setRole(User.Role.TUTOR);
+        tutor1.setRole(UserRole.TUTOR);
         
         User tutor2 = new User();
         tutor2.setId(2);
-        tutor2.setRole(User.Role.TUTOR);
+        tutor2.setRole(UserRole.TUTOR);
 
         List<User> tutors = Arrays.asList(tutor1, tutor2);
-        when(userRepository.findByRole(User.Role.TUTOR)).thenReturn(tutors);
+        when(userRepository.findByRole(UserRole.TUTOR)).thenReturn(tutors);
 
         // When
         List<User> result = userService.getAllTutors();
 
         // Then
         assertThat(result).hasSize(2);
-        assertThat(result).allMatch(user -> user.getRole() == User.Role.TUTOR);
+        assertThat(result).allMatch(user -> user.getRole() == UserRole.TUTOR);
 
-        verify(userRepository, times(1)).findByRole(User.Role.TUTOR);
+        verify(userRepository, times(1)).findByRole(UserRole.TUTOR);
     }
 }

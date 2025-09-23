@@ -16,17 +16,8 @@ public interface StudentProfileRepository extends JpaRepository<StudentProfile, 
     Optional<StudentProfile> findByUserId(Integer userId);
     Optional<StudentProfile> findByUser_Username(String username);
     
-    // Find students by learning goals
-    @Query("SELECT s FROM StudentProfile s WHERE s.learningGoals LIKE %:keyword%")
-    List<StudentProfile> findByLearningGoalsContaining(@Param("keyword") String keyword);
-    
-    // Find students by preferred subjects
-    @Query("SELECT s FROM StudentProfile s WHERE s.preferredSubjects LIKE %:subject%")
-    List<StudentProfile> findByPreferredSubjectsContaining(@Param("subject") String subject);
-    
-    // Find students by budget range
-    @Query("SELECT s FROM StudentProfile s WHERE s.budgetMin <= :maxBudget AND s.budgetMax >= :minBudget")
-    List<StudentProfile> findByBudgetRange(@Param("minBudget") Integer minBudget, @Param("maxBudget") Integer maxBudget);
+    // Note: learningGoals, preferredSubjects, budgetMin, budgetMax fields were removed from StudentProfile
+    // These queries are no longer available
     
     // Count total students
     long count();

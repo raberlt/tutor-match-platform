@@ -1,5 +1,4 @@
 package fsa.training.tutormatch.entity;
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -11,8 +10,12 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import fsa.training.tutormatch.enums.UserRole;
+import fsa.training.tutormatch.enums.Gender;
 
-import java.sql.Timestamp;
+import java.time.LocalDate; 
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 
 @Data
 @Entity
@@ -34,6 +37,7 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    // Personal information fields (chuyển từ Profile về User)
     @NotBlank(message = "First name is required")
     @Column(nullable = false, columnDefinition = "NVARCHAR(50)")
     private String firstName;
@@ -42,6 +46,34 @@ public class User {
     @Column(nullable = false, columnDefinition = "NVARCHAR(50)")
     private String lastName;
 
+    @Column(columnDefinition = "NVARCHAR(255)")
+    private String address;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
+    private String imageAvatar;
+
+    private LocalDate dateOfBirth;
+
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
+
+    // Timezone field mới
+    @Column(columnDefinition = "NVARCHAR(50)", nullable = false)
+    private String timezone = "Asia/Ho_Chi_Minh"; // Default timezone
+    
+    // Getter method for timezone field
+    public String getTimezone() {
+        return this.timezone;
+    }
+    
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
+    }
+
+    // Trạng thái xác thực của user (dành cho tutor)
+    @Column(nullable = false)
+    private boolean isVerified = false;
+
     @Email(message = "Invalid email format")
     @Column(unique = true)
     private String email;
@@ -49,43 +81,24 @@ public class User {
     @Pattern(regexp = "^[0-9]{9,15}$", message = "Phone number must be 9 to 15 digits")
     private String phoneNumber;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
-    private String address;
-
-    @Column(columnDefinition = "NVARCHAR(255)")
-    private String imageAvatar;
-
-    @Column(columnDefinition = "NVARCHAR(20)")
-    private String phone;
-
-    @Column(nullable = false)
-    private boolean enabled = true;
-
-    @Column(nullable = false)
-    private boolean isPremium = false;
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<BaseProfile> profiles;
+    private java.util.List<Profile> profiles;
 
     @NotNull(message = "Role is required")
     @Enumerated(EnumType.STRING)
-    private Role role = Role.STUDENT;
+    private UserRole role = UserRole.STUDENT;
 
     @CreationTimestamp
     @Column(updatable = false)
-    private Timestamp createdAt;
+    private ZonedDateTime createdAt;
 
     @UpdateTimestamp
-    private Timestamp updatedAt;
-
-    public enum Role {
-        ADMIN, STUDENT, TUTOR
-    }
+    private ZonedDateTime updatedAt;
 
     // Helper methods
     public java.util.Optional<StudentProfile> getStudentProfile() {
         if (profiles == null) return java.util.Optional.empty();
-        for (BaseProfile profile : profiles) {
+        for (Profile profile : profiles) {
             if (profile instanceof StudentProfile) {
                 return java.util.Optional.of((StudentProfile) profile);
             }
@@ -95,11 +108,37 @@ public class User {
 
     public java.util.Optional<TutorProfile> getTutorProfile() {
         if (profiles == null) return java.util.Optional.empty();
-        for (BaseProfile profile : profiles) {
+        for (Profile profile : profiles) {
             if (profile instanceof TutorProfile) {
                 return java.util.Optional.of((TutorProfile) profile);
             }
         }
         return java.util.Optional.empty();
+    }
+    
+    // Helper methods for timezone handling
+    public ZonedDateTime getCreatedAtInTimezone(String timezoneId) {
+        return createdAt != null ? createdAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
+    }
+    
+    public ZonedDateTime getUpdatedAtInTimezone(String timezoneId) {
+        return updatedAt != null ? updatedAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
+    }
+    
+    // Helper methods using user's own timezone
+    public ZonedDateTime getCreatedAtInUserTimezone() {
+        return getCreatedAtInTimezone(this.timezone);
+    }
+    
+    public ZonedDateTime getUpdatedAtInUserTimezone() {
+        return getUpdatedAtInTimezone(this.timezone);
+    }
+    
+    // Get user's display name
+    public String getFullName() {
+        if (firstName != null && lastName != null) {
+            return firstName + " " + lastName;
+        }
+        return username;
     }
 }

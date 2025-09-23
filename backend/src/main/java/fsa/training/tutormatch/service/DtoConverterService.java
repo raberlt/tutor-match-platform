@@ -1,9 +1,11 @@
 package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.entity.User;
+import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.entity.TutorProfile;
+import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.entity.StudentProfile;
-import fsa.training.tutormatch.entity.BaseProfile;
+import fsa.training.tutormatch.enums.UserRole;
 import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +21,7 @@ public class DtoConverterService {
         dto.put("firstName", user.getFirstName());
         dto.put("lastName", user.getLastName());
         dto.put("role", user.getRole());
-        dto.put("enabled", user.isEnabled());
+        // dto.put("enabled", user.isEnabled()); // enabled field removed
         dto.put("createdAt", user.getCreatedAt());
         dto.put("updatedAt", user.getUpdatedAt());
         return dto;
@@ -42,12 +44,7 @@ public class DtoConverterService {
     public Map<String, Object> convertToStudentProfileMap(StudentProfile profile) {
         Map<String, Object> dto = new HashMap<>();
         dto.put("id", profile.getId());
-        dto.put("learningGoals", profile.getLearningGoals());
-        dto.put("preferredSubjects", profile.getPreferredSubjects());
-        dto.put("learningStyle", profile.getLearningStyle());
-        dto.put("budgetMin", profile.getBudgetMin());
-        dto.put("budgetMax", profile.getBudgetMax());
-        dto.put("preferredTimeSlots", profile.getPreferredTimeSlots());
+        dto.put("educationLevel", profile.getEducationLevel());
         return dto;
     }
     
@@ -58,8 +55,8 @@ public class DtoConverterService {
         user.setEmail((String) dto.get("email"));
         user.setFirstName((String) dto.get("firstName"));
         user.setLastName((String) dto.get("lastName"));
-        user.setRole((User.Role) dto.get("role"));
-        user.setEnabled((Boolean) dto.get("enabled"));
+        user.setRole((UserRole) dto.get("role"));
+        // user.setEnabled((Boolean) dto.get("enabled")); // enabled field removed
         return user;
     }
 }

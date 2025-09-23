@@ -4,9 +4,12 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import fsa.training.tutormatch.enums.PaymentMethod;
+import fsa.training.tutormatch.enums.PaymentStatus;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Data
@@ -59,30 +62,25 @@ public class Payment {
     @Column(columnDefinition = "NVARCHAR(1000)")
     private String gatewayResponse; // Response từ payment gateway
 
-    private Timestamp paidAt;
+    private ZonedDateTime paidAt;
 
     @CreationTimestamp
     @Column(updatable = false)
-    private Timestamp createdAt;
+    private ZonedDateTime createdAt;
 
     @UpdateTimestamp
-    private Timestamp updatedAt;
-
-    public enum PaymentMethod {
-        CREDIT_CARD,
-        DEBIT_CARD,
-        VNPAY,
-        MOMO,
-        BANKING,
-        CASH
+    private ZonedDateTime updatedAt;
+    
+    // Helper methods for timezone handling
+    public ZonedDateTime getCreatedAtInTimezone(String timezoneId) {
+        return createdAt != null ? createdAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
     }
-
-    public enum PaymentStatus {
-        PENDING,    // Chờ thanh toán
-        PROCESSING, // Đang xử lý
-        COMPLETED,  // Hoàn thành
-        FAILED,     // Thất bại
-        CANCELLED,  // Hủy
-        REFUNDED    // Hoàn tiền
+    
+    public ZonedDateTime getUpdatedAtInTimezone(String timezoneId) {
+        return updatedAt != null ? updatedAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
     }
-} 
+    
+    public ZonedDateTime getPaidAtInTimezone(String timezoneId) {
+        return paidAt != null ? paidAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
+    }
+}

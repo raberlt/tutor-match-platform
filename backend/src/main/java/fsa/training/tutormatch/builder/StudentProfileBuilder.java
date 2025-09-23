@@ -2,7 +2,9 @@ package fsa.training.tutormatch.builder;
 
 import fsa.training.tutormatch.entity.StudentProfile;
 import fsa.training.tutormatch.entity.User;
-import java.sql.Timestamp;
+import fsa.training.tutormatch.enums.EducationLevel;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 
 public class StudentProfileBuilder {
     private StudentProfile profile;
@@ -10,56 +12,25 @@ public class StudentProfileBuilder {
     private StudentProfileBuilder(User user) {
         this.profile = new StudentProfile();
         this.profile.setUser(user);
-        this.profile.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-        this.profile.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+        this.profile.setCreatedAt(ZonedDateTime.now(ZoneId.systemDefault()));
+        this.profile.setUpdatedAt(ZonedDateTime.now(ZoneId.systemDefault()));
     }
 
     public static StudentProfileBuilder builderFor(User user) {
         return new StudentProfileBuilder(user);
     }
 
-    public StudentProfileBuilder withLearningGoals(String learningGoals) {
-        this.profile.setLearningGoals(learningGoals);
+    public StudentProfileBuilder withEducationLevel(EducationLevel educationLevel) {
+        this.profile.setEducationLevel(educationLevel);
         return this;
     }
 
-    public StudentProfileBuilder withPreferredSubjects(String preferredSubjects) {
-        this.profile.setPreferredSubjects(preferredSubjects);
-        return this;
-    }
-
-    public StudentProfileBuilder withLearningStyle(String learningStyle) {
-        this.profile.setLearningStyle(learningStyle);
-        return this;
-    }
-
-    public StudentProfileBuilder withBudget(Integer budgetMin, Integer budgetMax) {
-        this.profile.setBudgetMin(budgetMin);
-        this.profile.setBudgetMax(budgetMax);
-        return this;
-    }
-
-    public StudentProfileBuilder withPreferredTimeSlots(String preferredTimeSlots) {
-        this.profile.setPreferredTimeSlots(preferredTimeSlots);
-        return this;
-    }
+    // phoneNumber, firstName, lastName, address, imageAvatar, dateOfBirth, gender đã được chuyển về User
 
     public StudentProfile build() {
         // Set default values if not provided
-        if (profile.getLearningGoals() == null || profile.getLearningGoals().isEmpty()) {
-            profile.setLearningGoals("General learning goals");
-        }
-        if (profile.getPreferredSubjects() == null || profile.getPreferredSubjects().isEmpty()) {
-            profile.setPreferredSubjects("General subjects");
-        }
-        if (profile.getLearningStyle() == null || profile.getLearningStyle().isEmpty()) {
-            profile.setLearningStyle("Interactive learning");
-        }
-        if (profile.getBudgetMin() == null) {
-            profile.setBudgetMin(100000);
-        }
-        if (profile.getBudgetMax() == null) {
-            profile.setBudgetMax(500000);
+        if (profile.getEducationLevel() == null) {
+            profile.setEducationLevel(EducationLevel.INDEPENDENT_LEARNER);
         }
         return profile;
     }

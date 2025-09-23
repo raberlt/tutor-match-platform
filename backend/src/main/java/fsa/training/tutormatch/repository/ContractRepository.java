@@ -1,6 +1,7 @@
 package fsa.training.tutormatch.repository;
 
 import fsa.training.tutormatch.entity.Contract;
+import fsa.training.tutormatch.enums.ContractStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,7 +17,7 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
     Optional<Contract> findByBookingId(Integer bookingId);
     
     // Find contracts by status
-    List<Contract> findByContractStatus(Contract.ContractStatus status);
+    List<Contract> findByContractStatus(ContractStatus status);
     
     // Find contracts by student
     @Query("SELECT c FROM Contract c JOIN c.booking b WHERE b.student.id = :studentId")

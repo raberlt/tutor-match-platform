@@ -2,6 +2,7 @@ package fsa.training.tutormatch.repository;
 
 import fsa.training.tutormatch.entity.Payment;
 import fsa.training.tutormatch.entity.User;
+import fsa.training.tutormatch.enums.PaymentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,23 +21,23 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     
     List<Payment> findByTutorOrderByCreatedAtDesc(User tutor);
     
-    List<Payment> findByStatus(Payment.PaymentStatus status);
+    List<Payment> findByStatus(PaymentStatus status);
     
     Optional<Payment> findByTransactionId(String transactionId);
     
     List<Payment> findByBookingId(Integer bookingId);
     
     // Admin pagination methods
-    Page<Payment> findByStatus(Payment.PaymentStatus status, Pageable pageable);
+    Page<Payment> findByStatus(PaymentStatus status, Pageable pageable);
     
     Page<Payment> findByStudent(User student, Pageable pageable);
     
     Page<Payment> findByTutor(User tutor, Pageable pageable);
     
     // Count methods for statistics
-    long countByStatus(Payment.PaymentStatus status);
+    long countByStatus(PaymentStatus status);
     
     // Sum methods for revenue calculation
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = :status")
-    BigDecimal sumAmountByStatus(@Param("status") Payment.PaymentStatus status);
+    BigDecimal sumAmountByStatus(@Param("status") PaymentStatus status);
 } 

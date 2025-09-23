@@ -1,7 +1,8 @@
 package fsa.training.tutormatch.repository;
 
-import fsa.training.tutormatch.entity.BaseProfile;
+import fsa.training.tutormatch.entity.Profile;
 import fsa.training.tutormatch.entity.TutorProfile;
+import fsa.training.tutormatch.enums.ProfileStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,10 +14,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProfileRepository extends JpaRepository<BaseProfile, Integer> {
+public interface ProfileRepository extends JpaRepository<Profile, Integer> {
     
     // Find by user ID
-    Optional<BaseProfile> findByUserId(Integer userId);
+    Optional<Profile> findByUserId(Integer userId);
     
     // Query to find approved tutors
     @Query("SELECT p FROM TutorProfile p WHERE p.profileStatus = 'APPROVED'")
@@ -30,9 +31,7 @@ public interface ProfileRepository extends JpaRepository<BaseProfile, Integer> {
     @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'APPROVED'")
     List<TutorProfile> findByKeyword(@Param("keyword") String keyword);
     
-    // Find tutors by location
-    @Query("SELECT p FROM TutorProfile p WHERE p.city = :city AND p.profileStatus = 'APPROVED'")
-    List<TutorProfile> findByCity(@Param("city") String city);
+    // Find tutors by location - REMOVED: city field no longer exists
     
     // Methods for TutorSearchService
     @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'APPROVED'")
@@ -41,8 +40,7 @@ public interface ProfileRepository extends JpaRepository<BaseProfile, Integer> {
     @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.subject.name = :subject AND p.profileStatus = 'APPROVED'")
     List<TutorProfile> findTutorsBySubject(@Param("subject") String subject);
     
-    @Query("SELECT p FROM TutorProfile p WHERE p.city = :location AND p.profileStatus = 'APPROVED'")
-    List<TutorProfile> findTutorsByLocation(@Param("location") String location);
+    // REMOVED: findTutorsByLocation - city field no longer exists
     
     @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'APPROVED'")
     Page<TutorProfile> findTutorsByKeywordPaged(@Param("keyword") String keyword, Pageable pageable);
@@ -53,11 +51,11 @@ public interface ProfileRepository extends JpaRepository<BaseProfile, Integer> {
     @Query("SELECT p FROM TutorProfile p WHERE p.profileStatus = 'APPROVED' ORDER BY p.ratePointAverage DESC LIMIT :limit")
     List<TutorProfile> findTopRatedTutors(@Param("limit") int limit);
     
-    @Query("SELECT p FROM TutorProfile p WHERE p.fees BETWEEN :minPrice AND :maxPrice AND p.profileStatus = 'APPROVED'")
+    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.fees BETWEEN :minPrice AND :maxPrice AND p.profileStatus = 'ACTIVE'")
     List<TutorProfile> findTutorsByPriceRange(@Param("minPrice") Double minPrice, @Param("maxPrice") Double maxPrice);
     
     // Count methods for dashboard
-    long countByProfileStatus(BaseProfile.ProfileStatus status);
+    long countByProfileStatus(ProfileStatus status);
     
     @Query("SELECT COUNT(p) FROM TutorProfile p WHERE p.profileStatus = 'APPROVED'")
     long countApprovedTutors();

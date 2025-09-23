@@ -1,9 +1,10 @@
 package fsa.training.tutormatch.builder;
 
-import fsa.training.tutormatch.entity.BaseProfile;
 import fsa.training.tutormatch.entity.TutorProfile;
 import fsa.training.tutormatch.entity.User;
-import java.sql.Timestamp;
+import fsa.training.tutormatch.enums.ProfileStatus;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 
 public class TutorProfileBuilder {
     private TutorProfile profile;
@@ -11,10 +12,10 @@ public class TutorProfileBuilder {
     private TutorProfileBuilder(User user) {
         this.profile = new TutorProfile();
         this.profile.setUser(user);
-        this.profile.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-        this.profile.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+        this.profile.setCreatedAt(ZonedDateTime.now(ZoneId.systemDefault()));
+        this.profile.setUpdatedAt(ZonedDateTime.now(ZoneId.systemDefault()));
         // ProfileType không cần set vì TutorProfile đã có @DiscriminatorValue
-        this.profile.setProfileStatus(BaseProfile.ProfileStatus.PENDING_VERIFICATION);
+        this.profile.setProfileStatus(ProfileStatus.PENDING_VERIFICATION);
     }
 
     public static TutorProfileBuilder builderFor(User user) {
@@ -36,10 +37,7 @@ public class TutorProfileBuilder {
         return this;
     }
 
-    public TutorProfileBuilder withFees(Integer fees) {
-        this.profile.setFees(fees);
-        return this;
-    }
+    // withFees removed - fees are now per subject in TutorProfileSubject
 
     public TutorProfileBuilder withTeachingLevel(String teachingLevel) {
         this.profile.setTeachingLevel(teachingLevel);
@@ -68,9 +66,7 @@ public class TutorProfileBuilder {
         if (profile.getExperience() == null || profile.getExperience().isEmpty()) {
             profile.setExperience("Passionate educator with years of teaching experience, specializing in personalized learning approaches.");
         }
-        if (profile.getFees() == null) {
-            profile.setFees(200000);
-        }
+        // Default values for fees are now handled per subject in TutorProfileSubject
         if (profile.getTeachingLevel() == null || profile.getTeachingLevel().isEmpty()) {
             profile.setTeachingLevel("High School");
         }

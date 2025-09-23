@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import { tutorService } from "../../services/tutorService";
+import { TutorService } from "../../services/tutorService";
 import type {
   TutorPreviewProfile,
   TutorProfile,
@@ -31,7 +31,7 @@ const TutorSearch: React.FC = () => {
     keyword: "",
     subjectId: undefined,
     minFee: 100000,
-    maxFee: 1000000,
+    maxFee: 500000,
     minRating: undefined,
     city: "",
   });
@@ -40,31 +40,26 @@ const TutorSearch: React.FC = () => {
   const [sortBy, setSortBy] = useState("id");
   const [sortDirection, setSortDirection] = useState("asc");
 
-  useEffect(() => {
-    loadSubjects();
-  }, []);
-
-  useEffect(() => {
-    searchTutors();
-  }, [currentPage, sortBy, sortDirection, filters, isAuthenticated]);
+  // UI State
+  const [showPriceSlider, setShowPriceSlider] = useState(false);
 
   const loadSubjects = async () => {
     try {
-      const subjectsData = await tutorService.getSubjects();
+      const subjectsData = await TutorService.getSubjects();
       setSubjects(subjectsData);
     } catch (error: unknown) {
       console.error("Error loading subjects:", error);
     }
   };
 
-  const searchTutors = async () => {
+  const searchTutors = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
       let response;
       if (isAuthenticated) {
-        response = await tutorService.searchTutors(
+        response = await TutorService.searchTutors(
           filters,
           currentPage,
           pageSize,
@@ -72,7 +67,7 @@ const TutorSearch: React.FC = () => {
           sortDirection
         );
       } else {
-        response = await tutorService.searchTutorPreviews(
+        response = await TutorService.searchTutorPreviews(
           filters,
           currentPage,
           pageSize,
@@ -81,7 +76,7 @@ const TutorSearch: React.FC = () => {
         );
       }
 
-      setTutors(response.content);
+      setTutors(response.content as (TutorPreviewProfile | TutorProfile)[]);
       setTotalPages(response.totalPages);
       setTotalElements(response.totalElements);
     } catch (error: unknown) {
@@ -89,7 +84,15 @@ const TutorSearch: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, currentPage, pageSize, sortBy, sortDirection, isAuthenticated]);
+
+  useEffect(() => {
+    loadSubjects();
+  }, []);
+
+  useEffect(() => {
+    searchTutors();
+  }, [searchTutors]);
 
   const handleFilterChange = (
     key: keyof TutorSearchFilters,
@@ -109,7 +112,7 @@ const TutorSearch: React.FC = () => {
       keyword: "",
       subjectId: undefined,
       minFee: 100000,
-      maxFee: 1000000,
+      maxFee: 500000,
       minRating: undefined,
       city: "",
     });
@@ -185,158 +188,309 @@ const TutorSearch: React.FC = () => {
     <div className="bg-gray-50 min-h-screen">
       <div className="flex">
         {/* Left Sidebar - Filters */}
-        <aside className="w-80 bg-white shadow-sm p-6 sticky top-16 h-screen overflow-y-auto">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">
-            Tìm gia sư phù hợp
-          </h2>
+        <aside className="w-80 bg-white shadow-sm border-r border-gray-200">
+          <div className="p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">
+              🔍 Bộ lọc tìm kiếm
+            </h2>
 
-          {/* Subject Filter */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Môn học
-            </label>
-            <div className="relative">
-              <select
-                value={filters.subjectId || ""}
-                onChange={(e) =>
-                  handleFilterChange(
-                    "subjectId",
-                    e.target.value ? parseInt(e.target.value) : undefined
-                  )
-                }
-                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 appearance-none bg-white"
-              >
-                <option value="">Chọn môn học</option>
-                {subjects.map((subject) => (
-                  <option key={subject.id} value={subject.id}>
-                    {subject.name}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                <svg
-                  className="w-4 h-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          {/* Fee Range Filter */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Học phí/buổi
-            </label>
-            <div className="space-y-3">
-              {/* Price Range Display */}
-              <div className="flex items-center justify-between text-sm text-gray-600">
-                <span>Từ {formatPrice(filters.minFee || 100000)}</span>
-                <span>Đến {formatPrice(filters.maxFee || 1000000)}</span>
-              </div>
-
-              {/* Range Slider */}
+            {/* Search Input */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tìm kiếm
+              </label>
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg
+                    className="h-4 w-4 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
                 <input
-                  type="range"
-                  min="100000"
-                  max="2000000"
-                  step="50000"
-                  value={filters.minFee || 100000}
+                  type="text"
+                  placeholder="Tên gia sư, kỹ năng..."
+                  value={filters.keyword || ""}
                   onChange={(e) =>
-                    handleFilterChange("minFee", parseInt(e.target.value))
+                    handleFilterChange("keyword", e.target.value)
                   }
-                  className="absolute w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-                <input
-                  type="range"
-                  min="100000"
-                  max="2000000"
-                  step="50000"
-                  value={filters.maxFee || 1000000}
-                  onChange={(e) =>
-                    handleFilterChange("maxFee", parseInt(e.target.value))
-                  }
-                  className="absolute w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer"
+                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
-          </div>
 
-          {/* Search Input */}
-          <div className="mb-4">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg
-                  className="h-4 w-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            {/* Subject Filter */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                📚 Môn học
+              </label>
+              <div className="relative">
+                <select
+                  value={filters.subjectId || ""}
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "subjectId",
+                      e.target.value ? parseInt(e.target.value) : undefined
+                    )
+                  }
+                  className="w-full px-3 py-3 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
+                  <option value="">Tất cả môn học</option>
+                  {subjects.map((subject) => (
+                    <option key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                  <svg
+                    className="w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
               </div>
-              <input
-                type="text"
-                placeholder="Tên hoặc từ khóa"
-                value={filters.keyword || ""}
-                onChange={(e) => handleFilterChange("keyword", e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              />
             </div>
-          </div>
 
-          {/* Sort Options */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Sắp xếp theo
-            </label>
-            <div className="relative">
-              <select
-                value={`${sortBy},${sortDirection}`}
-                onChange={(e) => {
-                  const [newSortBy, newSortDirection] =
-                    e.target.value.split(",");
-                  setSortBy(newSortBy);
-                  setSortDirection(newSortDirection);
-                }}
-                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 appearance-none bg-white"
+            {/* Price Range Filter */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Học phí/buổi
+              </label>
+
+              {/* Price Range Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowPriceSlider(!showPriceSlider)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-left flex items-center justify-between"
+                >
+                  <span className="text-gray-700 font-medium">
+                    {formatPrice(filters.minFee || 100000)} -{" "}
+                    {formatPrice(filters.maxFee || 500000)}
+                  </span>
+                  <svg
+                    className={`w-5 h-5 text-gray-400 transition-transform ${
+                      showPriceSlider ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+
+                {/* Dropdown Content */}
+                {showPriceSlider && (
+                  <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4">
+                    <div className="space-y-4">
+                      {/* Price Display */}
+                      <div className="text-center">
+                        <span className="text-lg font-semibold text-gray-700">
+                          {formatPrice(filters.minFee || 100000)} -{" "}
+                          {formatPrice(filters.maxFee || 500000)}
+                        </span>
+                      </div>
+
+                      {/* Dual Range Slider */}
+                      <div className="relative px-2">
+                        {/* Track Background */}
+                        <div className="dual-range-track">
+                          {/* Progress Bar */}
+                          <div
+                            className="dual-range-progress"
+                            style={{
+                              left: `${
+                                (((filters.minFee || 100000) - 100000) /
+                                  (1000000 - 100000)) *
+                                100
+                              }%`,
+                              width: `${
+                                (((filters.maxFee || 500000) -
+                                  (filters.minFee || 100000)) /
+                                  (1000000 - 100000)) *
+                                100
+                              }%`,
+                            }}
+                          />
+                        </div>
+
+                        {/* Value tooltips */}
+                        <div className="absolute -top-8 w-full">
+                          {/* Min value tooltip */}
+                          <div
+                            className="absolute bg-green-600 text-white text-xs px-2 py-1 rounded shadow-lg"
+                            style={{
+                              left: `${
+                                (((filters.minFee || 100000) - 100000) /
+                                  (1000000 - 100000)) *
+                                100
+                              }%`,
+                              transform: "translateX(-50%)",
+                            }}
+                          >
+                            {formatPrice(filters.minFee || 100000)}
+                          </div>
+
+                          {/* Max value tooltip */}
+                          <div
+                            className="absolute bg-amber-600 text-white text-xs px-2 py-1 rounded shadow-lg"
+                            style={{
+                              left: `${
+                                (((filters.maxFee || 500000) - 100000) /
+                                  (1000000 - 100000)) *
+                                100
+                              }%`,
+                              transform: "translateX(-50%)",
+                            }}
+                          >
+                            {formatPrice(filters.maxFee || 500000)}
+                          </div>
+                        </div>
+
+                        {/* Range Sliders */}
+                        <div className="relative">
+                          {/* Min Price Slider */}
+                          <input
+                            type="range"
+                            min="100000"
+                            max="1000000"
+                            step="50000"
+                            value={filters.minFee || 100000}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value);
+                              const maxFee = filters.maxFee || 500000;
+                              if (value < maxFee) {
+                                handleFilterChange("minFee", value);
+                              } else {
+                                // If min would exceed max, adjust max too
+                                handleFilterChange("minFee", value);
+                                handleFilterChange("maxFee", value + 50000);
+                              }
+                            }}
+                            className="absolute w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider min-slider z-20"
+                            style={{ background: "transparent" }}
+                          />
+
+                          {/* Max Price Slider */}
+                          <input
+                            type="range"
+                            min="100000"
+                            max="1000000"
+                            step="50000"
+                            value={filters.maxFee || 500000}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value);
+                              const minFee = filters.minFee || 100000;
+                              if (value > minFee) {
+                                handleFilterChange("maxFee", value);
+                              } else {
+                                // If max would go below min, adjust min too
+                                handleFilterChange("maxFee", value);
+                                handleFilterChange(
+                                  "minFee",
+                                  Math.max(100000, value - 50000)
+                                );
+                              }
+                            }}
+                            className="absolute w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider max-slider z-10"
+                            style={{ background: "transparent" }}
+                          />
+                        </div>
+
+                        {/* Range Labels */}
+                        <div className="flex justify-between text-xs text-gray-500 mt-4">
+                          <span>100K</span>
+                          <span>300K</span>
+                          <span>500K</span>
+                          <span>750K</span>
+                          <span>1M+</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Sort Options */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                🔄 Sắp xếp
+              </label>
+              <div className="relative">
+                <select
+                  value={`${sortBy},${sortDirection}`}
+                  onChange={(e) => {
+                    const [newSortBy, newSortDirection] =
+                      e.target.value.split(",");
+                    setSortBy(newSortBy);
+                    setSortDirection(newSortDirection);
+                  }}
+                  className="w-full px-3 py-3 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                >
+                  <option value="id,asc">Mặc định</option>
+                  <option value="fees,asc">Học phí: Thấp → Cao</option>
+                  <option value="fees,desc">Học phí: Cao → Thấp</option>
+                  <option value="ratePointAverage,desc">
+                    ⭐ Đánh giá cao nhất
+                  </option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                  <svg
+                    className="w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={handleSearch}
+                className="w-full text-white py-3 px-4 rounded-lg hover:opacity-80 transition-colors font-medium shadow-md"
+                style={{ backgroundColor: "#94cce6" }}
               >
-                <option value="id,asc">Mặc định</option>
-                <option value="fees,asc">Học phí từ thấp đến cao</option>
-                <option value="fees,desc">Học phí từ cao đến thấp</option>
-                <option value="ratePointAverage,desc">
-                  Đánh giá cao đến thấp
-                </option>
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                <svg
-                  className="w-4 h-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </div>
+                🔍 Tìm kiếm gia sư
+              </button>
+              <button
+                onClick={clearFilters}
+                className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium border border-gray-300"
+              >
+                🗑️ Xóa bộ lọc
+              </button>
             </div>
           </div>
         </aside>
@@ -387,8 +541,14 @@ const TutorSearch: React.FC = () => {
                             className="w-16 h-16 rounded-lg object-cover"
                           />
                         ) : (
-                          <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <span className="text-xl text-blue-600 font-medium">
+                          <div
+                            className="w-16 h-16 rounded-lg flex items-center justify-center"
+                            style={{ backgroundColor: "#f0f8ff" }}
+                          >
+                            <span
+                              className="text-xl font-medium"
+                              style={{ color: "#94cce6" }}
+                            >
                               {tutor.firstName.charAt(0)}
                               {tutor.lastName.charAt(0)}
                             </span>
@@ -432,7 +592,8 @@ const TutorSearch: React.FC = () => {
                                   ? tutor.subjectNames.map((subject, index) => (
                                       <span
                                         key={index}
-                                        className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                                        className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white"
+                                        style={{ backgroundColor: "#94cce6" }}
                                       >
                                         {subject}
                                       </span>
@@ -441,7 +602,8 @@ const TutorSearch: React.FC = () => {
                                     tutor.subjects.map((subject) => (
                                       <span
                                         key={subject.id}
-                                        className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                                        className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white"
+                                        style={{ backgroundColor: "#94cce6" }}
                                       >
                                         {subject.name}
                                       </span>
@@ -467,13 +629,26 @@ const TutorSearch: React.FC = () => {
                             <div className="flex space-x-2">
                               <button
                                 onClick={() => navigate(`/tutor/${tutor.id}`)}
-                                className="text-blue-600 hover:text-blue-800 text-sm font-medium px-3 py-2 border border-blue-300 rounded-lg hover:bg-blue-50"
+                                className="text-sm font-medium px-3 py-2 border rounded-lg hover:opacity-80"
+                                style={{
+                                  color: "#94cce6",
+                                  borderColor: "#94cce6",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "#f0f8ff";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "transparent";
+                                }}
                               >
                                 Xem chi tiết
                               </button>
                               <button
                                 onClick={() => handleBooking(tutor)}
-                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                                className="text-white px-4 py-2 rounded-lg hover:opacity-80 transition-colors text-sm font-medium"
+                                style={{ backgroundColor: "#94cce6" }}
                               >
                                 {isAuthenticated ? "Đặt lịch" : "Đăng nhập"}
                               </button>
@@ -521,11 +696,25 @@ const TutorSearch: React.FC = () => {
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
-                        className={`px-3 py-2 rounded-lg ${
-                          currentPage === pageNum
-                            ? "bg-blue-600 text-white"
-                            : "border border-gray-300 hover:bg-gray-50"
-                        }`}
+                        className="px-3 py-2 rounded-lg border transition-colors"
+                        style={{
+                          backgroundColor:
+                            currentPage === pageNum ? "#94cce6" : "transparent",
+                          color: currentPage === pageNum ? "white" : "#374151",
+                          borderColor:
+                            currentPage === pageNum ? "#94cce6" : "#d1d5db",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (currentPage !== pageNum) {
+                            e.currentTarget.style.backgroundColor = "#f0f8ff";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (currentPage !== pageNum) {
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }
+                        }}
                       >
                         {pageNum + 1}
                       </button>
@@ -561,7 +750,8 @@ const TutorSearch: React.FC = () => {
                   </p>
                   <button
                     onClick={clearFilters}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                    className="text-white px-6 py-2 rounded-lg hover:opacity-80"
+                    style={{ backgroundColor: "#94cce6" }}
                   >
                     Xóa tất cả bộ lọc
                   </button>

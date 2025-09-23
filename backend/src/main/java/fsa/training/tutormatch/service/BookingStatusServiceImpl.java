@@ -1,8 +1,7 @@
 package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.entity.Booking;
-import fsa.training.tutormatch.entity.BookingStatus;
-import fsa.training.tutormatch.entity.BookingType;
+import fsa.training.tutormatch.enums.BookingStatus;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.UserRepository;

@@ -1,13 +1,9 @@
 package fsa.training.tutormatch.service;
 
-import fsa.training.tutormatch.entity.BaseProfile;
-import fsa.training.tutormatch.entity.Rate;
 import fsa.training.tutormatch.repository.ProfileRepository;
 import fsa.training.tutormatch.repository.RateRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 public class RateService {

@@ -1,183 +1,316 @@
-import api from "./api";
-import type {
-  TutorProfile,
-  TutorPreviewProfile,
-  TutorSearchFilters,
-  TutorSearchResponse,
-  Subject,
-} from "../types";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
-export const tutorService = {
-  /**
-   * Lấy danh sách môn học
-   */
-  async getSubjects(): Promise<Subject[]> {
+export interface Subject {
+  id: number;
+  name: string;
+}
+
+export interface TutorSearchFilters {
+  keyword?: string;
+  subjectId?: number;
+  minFee?: number;
+  maxFee?: number;
+  minRating?: number;
+  city?: string;
+}
+
+export interface TutorRegistrationData {
+  // Step 1: Thông tin cơ bản
+  fullName: string;
+  phone: string;
+  email: string;
+  subjects: Array<{ name: string; hourlyRate: string }>;
+  provinces: string[];
+
+  // Step 2: Ảnh đại diện & CV
+  profileImageUrl?: string;
+  cvFileUrl?: string;
+
+  // Step 3: Chứng chỉ
+  certificates: Array<{
+    name: string;
+    issuingOrganization: string;
+    issueDate: string;
+    imageUrl?: string;
+  }>;
+  noCertificates: boolean;
+
+  // Step 4: Học vấn
+  degrees: Array<{
+    degree: string;
+    school: string;
+    startYear: string;
+    endYear: string;
+    imageUrl?: string;
+  }>;
+  noDegrees: boolean;
+
+  // Step 5: Giới thiệu
+  title: string;
+  introduction: string;
+  experience: string;
+  teachingMethods: string;
+  targetStudents: string[];
+
+  // Step 6: Video
+  videoUrl?: string;
+
+  // Step 7: Thời gian dạy
+  dayTimeSlots: Record<string, Array<{ start: string; end: string }>>;
+}
+
+export interface TutorRegistrationResponse {
+  success: boolean;
+  message: string;
+  data?: unknown;
+  error?: string;
+}
+
+export class TutorService {
+  private static async makeRequest(
+    endpoint: string,
+    method: string = "GET",
+    data?: unknown
+  ): Promise<TutorRegistrationResponse> {
     try {
-      const response = await api.get("/student/become-tutor/subjects");
-      if (response.data.success) {
-        return response.data.subjects;
+      const response = await fetch(
+        `${API_BASE_URL}/api/tutor/draft/${endpoint}`,
+        {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: data ? JSON.stringify(data) : undefined,
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || result.message || "Request failed");
       }
-      throw new Error("Failed to load subjects");
-    } catch (error: unknown) {
-      console.error("Get subjects error:", error);
-      throw new Error(
-        (error as any).response?.data?.error || "Lấy danh sách môn học thất bại"
-      );
-    }
-  },
 
-  /**
-   * Tìm kiếm gia sư cho guest (không cần đăng nhập)
-   */
-  async searchTutorPreviews(
-    filters: TutorSearchFilters,
-    page: number = 0,
-    size: number = 20,
-    sortBy: string = "id",
-    sortDirection: string = "asc"
-  ): Promise<TutorSearchResponse<TutorPreviewProfile>> {
+      return result;
+    } catch (error) {
+      console.error("Tutor service error:", error);
+      return {
+        success: false,
+        message: "",
+        error: error instanceof Error ? error.message : "Request failed",
+      };
+    }
+  }
+
+  // Lưu nháp hồ sơ gia sư
+  static async saveDraft(
+    data: Partial<TutorRegistrationData>
+  ): Promise<TutorRegistrationResponse> {
+    // Filter out empty/invalid fields for draft
+    const cleanData = Object.fromEntries(
+      Object.entries(data).filter(([key, value]) => {
+        // Keep non-empty strings, non-empty arrays, and non-null values
+        if (typeof value === "string") return value.trim() !== "";
+        if (Array.isArray(value)) return value.length > 0;
+        if (value === null || value === undefined) return false;
+        return true;
+      })
+    );
+
+    return this.makeRequest("save", "POST", cleanData);
+  }
+
+  // Gửi hồ sơ gia sư để duyệt
+  static async submitApplication(
+    data: TutorRegistrationData
+  ): Promise<TutorRegistrationResponse> {
+    return this.makeRequest("submit", "POST", data);
+  }
+
+  // Lấy hồ sơ gia sư hiện tại
+  static async getCurrentProfile(): Promise<TutorRegistrationResponse> {
+    return this.makeRequest("profile", "GET");
+  }
+
+  // Cập nhật hồ sơ gia sư
+  static async updateProfile(
+    data: Partial<TutorRegistrationData>
+  ): Promise<TutorRegistrationResponse> {
+    return this.makeRequest("profile", "PUT", data);
+  }
+
+  // Lấy trạng thái hồ sơ
+  static async getApplicationStatus(): Promise<TutorRegistrationResponse> {
+    return this.makeRequest("status", "GET");
+  }
+
+  // Hủy hồ sơ đang chờ duyệt
+  static async cancelApplication(): Promise<TutorRegistrationResponse> {
+    return this.makeRequest("cancel", "POST");
+  }
+
+  // Lấy chi tiết gia sư
+  static async getTutorDetail(tutorId: number): Promise<unknown> {
     try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        size: size.toString(),
-        sortBy,
-        sortDirection,
+      const response = await fetch(`${API_BASE_URL}/api/tutors/${tutorId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
 
-      // Add filters to params
-      if (filters.keyword) params.append("keyword", filters.keyword);
-      if (filters.subjectId)
-        params.append("subjectId", filters.subjectId.toString());
-      if (filters.minFee) params.append("minFee", filters.minFee.toString());
-      if (filters.maxFee) params.append("maxFee", filters.maxFee.toString());
-      if (filters.minRating)
-        params.append("minRating", filters.minRating.toString());
-      if (filters.city) params.append("city", filters.city);
+      if (!response.ok) {
+        throw new Error("Failed to fetch tutor detail");
+      }
 
-      const response = await api.get(`/public/tutors?${params.toString()}`);
-      return response.data;
-    } catch (error: unknown) {
-      console.error("Search tutor previews error:", error);
-      throw new Error(
-        (error as any).response?.data?.error || "Tìm kiếm gia sư thất bại"
-      );
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching tutor detail:", error);
+      throw error;
     }
-  },
+  }
 
-  /**
-   * Tìm kiếm gia sư cho student (cần đăng nhập)
-   */
-  async searchTutors(
-    filters: TutorSearchFilters,
-    page: number = 0,
-    size: number = 20,
-    sortBy: string = "id",
-    sortDirection: string = "asc"
-  ): Promise<TutorSearchResponse<TutorProfile>> {
+  // Lấy danh sách môn học
+  static async getSubjects(): Promise<Subject[]> {
     try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        size: size.toString(),
-        sortBy,
-        sortDirection,
+      const response = await fetch(`${API_BASE_URL}/api/subjects`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
 
-      // Add filters to params
-      if (filters.keyword) params.append("keyword", filters.keyword);
-      if (filters.subjectId)
+      if (!response.ok) {
+        throw new Error("Failed to fetch subjects");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching subjects:", error);
+      return [];
+    }
+  }
+
+  // Tìm kiếm gia sư (cho user đã đăng nhập)
+  static async searchTutors(
+    filters: TutorSearchFilters,
+    page: number = 1,
+    size: number = 10,
+    sortBy: string = "createdAt",
+    sortDirection: string = "desc"
+  ): Promise<{
+    content: unknown[];
+    totalPages: number;
+    currentPage: number;
+    totalElements: number;
+  }> {
+    try {
+      const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("size", size.toString());
+      params.append("sortBy", sortBy);
+      params.append("sortDirection", sortDirection);
+
+      if (filters.keyword) {
+        params.append("keyword", filters.keyword);
+      }
+      if (filters.subjectId !== undefined) {
         params.append("subjectId", filters.subjectId.toString());
-      if (filters.minFee) params.append("minFee", filters.minFee.toString());
-      if (filters.maxFee) params.append("maxFee", filters.maxFee.toString());
-      if (filters.minRating)
+      }
+      if (filters.minFee !== undefined) {
+        params.append("minFee", filters.minFee.toString());
+      }
+      if (filters.maxFee !== undefined) {
+        params.append("maxFee", filters.maxFee.toString());
+      }
+      if (filters.city) {
+        params.append("city", filters.city);
+      }
+      if (filters.minRating !== undefined) {
         params.append("minRating", filters.minRating.toString());
-      if (filters.city) params.append("city", filters.city);
+      }
 
-      const response = await api.get(`/tutors?${params.toString()}`);
-      return response.data;
-    } catch (error: unknown) {
-      console.error("Search tutors error:", error);
-      throw new Error(
-        (error as any).response?.data?.error || "Tìm kiếm gia sư thất bại"
+      const response = await fetch(
+        `${API_BASE_URL}/api/tutors/search?${params}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
       );
-    }
-  },
 
-  /**
-   * Lấy chi tiết gia sư theo ID (cần đăng nhập)
-   */
-  async getTutorDetail(tutorId: number): Promise<TutorProfile> {
+      if (!response.ok) {
+        throw new Error("Failed to search tutors");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error searching tutors:", error);
+      return { content: [], totalPages: 0, currentPage: 1, totalElements: 0 };
+    }
+  }
+
+  // Tìm kiếm gia sư preview (cho user chưa đăng nhập)
+  static async searchTutorPreviews(
+    filters: TutorSearchFilters,
+    page: number = 1,
+    size: number = 10,
+    sortBy: string = "createdAt",
+    sortDirection: string = "desc"
+  ): Promise<{
+    content: unknown[];
+    totalPages: number;
+    currentPage: number;
+    totalElements: number;
+  }> {
     try {
-      const response = await api.get(`/tutors/${tutorId}`);
-      return response.data;
-    } catch (error: unknown) {
-      console.error("Get tutor detail error:", error);
-      throw new Error(
-        (error as any).response?.data?.error || "Lấy chi tiết gia sư thất bại"
-      );
-    }
-  },
+      const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("size", size.toString());
+      params.append("sortBy", sortBy);
+      params.append("sortDirection", sortDirection);
 
-  /**
-   * Lấy thông tin hệ thống (public)
-   */
-  async getSystemInfo(): Promise<any> {
-    try {
-      const response = await api.get("/public/info");
-      return response.data;
-    } catch (error: unknown) {
-      console.error("Get system info error:", error);
-      throw new Error(
-        (error as any).response?.data?.error ||
-          "Lấy thông tin hệ thống thất bại"
-      );
-    }
-  },
+      if (filters.keyword) {
+        params.append("keyword", filters.keyword);
+      }
+      if (filters.subjectId !== undefined) {
+        params.append("subjectId", filters.subjectId.toString());
+      }
+      if (filters.minFee !== undefined) {
+        params.append("minFee", filters.minFee.toString());
+      }
+      if (filters.maxFee !== undefined) {
+        params.append("maxFee", filters.maxFee.toString());
+      }
+      if (filters.city) {
+        params.append("city", filters.city);
+      }
+      if (filters.minRating !== undefined) {
+        params.append("minRating", filters.minRating.toString());
+      }
 
-  /**
-   * Đảm bảo có TutorProfile cho user hiện tại (tạo rỗng nếu chưa có) và trả về
-   */
-  async ensureMyTutorProfile(): Promise<any> {
-    try {
-      const response = await api.post(`/tutors/profile/ensure`);
-      return response.data;
-    } catch (error: unknown) {
-      console.error("Ensure tutor profile error:", error);
-      throw new Error(
-        (error as Error & { response?: { data?: { error?: string } } })
-          ?.response?.data?.error || "Không thể đảm bảo hồ sơ gia sư"
+      const response = await fetch(
+        `${API_BASE_URL}/api/tutors/preview?${params}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
-    }
-  },
 
-  /**
-   * Lấy hồ sơ gia sư của chính mình
-   */
-  async getMyTutorProfile(): Promise<any> {
-    try {
-      const response = await api.get(`/tutors/profile/me`);
-      return response.data;
-    } catch (error: unknown) {
-      console.error("Get my tutor profile error:", error);
-      throw new Error(
-        (error as Error & { response?: { data?: { error?: string } } })
-          ?.response?.data?.error || "Không thể lấy hồ sơ gia sư"
-      );
-    }
-  },
+      if (!response.ok) {
+        throw new Error("Failed to search tutor previews");
+      }
 
-  /**
-   * Nộp hồ sơ gia sư (POST /api/student/become-tutor/apply)
-   */
-  async updateMyTutorProfile(payload: any): Promise<any> {
-    try {
-      const response = await api.post(`/student/become-tutor/apply`, payload);
-      return response.data;
-    } catch (error: unknown) {
-      console.error("Update tutor profile error:", error);
-      throw new Error(
-        (error as Error & { response?: { data?: { error?: string } } })
-          ?.response?.data?.error || "Cập nhật hồ sơ gia sư thất bại"
-      );
+      return await response.json();
+    } catch (error) {
+      console.error("Error searching tutor previews:", error);
+      return { content: [], totalPages: 0, currentPage: 1, totalElements: 0 };
     }
-  },
-};
+  }
+}

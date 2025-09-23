@@ -1,10 +1,11 @@
 package fsa.training.tutormatch.dto;
 
+import fsa.training.tutormatch.enums.TeachingLevel;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -23,26 +24,23 @@ public class BecomeTutorRequest {
     @Size(max = 2000, message = "Kinh nghiệm không được quá 2000 ký tự")
     private String experience;
     
-    @NotBlank(message = "Trình độ giảng dạy không được để trống")
-    @Size(max = 2000, message = "Trình độ giảng dạy không được quá 2000 ký tự")
-    private String teachingLevel;
+    @NotNull(message = "Trình độ giảng dạy không được để trống")
+    private TeachingLevel teachingLevel;
     
-    @NotNull(message = "Học phí không được để trống")
-    @Min(value = 50000, message = "Học phí tối thiểu 50,000 VND")
-    private Integer fees;
+    // Học phí đã được chuyển sang SubjectFeeRequest
     
-    // Thông tin học vấn
-    @Size(max = 255, message = "Trường đại học không được quá 255 ký tự")
-    private String university;
-    
-    @Size(max = 255, message = "Chuyên ngành không được quá 255 ký tự")
-    private String major;
-    
-    @Size(max = 100, message = "Trình độ học vấn không được quá 100 ký tự")
-    private String educationLevel;
+    // Thông tin học vấn - đã được chuyển vào EducationRequest
     
     // Thông tin cá nhân bổ sung
-    private Date dateOfBirth;
+    @NotBlank(message = "Họ không được để trống")
+    @Size(max = 50, message = "Họ không được quá 50 ký tự")
+    private String firstName;
+    
+    @NotBlank(message = "Tên không được để trống")
+    @Size(max = 50, message = "Tên không được quá 50 ký tự")
+    private String lastName;
+    
+    private LocalDate dateOfBirth;
     
     @Pattern(regexp = "MALE|FEMALE|OTHER", message = "Giới tính phải là MALE, FEMALE hoặc OTHER")
     private String gender;
@@ -50,18 +48,27 @@ public class BecomeTutorRequest {
     @Pattern(regexp = "^[0-9]{10,11}$", message = "Số điện thoại phải từ 10-11 chữ số")
     private String phoneNumber;
     
-    @Size(max = 255, message = "Địa chỉ không được quá 255 ký tự")
-    private String addressLine1;
+    @Size(max = 500, message = "Địa chỉ không được quá 500 ký tự")
+    private String address;
     
-    @Size(max = 100, message = "Thành phố không được quá 100 ký tự")
-    private String city;
+    @Size(max = 100, message = "Múi giờ không được quá 100 ký tự")
+    private String timezone;
+    
+    // Avatar
+    @Size(max = 500, message = "Link avatar không được quá 500 ký tự")
+    private String avatar;
+    
+    // CV URL
+    @Size(max = 500, message = "Link CV không được quá 500 ký tự")
+    private String cvUrl;
     
     // Video giới thiệu
     private String videoIntro;
     
-    // Danh sách ID môn học
+    // Danh sách môn học với học phí
+    @Valid
     @NotEmpty(message = "Phải chọn ít nhất một môn học")
-    private List<Integer> subjectIds;
+    private List<SubjectFeeRequest> subjectFees;
     
     // Lịch dạy
     @Valid
@@ -135,5 +142,27 @@ public class BecomeTutorRequest {
         private String description;
         
         private String certImage;
+    }
+    
+    @Data
+    public static class SubjectFeeRequest {
+        @NotNull(message = "ID môn học không được để trống")
+        private Integer subjectId;
+        
+        @NotNull(message = "Học phí không được để trống")
+        @Min(value = 50000, message = "Học phí tối thiểu 50,000 VND")
+        private Integer fees; // Học phí cho môn học này (VND)
+        
+        /**
+         * Ví dụ:
+         * {
+         *   "subjectId": 1,    // ID môn Toán
+         *   "fees": 150000     // 150k VND/buổi
+         * },
+         * {
+         *   "subjectId": 2,    // ID môn Lý  
+         *   "fees": 200000     // 200k VND/buổi
+         * }
+         */
     }
 } 

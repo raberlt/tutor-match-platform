@@ -1,33 +1,34 @@
 package fsa.training.tutormatch.service.interfaces;
 
-import fsa.training.tutormatch.entity.BaseProfile;
+import fsa.training.tutormatch.entity.Profile;
 import fsa.training.tutormatch.entity.StudentProfile;
 import fsa.training.tutormatch.entity.TutorProfile;
 import fsa.training.tutormatch.entity.User;
-import java.util.List;
+import fsa.training.tutormatch.enums.UserRole;
+
 import java.util.Optional;
 
 public interface IProfileService {
     StudentProfile createStudentProfile(User user);
     TutorProfile createTutorProfile(User user);
-    BaseProfile createProfile(User user, User.Role targetRole);
-    Optional<BaseProfile> findProfileByUserId(Integer userId);
+    Profile createProfile(User user, UserRole targetRole);
+    Optional<Profile> findProfileByUserId(Integer userId);
     Optional<StudentProfile> findStudentProfile(Integer userId);
     Optional<TutorProfile> findTutorProfile(Integer userId);
-    BaseProfile updateProfile(BaseProfile profile);
+    Profile updateProfile(Profile profile);
     boolean deleteProfile(Integer profileId);
-    boolean canUserCreateProfile(User user, User.Role targetRole);
+    boolean canUserCreateProfile(User user, UserRole targetRole);
     
     // Compatibility methods
-    default BaseProfile save(BaseProfile profile) {
+    default Profile save(Profile profile) {
         return updateProfile(profile);
     }
     
-    default BaseProfile save(BaseProfile profile, String username) {
+    default Profile save(Profile profile, String username) {
         return updateProfile(profile);
     }
     
-    default Optional<BaseProfile> findByUserId(Integer userId) {
+    default Optional<Profile> findByUserId(Integer userId) {
         return findProfileByUserId(userId);
     }
 }

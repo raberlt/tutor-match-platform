@@ -1,17 +1,17 @@
 package fsa.training.tutormatch.dto;
 
 import lombok.Data;
-import java.sql.Date;
-import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Data
 public class BookingRequestDTO {
     private Integer id;
     private String status;
     private String bookingType;
-    private Date date;
-    private Time fromTime;
-    private Time toTime;
+    private LocalDate date;
+    private LocalTime fromTime;
+    private LocalTime toTime;
     private String note;
     private Double totalAmount;
     private Integer contractDuration;

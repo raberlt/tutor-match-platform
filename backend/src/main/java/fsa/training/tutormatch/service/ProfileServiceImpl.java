@@ -1,9 +1,14 @@
 package fsa.training.tutormatch.service;
 
-import fsa.training.tutormatch.entity.BaseProfile;
+import fsa.training.tutormatch.entity.Profile;
+import fsa.training.tutormatch.enums.ProfileStatus;
+import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.entity.StudentProfile;
+import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.entity.TutorProfile;
+import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.entity.User;
+import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.factory.ProfileFactory;
 import fsa.training.tutormatch.repository.UserRepository;
 import fsa.training.tutormatch.service.interfaces.IProfileService;
@@ -29,7 +34,7 @@ public class ProfileServiceImpl implements IProfileService {
     @Override
     @Transactional
     public StudentProfile createStudentProfile(User user) {
-        if (user.getRole() != User.Role.STUDENT) {
+        if (user.getRole() != UserRole.STUDENT) {
             throw new IllegalArgumentException("User must be a STUDENT to create student profile");
         }
         
@@ -43,7 +48,7 @@ public class ProfileServiceImpl implements IProfileService {
     @Override
     @Transactional
     public TutorProfile createTutorProfile(User user) {
-        if (user.getRole() != User.Role.TUTOR && user.getRole() != User.Role.STUDENT) {
+        if (user.getRole() != UserRole.TUTOR && user.getRole() != UserRole.STUDENT) {
             throw new IllegalArgumentException("User must be STUDENT or TUTOR to create tutor profile");
         }
         
@@ -56,7 +61,7 @@ public class ProfileServiceImpl implements IProfileService {
 
     @Override
     @Transactional
-    public BaseProfile createProfile(User user, User.Role targetRole) {
+    public Profile createProfile(User user, UserRole targetRole) {
         // Factory method delegates to specific creation methods
         switch (targetRole) {
             case STUDENT:
@@ -69,11 +74,11 @@ public class ProfileServiceImpl implements IProfileService {
     }
 
     @Override
-    public Optional<BaseProfile> findProfileByUserId(Integer userId) {
+    public Optional<Profile> findProfileByUserId(Integer userId) {
         // Prefer tutor profile if exists, else student profile
         return userService.findById(userId)
-                .flatMap(u -> u.getTutorProfile().map(p -> (BaseProfile) p)
-                        .or(() -> u.getStudentProfile().map(p -> (BaseProfile) p)));
+                .flatMap(u -> u.getTutorProfile().map(p -> (Profile) p)
+                        .or(() -> u.getStudentProfile().map(p -> (Profile) p)));
     }
 
     @Override
@@ -88,7 +93,7 @@ public class ProfileServiceImpl implements IProfileService {
 
     @Override
     @Transactional
-    public BaseProfile updateProfile(BaseProfile profile) {
+    public Profile updateProfile(Profile profile) {
         if (profile == null) {
             throw new IllegalArgumentException("Profile cannot be null");
         }
@@ -106,40 +111,40 @@ public class ProfileServiceImpl implements IProfileService {
     }
 
     @Override
-    public boolean canUserCreateProfile(User user, User.Role targetRole) {
+    public boolean canUserCreateProfile(User user, UserRole targetRole) {
         if (user == null || targetRole == null) {
             return false;
         }
         
         // User can create student profile if they are student and don't have student profile
-        if (targetRole == User.Role.STUDENT) {
-            return user.getRole() == User.Role.STUDENT && user.getStudentProfile().isEmpty();
+        if (targetRole == UserRole.STUDENT) {
+            return user.getRole() == UserRole.STUDENT && user.getStudentProfile().isEmpty();
         }
         
         // User can create tutor profile if they are student/tutor and either no profile or rejected tutor profile
-        if (targetRole == User.Role.TUTOR) {
-            if (user.getRole() != User.Role.STUDENT && user.getRole() != User.Role.TUTOR) {
+        if (targetRole == UserRole.TUTOR) {
+            if (user.getRole() != UserRole.STUDENT && user.getRole() != UserRole.TUTOR) {
                 return false;
             }
             
             return user.getTutorProfile()
-                    .map(p -> p.getProfileStatus() == BaseProfile.ProfileStatus.REJECTED)
+                    .map(p -> p.getProfileStatus() == ProfileStatus.INACTIVE)
                     .orElse(true);
         }
         
         return false;
     }
 
-    public boolean isProfileComplete(BaseProfile profile) {
+    public boolean isProfileComplete(Profile profile) {
         if (profile == null) {
             return false;
         } 
         
         // Check common required fields
-        boolean commonComplete = profile.getDateOfBirth() != null &&
-                               profile.getGender() != null &&
-                               profile.getPhoneNumber() != null &&
-                               profile.getCity() != null;
+        boolean commonComplete = profile.getUser().getDateOfBirth() != null &&
+                               profile.getUser().getGender() != null &&
+                               profile.getUser().getPhoneNumber() != null;
+                               // Removed city field
         
         if (!commonComplete) {
             return false;
@@ -163,7 +168,7 @@ public class ProfileServiceImpl implements IProfileService {
         }
         
         User student = userOpt.get();
-        if (student.getRole() != User.Role.STUDENT) {
+        if (student.getRole() != UserRole.STUDENT) {
             throw new IllegalArgumentException("User is not a student");
         }
         
@@ -171,15 +176,15 @@ public class ProfileServiceImpl implements IProfileService {
         TutorProfile tutorProfile = createTutorProfile(student);
         
         // Update user role
-        student.setRole(User.Role.TUTOR);
+        student.setRole(UserRole.TUTOR);
         userRepository.save(student);
         
         return tutorProfile;
     }
     
     private boolean isStudentProfileComplete(StudentProfile profile) {
-        return profile.getLearningGoals() != null &&
-               !profile.getLearningGoals().trim().isEmpty();
+        // Removed learningGoals field - now only check educationLevel
+        return profile.getEducationLevel() != null;
     }
     
     private boolean isTutorProfileComplete(TutorProfile profile) {

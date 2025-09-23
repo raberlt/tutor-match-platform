@@ -4,9 +4,11 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import fsa.training.tutormatch.enums.ContractStatus;
 
-import java.sql.Timestamp;
+import java.time.ZonedDateTime;
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "contracts")
@@ -57,28 +59,18 @@ public class Contract {
     
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
-    private Timestamp createdAt;
+    private ZonedDateTime createdAt;
     
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private Timestamp updatedAt;
+    private ZonedDateTime updatedAt;
     
-    public enum ContractStatus {
-        PENDING("Chờ duyệt"),
-        APPROVED("Đã duyệt"),
-        ACTIVE("Đang hoạt động"),
-        COMPLETED("Hoàn thành"),
-        CANCELLED("Đã hủy"),
-        EXPIRED("Hết hạn");
-        
-        private final String displayName;
-        
-        ContractStatus(String displayName) {
-            this.displayName = displayName;
-        }
-        
-        public String getDisplayName() {
-            return displayName;
-        }
+    // Helper methods for timezone handling
+    public ZonedDateTime getCreatedAtInTimezone(String timezoneId) {
+        return createdAt != null ? createdAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
+    }
+    
+    public ZonedDateTime getUpdatedAtInTimezone(String timezoneId) {
+        return updatedAt != null ? updatedAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
     }
 }

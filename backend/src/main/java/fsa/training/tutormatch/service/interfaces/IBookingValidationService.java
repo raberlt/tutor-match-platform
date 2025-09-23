@@ -2,8 +2,8 @@ package fsa.training.tutormatch.service.interfaces;
 
 import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.entity.Booking;
-import fsa.training.tutormatch.entity.BookingStatus;import fsa.training.tutormatch.entity.User;
-import fsa.training.tutormatch.entity.BookingType;
+import fsa.training.tutormatch.entity.User;
+
 public interface IBookingValidationService {
     
     // Validation methods

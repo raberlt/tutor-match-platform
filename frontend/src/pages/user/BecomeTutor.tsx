@@ -1,4 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  FileUploadService,
+  type UploadResponse,
+} from "../../services/fileUploadService";
+import { TutorService } from "../../services/tutorService";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -6,7 +11,12 @@ export const BecomeTutor: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 8;
+  const totalSteps = 7;
+
+  // Track completed steps
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [isDraftSaving, setIsDraftSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [subjects, setSubjects] = useState<Array<{ id: number; name: string }>>(
     []
   );
@@ -24,14 +34,17 @@ export const BecomeTutor: React.FC = () => {
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
     phone: "",
-    subjects: [] as string[],
+    subjects: [] as Array<{ name: string; hourlyRate: string }>,
     email: user?.email || "",
     province: "",
     confirmAge: false,
     acceptTerms: false,
 
-    // Step 2: Ảnh đại diện
+    // Step 2: Ảnh đại diện và CV
     profileImage: null as File | null,
+    cvFile: null as File | null,
+    profileImageUrl: "",
+    cvFileUrl: "",
 
     // Step 3: Chứng chỉ
     certificates: [
@@ -40,12 +53,14 @@ export const BecomeTutor: React.FC = () => {
         description: "",
         issuedBy: "",
         file: null,
+        imageUrl: "",
       },
     ] as Array<{
       name: string;
       description: string;
       issuedBy: string;
       file: File | null;
+      imageUrl: string;
     }>,
     noCertificates: false,
 
@@ -64,6 +79,7 @@ export const BecomeTutor: React.FC = () => {
         startYear: "",
         endYear: "",
         file: null,
+        imageUrl: "",
       },
     ] as Array<{
       id: string;
@@ -73,6 +89,7 @@ export const BecomeTutor: React.FC = () => {
       startYear: string;
       endYear: string;
       file: File | null;
+      imageUrl: string;
     }>,
     noDegree: false,
 
@@ -80,7 +97,7 @@ export const BecomeTutor: React.FC = () => {
     title: "",
     introduction: "",
     experience: "",
-    teachingMethods: "",
+    teachingMethods: [] as string[],
 
     // Step 6: Video
     introductionVideo: null as File | null,
@@ -91,8 +108,6 @@ export const BecomeTutor: React.FC = () => {
     availableTimes: [] as string[],
     dayTimeSlots: {} as Record<string, Array<{ start: string; end: string }>>,
 
-    // Step 8: Học phí
-    hourlyRate: "",
     teachingLocations: [] as string[],
   });
 
@@ -105,6 +120,84 @@ export const BecomeTutor: React.FC = () => {
       });
     }
   }, [isAuthenticated, navigate]);
+
+  // Kiểm tra bước có hoàn thành không
+  const isStepCompleted = useCallback(
+    (step: number) => {
+      switch (step) {
+        case 1:
+          return (
+            formData.firstName &&
+            formData.lastName &&
+            formData.phone &&
+            formData.email &&
+            formData.province &&
+            formData.subjects.length > 0 &&
+            formData.subjects.every(
+              (subject) =>
+                subject.name &&
+                subject.hourlyRate &&
+                Number(subject.hourlyRate) > 0
+            ) &&
+            formData.confirmAge &&
+            formData.acceptTerms
+          );
+        case 2:
+          return formData.profileImage !== null && formData.cvFile !== null;
+        case 3:
+          return (
+            formData.noCertificates ||
+            (formData.certificates.length > 0 &&
+              formData.certificates.every((cert) => cert.name && cert.issuedBy))
+          );
+        case 4:
+          return (
+            formData.noDegree ||
+            (formData.degrees.length > 0 &&
+              formData.degrees.every(
+                (degree) =>
+                  degree.university &&
+                  degree.education &&
+                  degree.major &&
+                  degree.startYear &&
+                  degree.endYear
+              ))
+          );
+        case 5:
+          return (
+            formData.title &&
+            formData.introduction &&
+            formData.experience &&
+            formData.teachingMethods.length > 0
+          );
+        case 6:
+          return true; // Video không bắt buộc
+        case 7:
+          return (
+            formData.availableDays.length > 0 &&
+            Object.keys(formData.dayTimeSlots).some(
+              (day) =>
+                formData.dayTimeSlots[day] &&
+                formData.dayTimeSlots[day].length > 0
+            )
+          );
+        default:
+          return false;
+      }
+    },
+    [formData]
+  );
+
+  // Update completed steps when form data changes
+  useEffect(() => {
+    const newCompletedSteps = new Set<number>();
+    for (let i = 1; i <= totalSteps; i++) {
+      if (isStepCompleted(i)) {
+        newCompletedSteps.add(i);
+      }
+    }
+    setCompletedSteps(newCompletedSteps);
+  }, [formData, isStepCompleted]);
 
   // Load dữ liệu mặc định
   useEffect(() => {
@@ -211,6 +304,17 @@ export const BecomeTutor: React.FC = () => {
     setFilteredProvinces(vietnamProvinces);
   }, []);
 
+  // Danh sách đối tượng nhận dạy
+  const teachingLevels = [
+    "Trung học cơ sở",
+    "Trung học phổ thông",
+    "Trung cấp nghề",
+    "Cao đẳng / Đại học",
+    "Sau đại học",
+    "Người đi làm",
+    "Học tự do",
+  ];
+
   // Đóng dropdown khi click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -263,6 +367,11 @@ export const BecomeTutor: React.FC = () => {
           issuedBy: string;
           file: File | null;
         }>
+      | Array<{
+          name: string;
+          hourlyRate: string;
+        }>
+      | File
       | Record<string, Array<{ start: string; end: string }>>
   ) => {
     setFormData((prev) => ({
@@ -284,6 +393,42 @@ export const BecomeTutor: React.FC = () => {
       ...prev,
       [field]: file,
     }));
+  };
+
+  const uploadFileToCloudinary = async (
+    file: File,
+    type: "avatar" | "cv" | "certificate" | "degree",
+    onSuccess: (url: string) => void,
+    onError: (error: string) => void
+  ) => {
+    try {
+      let response: UploadResponse;
+
+      switch (type) {
+        case "avatar":
+          response = await FileUploadService.uploadAvatar(file);
+          break;
+        case "cv":
+          response = await FileUploadService.uploadCV(file);
+          break;
+        case "certificate":
+          response = await FileUploadService.uploadCertificate(file);
+          break;
+        case "degree":
+          response = await FileUploadService.uploadDegree(file);
+          break;
+        default:
+          throw new Error("Invalid upload type");
+      }
+
+      if (response.success) {
+        onSuccess(response.url);
+      } else {
+        onError(response.error || "Upload failed");
+      }
+    } catch (error) {
+      onError(error instanceof Error ? error.message : "Upload failed");
+    }
   };
 
   const addTimeSlot = (day: string) => {
@@ -345,6 +490,7 @@ export const BecomeTutor: React.FC = () => {
       startYear: "",
       endYear: "",
       file: null,
+      imageUrl: "",
     };
     setFormData((prev) => ({
       ...prev,
@@ -455,6 +601,7 @@ export const BecomeTutor: React.FC = () => {
 
   // Xử lý autocomplete tỉnh/TP
   const handleProvinceChange = (value: string) => {
+    console.log("Province input changed:", value);
     setFormData((prev) => ({
       ...prev,
       province: value,
@@ -467,142 +614,30 @@ export const BecomeTutor: React.FC = () => {
       const filtered = provinces.filter((province) =>
         province.name.toLowerCase().includes(value.toLowerCase())
       );
+      console.log("Filtered provinces:", filtered.length);
       setFilteredProvinces(filtered);
       setShowProvinceDropdown(true);
     }
   };
 
   const selectProvince = (province: { id: number; name: string }) => {
+    console.log("Selecting province:", province.name);
     setFormData((prev) => ({
       ...prev,
       province: province.name,
     }));
     setShowProvinceDropdown(false);
-  };
-
-  const validateStep = (step: number): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    switch (step) {
-      case 1:
-        if (!formData.firstName) newErrors.firstName = "Vui lòng nhập tên";
-        if (!formData.lastName) newErrors.lastName = "Vui lòng nhập họ";
-        if (!formData.phone) newErrors.phone = "Vui lòng nhập số điện thoại";
-        if (formData.phone && formData.phone.length < 10)
-          newErrors.phone = "Số điện thoại phải có ít nhất 10 chữ số";
-        if (formData.subjects.length === 0)
-          newErrors.subjects = "Vui lòng chọn ít nhất 1 môn học";
-        if (!formData.email) newErrors.email = "Vui lòng nhập email";
-        if (!formData.province)
-          newErrors.province = "Vui lòng chọn tỉnh/thành phố";
-        if (!formData.confirmAge)
-          newErrors.confirmAge = "Vui lòng xác nhận đủ 18 tuổi";
-        if (!formData.acceptTerms)
-          newErrors.acceptTerms = "Vui lòng đồng ý điều khoản sử dụng";
-        break;
-
-      case 2:
-        if (!formData.profileImage)
-          newErrors.profileImage = "Vui lòng tải lên ảnh đại diện";
-        break;
-
-      case 3: {
-        // Nếu không có chứng chỉ thì bỏ qua validation
-        if (formData.noCertificates) {
-          break;
-        }
-
-        // Kiểm tra tất cả chứng chỉ phải có thông tin đầy đủ (trừ ảnh)
-        const hasIncompleteCertificate = formData.certificates.some(
-          (cert) =>
-            (cert.name.trim() !== "" || cert.issuedBy.trim() !== "") && // Có ít nhất 1 trường được nhập
-            (cert.name.trim() === "" || cert.issuedBy.trim() === "") // Nhưng chưa đầy đủ
-        );
-
-        if (hasIncompleteCertificate) {
-          newErrors.certificates =
-            "Vui lòng nhập đầy đủ thông tin chứng chỉ hoặc chọn 'Tôi không có chứng chỉ'";
-        }
-        break;
-      }
-
-      case 4: {
-        // Nếu không có bằng cấp thì bỏ qua validation
-        if (formData.noDegree) {
-          break;
-        }
-
-        // Kiểm tra tất cả bằng cấp phải có thông tin đầy đủ (trừ ảnh)
-        const hasIncompleteDegree = formData.degrees.some(
-          (degree) =>
-            (degree.university.trim() !== "" ||
-              degree.education.trim() !== "" ||
-              degree.major.trim() !== "") && // Có ít nhất 1 trường được nhập
-            (degree.university.trim() === "" ||
-              degree.education.trim() === "" ||
-              degree.major.trim() === "") // Nhưng chưa đầy đủ
-        );
-
-        if (hasIncompleteDegree) {
-          newErrors.degrees =
-            "Vui lòng nhập đầy đủ thông tin học vấn hoặc chọn 'Tôi không có bằng cấp'";
-        }
-
-        // Kiểm tra năm học hợp lệ
-        formData.degrees.forEach((degree, index) => {
-          if (
-            degree.startYear &&
-            degree.endYear &&
-            parseInt(degree.endYear) < parseInt(degree.startYear)
-          ) {
-            newErrors[`degree_${index}_year`] =
-              "Năm kết thúc phải lớn hơn hoặc bằng năm bắt đầu";
-          }
-        });
-        break;
-      }
-
-      case 5:
-        if (!formData.title) newErrors.title = "Vui lòng nhập dòng tiêu đề";
-        if (!formData.introduction)
-          newErrors.introduction = "Vui lòng nhập giới thiệu bản thân";
-        if (!formData.experience)
-          newErrors.experience = "Vui lòng nhập kinh nghiệm";
-        if (!formData.teachingMethods)
-          newErrors.teachingMethods = "Vui lòng nhập trình độ nhận dạy";
-        break;
-
-      case 6:
-        // Video không bắt buộc
-        break;
-
-      case 7: {
-        if (formData.availableDays.length === 0)
-          newErrors.availableDays = "Vui lòng chọn ít nhất 1 ngày";
-
-        // Kiểm tra xem có ít nhất 1 ngày có khung giờ không
-        const hasTimeSlots = formData.availableDays.some(
-          (day) =>
-            formData.dayTimeSlots[day] && formData.dayTimeSlots[day].length > 0
-        );
-        if (!hasTimeSlots)
-          newErrors.availableTimes = "Vui lòng chọn ít nhất 1 khung giờ";
-        break;
-      }
-
-      case 8:
-        if (!formData.hourlyRate)
-          newErrors.hourlyRate = "Vui lòng nhập mức phí";
-        break;
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setFilteredProvinces(provinces);
   };
 
   const nextStep = () => {
-    if (validateStep(currentStep)) {
+    // Validate current step before proceeding
+    if (isStepCompleted(currentStep)) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+    } else {
+      alert(
+        "Vui lòng hoàn thành tất cả thông tin bắt buộc trước khi tiếp tục."
+      );
     }
   };
 
@@ -610,13 +645,163 @@ export const BecomeTutor: React.FC = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = () => {
-    if (validateStep(currentStep)) {
-      console.log("Submitting application:", formData);
-      // Handle form submission
-      alert(
-        "Đơn đăng ký đã được gửi thành công! Chúng tôi sẽ xem xét và phản hồi trong 2-3 ngày."
-      );
+  const goToStep = (step: number) => {
+    if (step < 1 || step > totalSteps) return;
+
+    // Allow going to step 1 always
+    if (step === 1) {
+      setCurrentStep(step);
+      return;
+    }
+
+    // For other steps, check if all previous steps are completed
+    let canNavigate = true;
+    for (let i = 1; i < step; i++) {
+      if (!completedSteps.has(i)) {
+        canNavigate = false;
+        break;
+      }
+    }
+
+    if (canNavigate) {
+      setCurrentStep(step);
+    }
+  };
+
+  // Helper functions
+  const getSubjectId = (subjectName: string): number => {
+    const subjectMap: { [key: string]: number } = {
+      Toán: 1,
+      "Vật lý": 2,
+      "Hóa học": 3,
+      "Sinh học": 4,
+      "Tiếng Anh": 5,
+      "Văn học": 6,
+      "Lịch sử": 7,
+      "Địa lý": 8,
+      "Tin học": 9,
+      "Âm nhạc": 10,
+      "Mỹ thuật": 11,
+      "Thể dục": 12,
+    };
+    return subjectMap[subjectName] || 1;
+  };
+
+  const mapDayToEnum = (day: string): string => {
+    const dayMap: { [key: string]: string } = {
+      monday: "MONDAY",
+      tuesday: "TUESDAY",
+      wednesday: "WEDNESDAY",
+      thursday: "THURSDAY",
+      friday: "FRIDAY",
+      saturday: "SATURDAY",
+      sunday: "SUNDAY",
+    };
+    return dayMap[day] || "MONDAY";
+  };
+
+  const convertFormDataToTutorData = () => {
+    return {
+      // Thông tin cơ bản
+      bio: formData.introduction || "",
+      headline: formData.title || "",
+      experience: formData.experience || "",
+      teachingLevel: "MIDDLE_SCHOOL", // TODO: Map từ formData.teachingMethods
+
+      // Thông tin cá nhân
+      firstName: formData.firstName || "",
+      lastName: formData.lastName || "",
+      dateOfBirth: null, // TODO: Thêm vào form nếu cần
+      gender: null, // TODO: Thêm vào form nếu cần
+      phoneNumber: formData.phone || "",
+      address: formData.province || "",
+      timezone: "Asia/Ho_Chi_Minh",
+
+      // Avatar và CV
+      avatar: formData.profileImageUrl || "",
+      cvUrl: formData.cvFileUrl || "",
+
+      // Video giới thiệu
+      videoIntro: formData.videoUrl || "",
+
+      // Môn học với học phí
+      subjectFees: formData.subjects.map((subject) => ({
+        subjectId: getSubjectId(subject.name),
+        fees: parseInt(subject.hourlyRate.replace(/\D/g, "")) || 100000,
+      })),
+
+      // Lịch dạy
+      schedules: Object.entries(formData.dayTimeSlots).flatMap(([day, slots]) =>
+        slots.map((slot) => ({
+          dayOfWeek: mapDayToEnum(day),
+          fromTime: slot.start,
+          toTime: slot.end,
+          enable: true,
+        }))
+      ),
+
+      // Học vấn
+      educations: formData.noDegree
+        ? []
+        : formData.degrees.map((degree) => ({
+            schoolName: degree.university || "",
+            degree: degree.education || "",
+            major: degree.major || "",
+            fromTime: parseInt(degree.startYear) || 2020,
+            toTime: parseInt(degree.endYear) || 2024,
+            degreeImage: degree.imageUrl || "",
+          })),
+
+      // Chứng chỉ
+      certificates: formData.noCertificates
+        ? []
+        : formData.certificates.map((cert) => ({
+            name: cert.name || "",
+            issuedBy: cert.issuedBy || "",
+            description: cert.description || "",
+            certImage: cert.imageUrl || "",
+          })),
+    };
+  };
+
+  const saveDraft = async () => {
+    setIsDraftSaving(true);
+    try {
+      const tutorData = convertFormDataToTutorData();
+      const response = await TutorService.saveDraft(tutorData);
+      if (response.success) {
+        alert("Đã lưu nháp thành công!");
+      } else {
+        alert(`Lỗi khi lưu nháp: ${response.error}`);
+      }
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      alert("Có lỗi khi lưu nháp!");
+    } finally {
+      setIsDraftSaving(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (areAllStepsCompleted()) {
+      setIsSubmitting(true);
+      try {
+        const tutorData = convertFormDataToTutorData();
+        const response = await TutorService.submitApplication(tutorData);
+        if (response.success) {
+          alert(
+            "Đơn đăng ký đã được gửi thành công! Chúng tôi sẽ xem xét và phản hồi trong 2-3 ngày."
+          );
+          navigate("/");
+        } else {
+          alert(`Lỗi khi gửi đăng ký: ${response.error}`);
+        }
+      } catch (error) {
+        console.error("Error submitting application:", error);
+        alert("Có lỗi khi gửi đăng ký!");
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -624,412 +809,588 @@ export const BecomeTutor: React.FC = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Tên *
-                </label>
-                <input
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) =>
-                    handleInputChange("firstName", e.target.value)
-                  }
-                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 ${
-                    errors.firstName
-                      ? "border-red-400 bg-red-50"
-                      : "border-gray-300 hover:border-gray-400"
-                  }`}
-                  placeholder="Nhập tên của bạn"
-                />
-                {errors.firstName && (
-                  <p className="text-red-500 text-sm mt-2 flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {errors.firstName}
-                  </p>
-                )}
-              </div>
+          <div className="max-w-4xl mx-auto">
+            <div
+              className="rounded-lg shadow-sm p-8"
+              style={{ backgroundColor: "#94cce6" }}
+            >
+              {/* <h2 className="text-2xl font-semibold text-gray-900 mb-8 text-center">
+                Thông tin cơ bản
+              </h2> */}
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Họ *
-                </label>
-                <input
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) =>
-                    handleInputChange("lastName", e.target.value)
-                  }
-                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 ${
-                    errors.lastName
-                      ? "border-red-400 bg-red-50"
-                      : "border-gray-300 hover:border-gray-400"
-                  }`}
-                  placeholder="Nhập họ của bạn"
-                />
-                {errors.lastName && (
-                  <p className="text-red-500 text-sm mt-2 flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
+              <div
+                className="space-y-6 p-6 rounded-lg"
+                style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
+              >
+                {/* Thông tin cá nhân */}
+                <div>
+                  {/* <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Thông tin cá nhân
+                  </h3> */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tên *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.firstName}
+                        onChange={(e) =>
+                          handleInputChange("firstName", e.target.value)
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Nhập tên của bạn"
                       />
-                    </svg>
-                    {errors.lastName}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Số điện thoại *
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => {
-                    // Chỉ cho phép nhập số
-                    const value = e.target.value.replace(/[^0-9]/g, "");
-                    handleInputChange("phone", value);
-                  }}
-                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 ${
-                    errors.phone
-                      ? "border-red-400 bg-red-50"
-                      : "border-gray-300 hover:border-gray-400"
-                  }`}
-                  placeholder="Nhập số điện thoại của bạn (chỉ số)"
-                />
-                {errors.phone && (
-                  <p className="text-red-500 text-sm mt-2 flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
+                      {errors.firstName && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.firstName}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Họ *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.lastName}
+                        onChange={(e) =>
+                          handleInputChange("lastName", e.target.value)
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Nhập họ của bạn"
                       />
-                    </svg>
-                    {errors.phone}
-                  </p>
-                )}
-              </div>
+                      {errors.lastName && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.lastName}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Môn học giảng dạy *
-                </label>
-                <div className="space-y-3">
-                  {/* Dropdown chọn môn học */}
-                  <div className="relative">
+                {/* Thông tin liên hệ */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Thông tin liên hệ
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Số điện thoại *
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, "");
+                          handleInputChange("phone", value);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Nhập số điện thoại"
+                      />
+                      {errors.phone && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.phone}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 cursor-not-allowed"
+                      />
+                      {errors.email && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Địa chỉ */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Địa chỉ
+                  </h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tỉnh/Thành phố *
+                    </label>
+                    <div className="relative province-dropdown">
+                      <input
+                        type="text"
+                        value={formData.province}
+                        onChange={(e) => handleProvinceChange(e.target.value)}
+                        onFocus={() => {
+                          console.log("Input focused, showing dropdown");
+                          setShowProvinceDropdown(true);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Chọn tỉnh/thành phố"
+                        autoComplete="off"
+                      />
+                      {showProvinceDropdown && filteredProvinces.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {filteredProvinces.map((province) => {
+                            console.log("Rendering province:", province.name);
+                            return (
+                              <div
+                                key={province.id}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log(
+                                    "Mouse down on province:",
+                                    province.name
+                                  );
+                                  selectProvince(province);
+                                }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log(
+                                    "Click on province:",
+                                    province.name
+                                  );
+                                  selectProvince(province);
+                                }}
+                                className="px-3 py-2 hover:bg-gray-50 cursor-pointer select-none"
+                              >
+                                <span className="text-gray-900">
+                                  {province.name}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    {errors.province && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.province}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Môn học giảng dạy */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Môn học giảng dạy
+                  </h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Chọn môn học bạn muốn dạy *
+                    </label>
                     <select
                       onChange={(e) => {
                         if (
                           e.target.value &&
-                          !formData.subjects.includes(e.target.value)
+                          !formData.subjects.some(
+                            (sub) => sub.name === e.target.value
+                          )
                         ) {
                           handleInputChange("subjects", [
                             ...formData.subjects,
-                            e.target.value,
+                            { name: e.target.value, hourlyRate: "" },
                           ]);
                         }
-                        e.target.value = ""; // Reset selection
+                        e.target.value = "";
                       }}
-                      className="w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 border-gray-300 hover:border-gray-400"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="">Chọn môn học từ danh sách</option>
+                      <option value="">Chọn môn học</option>
                       {subjects.map((subject) => (
                         <option key={subject.id} value={subject.name}>
                           {subject.name}
                         </option>
                       ))}
                     </select>
-                  </div>
 
-                  {/* Hiển thị các môn học đã chọn dạng tags */}
-                  {formData.subjects.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {formData.subjects.map((subject, index) => (
-                        <div
-                          key={index}
-                          className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
-                        >
-                          <span>{subject}</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newSubjects = formData.subjects.filter(
-                                (_, i) => i !== index
-                              );
-                              handleInputChange("subjects", newSubjects);
-                            }}
-                            className="text-blue-600 hover:text-blue-800 ml-1"
+                    {/* Danh sách môn học đã chọn với học phí */}
+                    {formData.subjects.length > 0 && (
+                      <div className="mt-4 space-y-3">
+                        {formData.subjects.map((subject, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg"
+                            style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
                           >
-                            <svg
-                              className="w-3 h-3"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                            <div className="flex-1">
+                              <span className="font-medium text-gray-900">
+                                {subject.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <label className="text-sm text-gray-600">
+                                Học phí:
+                              </label>
+                              <div className="flex items-center">
+                                <input
+                                  type="number"
+                                  value={subject.hourlyRate}
+                                  onChange={(e) => {
+                                    const newSubjects = [...formData.subjects];
+                                    newSubjects[index].hourlyRate =
+                                      e.target.value;
+                                    handleInputChange("subjects", newSubjects);
+                                  }}
+                                  className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#94cce6] focus:border-[#94cce6]"
+                                  placeholder="100000"
+                                  min="50000"
+                                />
+                                <span className="ml-1 text-sm text-gray-600">
+                                  đ/buổi
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newSubjects = formData.subjects.filter(
+                                    (_, i) => i !== index
+                                  );
+                                  handleInputChange("subjects", newSubjects);
+                                }}
+                                className="ml-2 text-red-500 hover:text-red-700"
+                              >
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {errors.subjects && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.subjects}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                {errors.subjects && (
-                  <p className="text-red-500 text-sm mt-2 flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
+
+                {/* Xác nhận */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Xác nhận
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <input
+                        type="checkbox"
+                        id="age-confirm"
+                        checked={formData.confirmAge}
+                        onChange={(e) =>
+                          handleInputChange("confirmAge", e.target.checked)
+                        }
+                        className={`h-4 w-4 focus:ring-[#94cce6] border-gray-300 rounded mt-1 ${
+                          errors.confirmAge ? "border-red-500" : ""
+                        }`}
                       />
-                    </svg>
-                    {errors.subjects}
-                  </p>
-                )}
-              </div>
+                      <label
+                        htmlFor="age-confirm"
+                        className="ml-3 block text-sm text-gray-700"
+                      >
+                        Tôi xác nhận đã đủ 18 tuổi
+                      </label>
+                    </div>
+                    {errors.confirmAge && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.confirmAge}
+                      </p>
+                    )}
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  readOnly
-                  className="w-full px-4 py-3 border-2 rounded-xl bg-gray-100 text-gray-600 cursor-not-allowed border-gray-300"
-                  placeholder="Email từ tài khoản đăng nhập"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Email được lấy từ tài khoản đăng nhập, không thể chỉnh sửa
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Tỉnh/Thành phố *
-                </label>
-                <div className="relative province-dropdown">
-                  <input
-                    type="text"
-                    value={formData.province}
-                    onChange={(e) => handleProvinceChange(e.target.value)}
-                    onFocus={() => setShowProvinceDropdown(true)}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 ${
-                      errors.province
-                        ? "border-red-400 bg-red-50"
-                        : "border-gray-300 hover:border-gray-400"
-                    }`}
-                    placeholder="Nhập hoặc chọn tỉnh/thành phố"
-                  />
-
-                  {/* Dropdown tỉnh/TP */}
-                  {showProvinceDropdown && filteredProvinces.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                      {filteredProvinces.map((province) => (
-                        <div
-                          key={province.id}
-                          onClick={() => selectProvince(province)}
-                          className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                    <div className="flex items-start">
+                      <input
+                        type="checkbox"
+                        id="terms-confirm"
+                        checked={formData.acceptTerms}
+                        onChange={(e) =>
+                          handleInputChange("acceptTerms", e.target.checked)
+                        }
+                        className={`h-4 w-4 focus:ring-[#94cce6] border-gray-300 rounded mt-1 ${
+                          errors.acceptTerms ? "border-red-500" : ""
+                        }`}
+                      />
+                      <label
+                        htmlFor="terms-confirm"
+                        className="ml-3 block text-sm text-gray-700"
+                      >
+                        Tôi đồng ý với{" "}
+                        <a
+                          href="#"
+                          className="hover:opacity-80 underline"
+                          style={{ color: "#94cce6" }}
                         >
-                          <span className="text-gray-900">{province.name}</span>
-                        </div>
-                      ))}
+                          điều khoản sử dụng
+                        </a>{" "}
+                        và{" "}
+                        <a
+                          href="#"
+                          className="hover:opacity-80 underline"
+                          style={{ color: "#94cce6" }}
+                        >
+                          chính sách bảo mật
+                        </a>{" "}
+                        của TutorMatch
+                      </label>
                     </div>
-                  )}
+                    {errors.acceptTerms && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.acceptTerms}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                {errors.province && (
-                  <p className="text-red-500 text-sm mt-2 flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {errors.province}
-                  </p>
-                )}
               </div>
-            </div>
-
-            {/* Checkbox xác nhận 18 tuổi */}
-            <div className="mt-8">
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="age-confirm"
-                  checked={formData.confirmAge}
-                  onChange={(e) =>
-                    handleInputChange("confirmAge", e.target.checked)
-                  }
-                  className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1 ${
-                    errors.confirmAge ? "border-red-500" : ""
-                  }`}
-                />
-                <label
-                  htmlFor="age-confirm"
-                  className="ml-3 block text-sm text-gray-700"
-                >
-                  Tôi xác nhận đã đủ 18 tuổi
-                </label>
-              </div>
-              {errors.confirmAge && (
-                <p className="text-red-500 text-sm mt-1">{errors.confirmAge}</p>
-              )}
-            </div>
-
-            {/* Checkbox đồng ý điều khoản sử dụng */}
-            <div className="mt-4">
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="terms-confirm"
-                  checked={formData.acceptTerms}
-                  onChange={(e) =>
-                    handleInputChange("acceptTerms", e.target.checked)
-                  }
-                  className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1 ${
-                    errors.acceptTerms ? "border-red-500" : ""
-                  }`}
-                />
-                <label
-                  htmlFor="terms-confirm"
-                  className="ml-3 block text-sm text-gray-700"
-                >
-                  Tôi đồng ý với{" "}
-                  <a
-                    href="#"
-                    className="text-blue-600 hover:text-blue-700 underline"
-                  >
-                    điều khoản sử dụng
-                  </a>{" "}
-                  và{" "}
-                  <a
-                    href="#"
-                    className="text-blue-600 hover:text-blue-700 underline"
-                  >
-                    chính sách bảo mật
-                  </a>{" "}
-                  của TutorMatch
-                </label>
-              </div>
-              {errors.acceptTerms && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.acceptTerms}
-                </p>
-              )}
             </div>
           </div>
         );
 
       case 2:
         return (
-          <div className="space-y-6">
-            
+          <div className="space-y-8">
+            {/* Grid Layout cho 2 phần upload */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Ảnh đại diện */}
+              <div className="space-y-6">
+                <h3 className="text-xl font-semibold text-gray-900 text-center">
+                  Ảnh đại diện
+                </h3>
 
-            <div className="flex flex-col items-center space-y-6">
-              {/* Avatar Display */}
-              <div className="w-40 h-40 border border-gray-300 rounded-lg flex items-center justify-center bg-white">
-                {formData.profileImage ? (
-                  <img
-                    src={URL.createObjectURL(formData.profileImage)}
-                    alt="Profile preview"
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                ) : (
-                  <div className="text-center text-gray-500">
-                    <div className="text-4xl mb-2">👤</div>
-                    <p className="text-sm">Chưa có ảnh</p>
+                <div className="flex flex-col items-center space-y-6">
+                  {/* Avatar Display */}
+                  <div className="w-40 h-40 border border-gray-300 rounded-lg flex items-center justify-center bg-white">
+                    {formData.profileImage ? (
+                      <img
+                        src={URL.createObjectURL(formData.profileImage)}
+                        alt="Profile preview"
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="text-center text-gray-500">
+                        <div className="text-4xl mb-2">👤</div>
+                        <p className="text-sm">Chưa có ảnh</p>
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  {/* Upload Button */}
+                  <div>
+                    <input
+                      type="file"
+                      id="profile-image"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0] || null;
+                        if (file) {
+                          handleFileChange("profileImage", file);
+                          await uploadFileToCloudinary(
+                            file,
+                            "avatar",
+                            (url) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                profileImageUrl: url,
+                              }));
+                            },
+                            (error) => {
+                              setErrors((prev) => ({
+                                ...prev,
+                                profileImage: error,
+                              }));
+                            }
+                          );
+                        }
+                      }}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="profile-image"
+                      className="inline-flex items-center px-6 py-3 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium cursor-pointer"
+                      style={{ backgroundColor: "#94cce6" }}
+                    >
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      Tải ảnh lên
+                    </label>
+                  </div>
+
+                  {/* Requirements */}
+                  <div
+                    className="w-full p-4 rounded-lg"
+                    style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
+                  >
+                    <h4 className="font-medium text-gray-900 mb-3">
+                      Yêu cầu ảnh đại diện
+                    </h4>
+                    <ul className="space-y-2 text-sm text-gray-600">
+                      <li className="flex items-center">
+                        <span className="text-green-500 mr-2">✓</span>
+                        Hiện rõ khuôn mặt và mắt
+                      </li>
+                      <li className="flex items-center">
+                        <span className="text-green-500 mr-2">✓</span>
+                        Chất lượng tốt, không bị mờ
+                      </li>
+                      <li className="flex items-center">
+                        <span className="text-green-500 mr-2">✓</span>
+                        Định dạng JPG, PNG
+                      </li>
+                      <li className="flex items-center">
+                        <span className="text-green-500 mr-2">✓</span>
+                        Kích thước tối đa 10MB
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
-              {/* Upload Button */}
-              <div>
-                <input
-                  type="file"
-                  id="profile-image"
-                  accept="image/*"
-                  onChange={(e) =>
-                    handleFileChange(
-                      "profileImage",
-                      e.target.files?.[0] || null
-                    )
-                  }
-                  className="hidden"
-                />
-                <label
-                  htmlFor="profile-image"
-                  className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 cursor-pointer"
-                >
-                  Tải ảnh lên
-                </label>
-              </div>
+              {/* File CV */}
+              <div className="space-y-6">
+                <h3 className="text-xl font-semibold text-gray-900 text-center">
+                  CV/Resume
+                </h3>
 
-              {/* Requirements */}
-              <div className="max-w-md">
-                <h4 className="font-medium text-gray-900 mb-3">
-                  Bức ảnh tải lên cần phải
-                </h4>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Hiện rõ khuôn mặt và mắt
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Là người duy nhất trong bức ảnh
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Dùng ảnh có màu và không dùng filter
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Không có logo hoặc thông tin liên hệ
-                  </li>
-                </ul>
+                <div className="flex flex-col items-center space-y-6">
+                  {/* CV Display */}
+                  <div className="w-full p-6 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center bg-white min-h-[160px]">
+                    {formData.cvFile ? (
+                      <div className="text-center">
+                        <div className="text-4xl mb-2">📄</div>
+                        <p className="text-sm font-medium text-gray-900 mb-1">
+                          {formData.cvFile.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {(formData.cvFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-500">
+                        <div className="text-4xl mb-2">📄</div>
+                        <p className="text-sm">Chưa có CV</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Upload Button */}
+                  <div>
+                    <input
+                      type="file"
+                      id="cv-file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0] || null;
+                        if (file) {
+                          handleFileChange("cvFile", file);
+                          await uploadFileToCloudinary(
+                            file,
+                            "cv",
+                            (url) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                cvFileUrl: url,
+                              }));
+                            },
+                            (error) => {
+                              setErrors((prev) => ({ ...prev, cvFile: error }));
+                            }
+                          );
+                        }
+                      }}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="cv-file"
+                      className="inline-flex items-center px-6 py-3 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium cursor-pointer"
+                      style={{ backgroundColor: "#94cce6" }}
+                    >
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                      Tải CV lên
+                    </label>
+                  </div>
+
+                  {/* Requirements */}
+                  <div
+                    className="w-full p-4 rounded-lg"
+                    style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
+                  >
+                    <h4 className="font-medium text-gray-900 mb-3">
+                      Yêu cầu file CV
+                    </h4>
+                    <ul className="space-y-2 text-sm text-gray-600">
+                      <li className="flex items-center">
+                        <span className="text-green-500 mr-2">✓</span>
+                        Định dạng PDF, DOC, DOCX
+                      </li>
+                      <li className="flex items-center">
+                        <span className="text-green-500 mr-2">✓</span>
+                        Kích thước tối đa 10MB
+                      </li>
+                      <li className="flex items-center">
+                        <span className="text-green-500 mr-2">✓</span>
+                        Nội dung rõ ràng, dễ đọc
+                      </li>
+                      <li className="flex items-center">
+                        <span className="text-green-500 mr-2">✓</span>
+                        Cập nhật thông tin mới nhất
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {errors.profileImage && (
-              <p className="text-red-500 text-sm text-center">
-                {errors.profileImage}
-              </p>
+            {/* Error Messages */}
+            {(errors.profileImage || errors.cvFile) && (
+              <div className="text-center space-y-2">
+                {errors.profileImage && (
+                  <p className="text-red-500 text-sm">{errors.profileImage}</p>
+                )}
+                {errors.cvFile && (
+                  <p className="text-red-500 text-sm">{errors.cvFile}</p>
+                )}
+              </div>
             )}
           </div>
         );
@@ -1038,8 +1399,17 @@ export const BecomeTutor: React.FC = () => {
         return (
           <div className="space-y-6">
             {/* Upload Instructions - Di chuyển lên trên checkbox */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-              <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
+            <div
+              className="rounded-xl p-6"
+              style={{
+                backgroundColor: "#f0f8ff",
+                border: "1px solid #94cce6",
+              }}
+            >
+              <h4
+                className="font-semibold mb-2 flex items-center"
+                style={{ color: "#94cce6" }}
+              >
                 <svg
                   className="w-5 h-5 mr-2"
                   fill="currentColor"
@@ -1065,7 +1435,7 @@ export const BecomeTutor: React.FC = () => {
                 id="no-certificates"
                 checked={formData.noCertificates}
                 onChange={(e) => handleNoCertificatesChange(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 focus:ring-[#94cce6] border-gray-300 rounded"
               />
               <label
                 htmlFor="no-certificates"
@@ -1102,7 +1472,8 @@ export const BecomeTutor: React.FC = () => {
                   {formData.certificates.map((cert, index) => (
                     <div
                       key={index}
-                      className="border-2 border-gray-200 rounded-xl p-6 hover:border-gray-300 transition-colors duration-200"
+                      className="rounded-xl p-6 hover:bg-gray-50 transition-colors duration-200"
+                      style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
                     >
                       <div className="flex justify-between items-center mb-4">
                         <h5 className="font-semibold text-gray-800">
@@ -1205,7 +1576,22 @@ export const BecomeTutor: React.FC = () => {
                         />
                         <label
                           htmlFor={`cert-file-${index}`}
-                          className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors duration-200"
+                          className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer transition-colors duration-200"
+                          style={
+                            {
+                              "--hover-border": "#94cce6",
+                              "--hover-bg": "#f0f8ff",
+                            } as React.CSSProperties
+                          }
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = "#94cce6";
+                            e.currentTarget.style.backgroundColor = "#f0f8ff";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "#d1d5db";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }}
                         >
                           <svg
                             className="w-5 h-5 mr-2 text-gray-400"
@@ -1261,7 +1647,19 @@ export const BecomeTutor: React.FC = () => {
                     ];
                     handleInputChange("certificates", newCerts);
                   }}
-                  className="flex items-center justify-center w-full px-6 py-3 border-2 border-dashed border-blue-300 text-blue-600 hover:border-blue-400 hover:bg-blue-50 rounded-xl transition-colors duration-200 font-medium"
+                  className="flex items-center justify-center w-full px-6 py-3 border-2 border-dashed rounded-xl transition-colors duration-200 font-medium"
+                  style={{
+                    borderColor: "#94cce6",
+                    color: "#94cce6",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "#94cce6";
+                    e.currentTarget.style.backgroundColor = "#f0f8ff";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "#94cce6";
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
                 >
                   <svg
                     className="w-5 h-5 mr-2"
@@ -1287,8 +1685,17 @@ export const BecomeTutor: React.FC = () => {
         return (
           <div className="space-y-6">
             {/* Upload Instructions - Only show once */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-              <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
+            <div
+              className="rounded-xl p-6"
+              style={{
+                backgroundColor: "#f0f8ff",
+                border: "1px solid #94cce6",
+              }}
+            >
+              <h4
+                className="font-semibold mb-2 flex items-center"
+                style={{ color: "#94cce6" }}
+              >
                 <svg
                   className="w-5 h-5 mr-2"
                   fill="currentColor"
@@ -1314,7 +1721,7 @@ export const BecomeTutor: React.FC = () => {
                 id="no-degree"
                 checked={formData.noDegree}
                 onChange={(e) => handleNoDegreeChange(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 focus:ring-[#94cce6] border-gray-300 rounded"
               />
               <label
                 htmlFor="no-degree"
@@ -1350,7 +1757,8 @@ export const BecomeTutor: React.FC = () => {
                 {formData.degrees.map((degree, index) => (
                   <div
                     key={degree.id}
-                    className="bg-white border-2 border-gray-200 rounded-xl p-6 relative"
+                    className="rounded-xl p-6 relative"
+                    style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
                   >
                     {/* Chỉ hiển thị nút xóa khi có nhiều hơn 1 bằng cấp hoặc đã có thông tin */}
                     {(formData.degrees.length > 1 ||
@@ -1611,7 +2019,19 @@ export const BecomeTutor: React.FC = () => {
                 <button
                   type="button"
                   onClick={addDegree}
-                  className="flex items-center justify-center w-full px-6 py-3 border-2 border-dashed border-blue-300 text-blue-600 hover:border-blue-400 hover:bg-blue-50 rounded-xl transition-colors duration-200 font-medium"
+                  className="flex items-center justify-center w-full px-6 py-3 border-2 border-dashed rounded-xl transition-colors duration-200 font-medium"
+                  style={{
+                    borderColor: "#94cce6",
+                    color: "#94cce6",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "#94cce6";
+                    e.currentTarget.style.backgroundColor = "#f0f8ff";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "#94cce6";
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
                 >
                   <svg
                     className="w-5 h-5 mr-2"
@@ -1653,7 +2073,7 @@ export const BecomeTutor: React.FC = () => {
 
             <div className="space-y-6">
               {/* 1. Dòng tiêu đề */}
-              <div className="border border-gray-200 rounded-lg p-4">
+              <div className="rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-medium text-gray-900">1. Dòng tiêu đề</h4>
                   <span className="text-green-500">✓</span>
@@ -1677,7 +2097,7 @@ export const BecomeTutor: React.FC = () => {
               </div>
 
               {/* 2. Giới thiệu về bạn */}
-              <div className="border border-gray-200 rounded-lg p-4">
+              <div className="rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-medium text-gray-900">
                     2. Giới thiệu về bạn
@@ -1706,7 +2126,7 @@ export const BecomeTutor: React.FC = () => {
               </div>
 
               {/* 3. Kinh nghiệm giảng dạy */}
-              <div className="border border-gray-200 rounded-lg p-4">
+              <div className="rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-medium text-gray-900">
                     3. Kinh nghiệm giảng dạy
@@ -1735,31 +2155,82 @@ export const BecomeTutor: React.FC = () => {
                 )}
               </div>
 
-              {/* 4. Trình độ nhận dạy */}
-              <div className="border border-gray-200 rounded-lg p-4">
+              {/* 4. Đối tượng nhận dạy */}
+              <div className="rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-medium text-gray-900">
-                    4. Trình độ nhận dạy
+                    4. Đối tượng nhận dạy
                   </h4>
                   <span className="text-green-500">✓</span>
                 </div>
                 <p className="text-sm text-gray-600 mb-3">
-                  Những trình độ bạn có thể nhận giảng dạy ở từng môn học. Ví
-                  dụ:
+                  Chọn đối tượng học viên mà bạn có thể nhận dạy
                 </p>
-                <textarea
-                  value={formData.teachingMethods}
-                  onChange={(e) =>
-                    handleInputChange("teachingMethods", e.target.value)
-                  }
-                  rows={6}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 ${
-                    errors.teachingMethods
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Học sinh THPT môn Toán, Sinh viên đại học môn Vật lý, Người đi làm môn Tiếng Anh..."
-                />
+
+                {/* Dropdown cho đối tượng nhận dạy */}
+                <div className="relative mb-4">
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      const selectedLevel = e.target.value;
+                      if (
+                        selectedLevel &&
+                        !formData.teachingMethods.includes(selectedLevel)
+                      ) {
+                        handleInputChange("teachingMethods", [
+                          ...formData.teachingMethods,
+                          selectedLevel,
+                        ]);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#94cce6] focus:ring-1 focus:ring-[#94cce6]"
+                  >
+                    <option value="">Chọn đối tượng nhận dạy</option>
+                    {teachingLevels.map((level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Tags hiển thị đối tượng đã chọn */}
+                {formData.teachingMethods.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {formData.teachingMethods.map((level, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
+                        style={{ backgroundColor: "#94cce6" }}
+                      >
+                        {level}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newLevels = formData.teachingMethods.filter(
+                              (_, i) => i !== index
+                            );
+                            handleInputChange("teachingMethods", newLevels);
+                          }}
+                          className="ml-2 hover:bg-white hover:bg-opacity-20 rounded-full p-0.5"
+                        >
+                          <svg
+                            className="w-3 h-3"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 {errors.teachingMethods && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.teachingMethods}
@@ -1887,8 +2358,14 @@ export const BecomeTutor: React.FC = () => {
                 </div>
 
                 {/* Help Link */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h5 className="font-medium text-blue-900 mb-2">
+                <div
+                  className="rounded-lg p-4"
+                  style={{
+                    backgroundColor: "#f0f8ff",
+                    border: "1px solid #94cce6",
+                  }}
+                >
+                  <h5 className="font-medium mb-2" style={{ color: "#94cce6" }}>
                     Cần trợ giúp?
                   </h5>
                   <p className="text-sm text-blue-700 mb-2">
@@ -1898,7 +2375,7 @@ export const BecomeTutor: React.FC = () => {
                     href="https://support.google.com/youtube/answer/57407"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 text-sm hover:text-blue-700 underline"
+                    className="text-[#94cce6] text-sm hover:text-blue-700 underline"
                   >
                     Hướng dẫn tải video lên YouTube →
                   </a>
@@ -1925,11 +2402,15 @@ export const BecomeTutor: React.FC = () => {
               {availableDays.map((day, index) => (
                 <div
                   key={day}
-                  className={`border-2 rounded-xl transition-all duration-200 ${
-                    formData.availableDays.includes(day)
-                      ? "border-blue-200 bg-blue-50"
-                      : "border-gray-200 bg-white"
-                  }`}
+                  className="border-2 rounded-xl transition-all duration-200"
+                  style={{
+                    borderColor: formData.availableDays.includes(day)
+                      ? "#94cce6"
+                      : "#e5e7eb",
+                    backgroundColor: formData.availableDays.includes(day)
+                      ? "#f0f8ff"
+                      : "white",
+                  }}
                 >
                   <div className="flex items-center space-x-4 p-6">
                     <input
@@ -1937,7 +2418,7 @@ export const BecomeTutor: React.FC = () => {
                       id={`day-${index}`}
                       checked={formData.availableDays.includes(day)}
                       onChange={(e) => handleDayToggle(day, e.target.checked)}
-                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-5 w-5 focus:ring-[#94cce6] border-gray-300 rounded"
                     />
                     <label
                       htmlFor={`day-${index}`}
@@ -2038,7 +2519,19 @@ export const BecomeTutor: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => addTimeSlot(day)}
-                        className="w-full py-3 px-4 text-blue-600 text-sm font-medium hover:text-blue-700 hover:bg-blue-50 rounded-lg border border-blue-200 hover:border-blue-300 transition-colors duration-200 flex items-center justify-center space-x-2"
+                        className="w-full py-3 px-4 text-sm font-medium rounded-lg border transition-colors duration-200 flex items-center justify-center space-x-2"
+                        style={{
+                          color: "#94cce6",
+                          borderColor: "#94cce6",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = "#94cce6";
+                          e.currentTarget.style.backgroundColor = "#f0f8ff";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = "#94cce6";
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
                       >
                         <svg
                           className="w-4 h-4"
@@ -2070,46 +2563,6 @@ export const BecomeTutor: React.FC = () => {
           </div>
         );
 
-      case 8:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Học phí 1 buổi học của bạn
-              </h3>
-              <p className="text-gray-600">
-                Một buổi học kéo dài mặc định 90 phút. Hãy nhớ: Đừng cạnh tranh
-                bằng học phí thấp mà hãy nâng cao chất lượng và kỹ năng giảng
-                dạy của bản thân và đặt mức học phí bạn xứng đáng.
-              </p>
-            </div>
-
-            <div className="max-w-md">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mức phí cho 1 buổi học (90 phút)
-              </label>
-              <div className="flex items-center">
-                <input
-                  type="number"
-                  value={formData.hourlyRate}
-                  onChange={(e) =>
-                    handleInputChange("hourlyRate", e.target.value)
-                  }
-                  className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 ${
-                    errors.hourlyRate ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder="100000"
-                  min="50000"
-                />
-                <span className="ml-2 text-gray-600">đ/buổi</span>
-              </div>
-              {errors.hourlyRate && (
-                <p className="text-red-500 text-sm mt-1">{errors.hourlyRate}</p>
-              )}
-            </div>
-          </div>
-        );
-
       default:
         return null;
     }
@@ -2118,70 +2571,69 @@ export const BecomeTutor: React.FC = () => {
   const getStepTitle = (step: number) => {
     const titles = [
       "Thông tin cơ bản",
-      "Ảnh đại diện",
+      "Ảnh đại diện & CV",
       "Chứng chỉ",
       "Học vấn",
       "Giới thiệu",
       "Video",
       "Thời gian dạy",
-      "Học phí",
     ];
     return titles[step - 1] || "";
+  };
+
+  // Kiểm tra tất cả bước có hoàn thành không
+  const areAllStepsCompleted = () => {
+    for (let i = 1; i <= totalSteps; i++) {
+      if (!isStepCompleted(i)) return false;
+    }
+    return true;
+  };
+
+  // Kiểm tra có thể navigate đến step này không
+  const canNavigateToStep = (step: number) => {
+    if (step === 1) return true; // Always allow step 1
+
+    // Check if all previous steps are completed
+    for (let i = 1; i < step; i++) {
+      if (!completedSteps.has(i)) {
+        return false;
+      }
+    }
+    return true;
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header Section - Larger and more prominent */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-2xl">
-        <div className="container mx-auto px-4 py-12">
+      <div
+        className="shadow-2xl"
+        style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
+      >
+        <div className="container mx-auto px-4 py-6">
           {/* Progress Steps - Desktop */}
           <div className="hidden lg:block">
-            <div className="flex items-center justify-between relative">
-              {/* Progress Line Background */}
-              <div className="absolute top-8 left-0 right-0 h-1 bg-white/30 -z-10 rounded-full"></div>
-
+            <div className="flex items-center justify-center space-x-4">
               {Array.from({ length: totalSteps }, (_, i) => i + 1).map(
                 (step) => (
-                  <div
-                    key={step}
-                    className="flex flex-col items-center relative z-10"
-                  >
-                    {/* Step Circle */}
+                  <React.Fragment key={step}>
                     <div
-                      className={`w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold transition-all duration-300 shadow-xl ${
-                        step < currentStep
-                          ? "bg-green-500 text-white shadow-green-500/50"
-                          : step === currentStep
-                          ? "bg-white text-blue-600 shadow-white/50 ring-4 ring-white/30"
-                          : "bg-white/20 text-white"
+                      className={`px-3 py-2 rounded text-sm font-medium transition-all duration-200 ${
+                        step === currentStep
+                          ? "bg-white text-[#94cce6]"
+                          : completedSteps.has(step)
+                          ? "bg-green-500 text-white hover:bg-green-600 cursor-pointer"
+                          : canNavigateToStep(step)
+                          ? "bg-white/20 text-white hover:bg-white/30 cursor-pointer"
+                          : "bg-gray-400/50 text-gray-500 cursor-not-allowed"
                       }`}
+                      onClick={() => canNavigateToStep(step) && goToStep(step)}
                     >
-                      {step < currentStep ? (
-                        <svg
-                          className="w-8 h-8"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      ) : (
-                        step
-                      )}
+                      {step} {getStepTitle(step)}
                     </div>
-
-                    {/* Step Title */}
-                    <span
-                      className={`mt-4 text-sm font-semibold text-center max-w-24 ${
-                        step <= currentStep ? "text-white" : "text-blue-200"
-                      }`}
-                    >
-                      {getStepTitle(step)}
-                    </span>
-                  </div>
+                    {step < totalSteps && (
+                      <span className="text-gray-600 text-lg">&gt;</span>
+                    )}
+                  </React.Fragment>
                 )
               )}
             </div>
@@ -2189,21 +2641,30 @@ export const BecomeTutor: React.FC = () => {
 
           {/* Progress Steps - Mobile */}
           <div className="lg:hidden">
-            <div className="text-center mb-6">
-              <div className="text-2xl font-bold text-white mb-2">
-                Bước {currentStep} / {totalSteps}
-              </div>
-              <div className="text-lg font-medium text-blue-100">
-                {getStepTitle(currentStep)}
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="w-full bg-white/30 rounded-full h-3">
-              <div
-                className="bg-gradient-to-r from-white to-blue-100 h-3 rounded-full transition-all duration-500 ease-out shadow-lg"
-                style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-              ></div>
+            <div className="flex items-center justify-center space-x-2 overflow-x-auto">
+              {Array.from({ length: totalSteps }, (_, i) => i + 1).map(
+                (step) => (
+                  <React.Fragment key={step}>
+                    <div
+                      className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap transition-all duration-200 ${
+                        step === currentStep
+                          ? "bg-white text-[#94cce6]"
+                          : completedSteps.has(step)
+                          ? "bg-green-500 text-white hover:bg-green-600 cursor-pointer"
+                          : canNavigateToStep(step)
+                          ? "bg-white/20 text-white hover:bg-white/30 cursor-pointer"
+                          : "bg-gray-400/50 text-gray-500 cursor-not-allowed"
+                      }`}
+                      onClick={() => canNavigateToStep(step) && goToStep(step)}
+                    >
+                      {step} {getStepTitle(step)}
+                    </div>
+                    {step < totalSteps && (
+                      <span className="text-gray-600 text-sm">&gt;</span>
+                    )}
+                  </React.Fragment>
+                )
+              )}
             </div>
           </div>
         </div>
@@ -2245,52 +2706,13 @@ export const BecomeTutor: React.FC = () => {
             {/* Navigation Buttons */}
             <div className="bg-gray-50 px-8 py-6 border-t border-gray-200">
               <div className="flex justify-between items-center">
-                <button
-                  onClick={prevStep}
-                  disabled={currentStep === 1}
-                  className="flex items-center px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
-                >
-                  <svg
-                    className="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                  Quay lại
-                </button>
-
+                {/* Nhóm bên trái: Quay lại và Tiếp tục */}
                 <div className="flex space-x-3">
-                  {currentStep < totalSteps ? (
+                  {/* Nút Quay lại */}
+                  {currentStep > 1 && (
                     <button
-                      onClick={nextStep}
-                      className="flex items-center px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
-                    >
-                      Lưu và tiếp tục
-                      <svg
-                        className="w-4 h-4 ml-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleSubmit}
-                      className="flex items-center px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
+                      onClick={prevStep}
+                      className="flex items-center px-6 py-3 text-gray-700 bg-gray-200 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium hover:bg-gray-300"
                     >
                       <svg
                         className="w-4 h-4 mr-2"
@@ -2302,12 +2724,90 @@ export const BecomeTutor: React.FC = () => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M5 13l4 4L19 7"
+                          d="M15 19l-7-7 7-7"
                         />
                       </svg>
-                      Hoàn thành đăng ký
+                      Quay lại
                     </button>
                   )}
+
+                  {/* Nút Tiếp tục */}
+                  <button
+                    onClick={nextStep}
+                    disabled={currentStep >= totalSteps}
+                    className="flex items-center px-8 py-3 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor:
+                        currentStep >= totalSteps ? "#9ca3af" : "#94cce6",
+                    }}
+                  >
+                    Tiếp tục
+                    <svg
+                      className="w-4 h-4 ml-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Nhóm bên phải: Lưu nháp và Gửi đăng ký */}
+                <div className="flex space-x-3">
+                  {/* Nút Lưu nháp */}
+                  <button
+                    onClick={saveDraft}
+                    disabled={isDraftSaving}
+                    className="flex items-center px-6 py-3 text-gray-700 bg-gray-200 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium hover:bg-gray-300 disabled:opacity-50"
+                  >
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                    {isDraftSaving ? "Đang lưu..." : "Lưu nháp"}
+                  </button>
+
+                  {/* Nút Gửi đăng ký */}
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!areAllStepsCompleted() || isSubmitting}
+                    className="flex items-center px-8 py-3 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: areAllStepsCompleted()
+                        ? "#10b981"
+                        : "#9ca3af",
+                    }}
+                  >
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    {isSubmitting ? "Đang gửi..." : "Gửi đăng ký"}
+                  </button>
                 </div>
               </div>
             </div>

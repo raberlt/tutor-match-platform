@@ -2,6 +2,8 @@ package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.entity.*;
+import fsa.training.tutormatch.enums.BookingStatus;
+import fsa.training.tutormatch.enums.BookingType;
 import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.SubjectRepository;
 import fsa.training.tutormatch.repository.UserRepository;
@@ -12,8 +14,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Date;
-import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Service
 public class BookingCreationServiceImpl implements IBookingCreationService {
@@ -37,7 +39,7 @@ public class BookingCreationServiceImpl implements IBookingCreationService {
         validationService.validateBookingRequest(request);
         
         Booking booking = createBaseBooking(studentUsername, request);
-        booking.setBookingType(BookingType.TRIAL);
+        booking.setBookingType(BookingType.SINGLE);
         
         return bookingRepository.save(booking);
     }
@@ -49,7 +51,7 @@ public class BookingCreationServiceImpl implements IBookingCreationService {
         validationService.validateBookingRequest(request);
         
         Booking booking = createBaseBooking(studentUsername, request);
-        booking.setBookingType(BookingType.SINGLE_SESSION);
+        booking.setBookingType(BookingType.SINGLE);
         
         return bookingRepository.save(booking);
     }
@@ -85,7 +87,7 @@ public class BookingCreationServiceImpl implements IBookingCreationService {
         String bookingType = request.getBookingType().toUpperCase();
         
         switch (bookingType) {
-            case "TRIAL":
+            case "SINGLE":
                 return createTrialBooking(studentUsername, request);
             case "MONTHLY":
                 return createMonthlyBooking(studentUsername, request);
@@ -112,9 +114,9 @@ public class BookingCreationServiceImpl implements IBookingCreationService {
 
         // Parse time
         String[] timeRange = request.getTime().split("-");
-        Time fromTime = Time.valueOf(timeRange[0] + ":00");
-        Time toTime = Time.valueOf(timeRange[1] + ":00");
-        Date bookingDate = Date.valueOf(request.getDate());
+        LocalTime fromLocalTime = LocalTime.parse(timeRange[0] + ":00");
+        LocalTime toLocalTime = LocalTime.parse(timeRange[1] + ":00");
+        LocalDate bookingDate = LocalDate.parse(request.getDate());
 
         // Create booking
         Booking booking = new Booking();
@@ -122,8 +124,8 @@ public class BookingCreationServiceImpl implements IBookingCreationService {
         booking.setTutor(tutorProfile);
         booking.setSubject(subject);
         booking.setDate(bookingDate);
-        booking.setFromTime(fromTime);
-        booking.setToTime(toTime);
+        booking.setFromTime(fromLocalTime);
+        booking.setToTime(toLocalTime);
         booking.setNote(request.getNote());
         booking.setStatus(BookingStatus.PENDING);
 

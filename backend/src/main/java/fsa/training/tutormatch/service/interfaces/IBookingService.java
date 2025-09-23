@@ -3,7 +3,7 @@ package fsa.training.tutormatch.service.interfaces;
 import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.entity.Booking;
 
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 public interface IBookingService {
@@ -20,6 +20,6 @@ public interface IBookingService {
     
     // Booking queries
     List<Booking> getPendingBookings(String tutorUsername);
-    List<Booking> getConfirmedBookingsByDate(String tutorUsername, Date date);
-    List<Booking> getBookingsBetweenDates(String tutorUsername, Date startDate, Date endDate);
+    List<Booking> getConfirmedBookingsByLocalDate(String tutorUsername, LocalDate date);
+    List<Booking> getBookingsBetweenLocalDates(String tutorUsername, LocalDate startLocalDate, LocalDate endLocalDate);
 } 

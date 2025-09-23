@@ -4,9 +4,11 @@
 .slider {
   -webkit-appearance: none;
   appearance: none;
-  background: #e5e7eb;
+  background: transparent;
   outline: none;
   border-radius: 0.5rem;
+  height: 6px;
+  pointer-events: none;
 }
 
 .slider::-webkit-slider-thumb {
@@ -17,6 +19,11 @@
   background: #3b82f6;
   cursor: pointer;
   border-radius: 50%;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  pointer-events: all;
+  position: relative;
+  z-index: 1000;
 }
 
 .slider::-moz-range-thumb {
@@ -25,5 +32,55 @@
   background: #3b82f6;
   cursor: pointer;
   border-radius: 50%;
-  border: none;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  pointer-events: all;
+}
+
+/* Specific styles for min and max sliders */
+.min-slider::-webkit-slider-thumb {
+  background: #10b981;
+}
+
+.min-slider::-moz-range-thumb {
+  background: #10b981;
+}
+
+.max-slider::-webkit-slider-thumb {
+  background: #f59e0b;
+}
+
+.max-slider::-moz-range-thumb {
+  background: #f59e0b;
+}
+
+/* Hover effects */
+.slider:hover::-webkit-slider-thumb {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+.slider:hover::-moz-range-thumb {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+/* Price range dropdown styles */
+.price-dropdown {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Dual range slider track */
+.dual-range-track {
+  position: relative;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+}
+
+.dual-range-progress {
+  position: absolute;
+  height: 6px;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  border-radius: 3px;
 }

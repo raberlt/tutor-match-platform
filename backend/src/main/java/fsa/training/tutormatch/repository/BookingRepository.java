@@ -1,8 +1,8 @@
 package fsa.training.tutormatch.repository;
 
 import fsa.training.tutormatch.entity.Booking;
-import fsa.training.tutormatch.entity.BookingStatus;
-import fsa.training.tutormatch.entity.BookingType;
+import fsa.training.tutormatch.enums.BookingStatus;
+import fsa.training.tutormatch.enums.BookingType;
 import fsa.training.tutormatch.entity.StudentProfile;
 import fsa.training.tutormatch.entity.TutorProfile;
 import fsa.training.tutormatch.entity.User;
@@ -13,8 +13,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Date;
-import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Repository
@@ -28,7 +28,7 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     Page<Booking> findByTutor(TutorProfile tutor, Pageable pageable);
     Page<Booking> findByTutorAndStatus(TutorProfile tutor, BookingStatus status, Pageable pageable);
     List<Booking> findByTutorAndStatus(TutorProfile tutor, BookingStatus status);
-    List<Booking> findByTutorAndDateBetween(TutorProfile tutor, Date startDate, Date endDate);
+    List<Booking> findByTutorAndDateBetween(TutorProfile tutor, LocalDate startDate, LocalDate endDate);
     
     // Methods với User để backward compatibility
     @Query("SELECT b FROM Booking b WHERE b.student.user = :user")
@@ -47,10 +47,10 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     List<Booking> findByTutorUserAndStatus(@Param("user") User user, @Param("status") BookingStatus status);
     
     @Query("SELECT b FROM Booking b WHERE b.tutor.user = :user AND b.date = :date")
-    List<Booking> findByTutorUserAndDate(@Param("user") User user, @Param("date") Date date);
+    List<Booking> findByTutorUserAndDate(@Param("user") User user, @Param("date") LocalDate date);
     
     @Query("SELECT b FROM Booking b WHERE b.tutor.user = :user AND b.date BETWEEN :startDate AND :endDate")
-    List<Booking> findByTutorUserAndDateBetween(@Param("user") User user, @Param("startDate") Date startDate, @Param("endDate") Date endDate);
+    List<Booking> findByTutorUserAndDateBetween(@Param("user") User user, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
     
     // Basic find methods
     List<Booking> findByStudentId(Integer studentId);
@@ -62,8 +62,8 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     // Count methods for statistics
     long countByStatus(BookingStatus status);
     long countByBookingType(BookingType bookingType);
-    long countByDate(Date date);
-    long countByCreatedAtAfter(Timestamp date);
+    long countByDate(LocalDate date);
+    long countByCreatedAtAfter(ZonedDateTime date);
     long countByTutor(TutorProfile tutor);
     long countByTutorAndStatus(TutorProfile tutor, BookingStatus status);
     long countByStudent(StudentProfile student);

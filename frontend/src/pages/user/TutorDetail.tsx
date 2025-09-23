@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import { tutorService } from "../../services/tutorService";
+import { TutorService } from "../../services/tutorService";
 import type { TutorProfile } from "../../types";
 
 const TutorDetail: React.FC = () => {
@@ -22,7 +22,7 @@ const TutorDetail: React.FC = () => {
   const loadTutorDetail = async (tutorId: number) => {
     try {
       setLoading(true);
-      const tutorData = await tutorService.getTutorDetail(tutorId);
+      const tutorData = await TutorService.getTutorDetail(tutorId);
       setTutor(tutorData);
     } catch (error: unknown) {
       setError((error as Error).message);

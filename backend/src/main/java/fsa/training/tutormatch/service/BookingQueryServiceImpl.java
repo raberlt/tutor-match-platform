@@ -1,14 +1,16 @@
 package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.entity.Booking;
-import fsa.training.tutormatch.entity.BookingStatus;import fsa.training.tutormatch.entity.User;
-import fsa.training.tutormatch.entity.BookingType;import fsa.training.tutormatch.repository.BookingRepository;
+import fsa.training.tutormatch.enums.UserRole;
+import fsa.training.tutormatch.enums.BookingStatus;
+import fsa.training.tutormatch.entity.User;
+import fsa.training.tutormatch.enums.UserRole;
+import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.UserRepository;
 import fsa.training.tutormatch.service.interfaces.IBookingQueryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.Date;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -54,7 +56,7 @@ public class BookingQueryServiceImpl implements IBookingQueryService {
     @Override
     public List<Booking> getCancelledBookings(String username) {
         User user = findUserByUsername(username);
-        if (user.getRole() == User.Role.TUTOR) {
+        if (user.getRole() == UserRole.TUTOR) {
             return bookingRepository.findByTutorUserAndStatus(user, BookingStatus.CANCELLED);
         } else {
             return bookingRepository.findByStudentUserAndStatus(user, BookingStatus.CANCELLED, org.springframework.data.domain.Pageable.unpaged()).getContent();
@@ -62,7 +64,7 @@ public class BookingQueryServiceImpl implements IBookingQueryService {
     }
     
     @Override
-    public List<Booking> getConfirmedBookingsByDate(String tutorUsername, Date date) {
+    public List<Booking> getConfirmedBookingsByLocalDate(String tutorUsername, LocalDate date) {
         User tutor = findUserByUsername(tutorUsername);
         return bookingRepository.findByTutorUserAndDate(tutor, date)
                 .stream()
@@ -71,9 +73,9 @@ public class BookingQueryServiceImpl implements IBookingQueryService {
     }
     
     @Override
-    public List<Booking> getBookingsBetweenDates(String tutorUsername, Date startDate, Date endDate) {
+    public List<Booking> getBookingsBetweenLocalDates(String tutorUsername, LocalDate startLocalDate, LocalDate endLocalDate) {
         User tutor = findUserByUsername(tutorUsername);
-        return bookingRepository.findByTutorUserAndDateBetween(tutor, startDate, endDate);
+        return bookingRepository.findByTutorUserAndDateBetween(tutor, startLocalDate, endLocalDate);
     }
     
     @Override
@@ -91,7 +93,7 @@ public class BookingQueryServiceImpl implements IBookingQueryService {
     @Override
     public long countTodayBookings(String tutorUsername) {
         User tutor = findUserByUsername(tutorUsername);
-        Date today = Date.valueOf(LocalDate.now());
+        LocalDate today = LocalDate.now();
         return bookingRepository.findByTutorUserAndDate(tutor, today)
                 .stream()
                 .filter(booking -> booking.getStatus() == BookingStatus.CONFIRMED)

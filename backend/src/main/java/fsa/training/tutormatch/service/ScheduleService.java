@@ -1,15 +1,15 @@
 package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.entity.Booking;
-import fsa.training.tutormatch.entity.BookingStatus;import fsa.training.tutormatch.entity.Schedule;
-import fsa.training.tutormatch.entity.BookingType;import fsa.training.tutormatch.entity.User;
+import fsa.training.tutormatch.enums.BookingStatus;import fsa.training.tutormatch.entity.Schedule;
+import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.ScheduleRepository;
 import fsa.training.tutormatch.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -63,9 +63,9 @@ public class ScheduleService {
         }
 
         // Get tutor's schedule for the day
-        Date bookingDate = Date.valueOf(date);
+        LocalDate bookingDate = LocalDate.parse(date);
         Calendar cal = Calendar.getInstance();
-        cal.setTime(bookingDate);
+        cal.setTime(java.sql.Date.valueOf(bookingDate));
         String dayOfWeekEn = getDayOfWeekEnglish(cal.get(Calendar.DAY_OF_WEEK));
         String dayOfWeekVi = getDayOfWeekVietnamese(cal.get(Calendar.DAY_OF_WEEK));
 
@@ -102,8 +102,8 @@ public class ScheduleService {
             if (!isBooked) {
                 AvailableSlot slot = new AvailableSlot();
                 // Format time to HH:mm format
-                slot.setFromTime(schedule.getFromTime().toLocalTime().toString().substring(0, 5));
-                slot.setToTime(schedule.getToTime().toLocalTime().toString().substring(0, 5));
+                slot.setFromTime(schedule.getFromTime().toString().substring(0, 5));
+                slot.setToTime(schedule.getToTime().toString().substring(0, 5));
                 slot.setDayOfWeek(schedule.getDayOfWeek());
                 availableSlots.add(slot);
             }

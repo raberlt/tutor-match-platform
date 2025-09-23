@@ -1,14 +1,13 @@
 package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.dto.TutorStatsDTO;
-import fsa.training.tutormatch.entity.Booking;
-import fsa.training.tutormatch.entity.BookingStatus;import fsa.training.tutormatch.entity.User;
-import fsa.training.tutormatch.entity.BookingType;import fsa.training.tutormatch.repository.BookingRepository;
+import fsa.training.tutormatch.enums.BookingStatus;import fsa.training.tutormatch.entity.User;
+import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Optional;
 
@@ -31,7 +30,7 @@ public class StatisticsService {
         }
 
         User tutor = tutorOpt.get();
-        Date today = new Date(System.currentTimeMillis());
+        LocalDate today = LocalDate.now();
 
         // Count today's confirmed bookings
         long todayCount = bookingRepository.findByTutorUserAndDate(tutor, today)
@@ -45,7 +44,7 @@ public class StatisticsService {
         // Count upcoming week bookings
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_YEAR, 7);
-        Date nextWeek = new Date(cal.getTimeInMillis());
+        LocalDate nextWeek = LocalDate.now().plusWeeks(1);
         
         long upcomingCount = bookingRepository.findByTutorUserAndDateBetween(tutor, today, nextWeek)
             .stream()

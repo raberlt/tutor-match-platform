@@ -9,8 +9,16 @@ export const Footer: React.FC = () => {
           {/* Logo & Description */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">TM</span>
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: "#94cce6" }}
+              >
+                <span
+                  className="font-bold text-sm"
+                  style={{ color: "oklch(0.97 0.01 0)" }}
+                >
+                  TM
+                </span>
               </div>
               <span className="text-xl font-semibold">TutorMatch</span>
             </div>

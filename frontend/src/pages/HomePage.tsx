@@ -121,7 +121,7 @@ export const HomePage: React.FC = () => {
                           onClick={() => setShowPriceSlider(!showPriceSlider)}
                           className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#94cce6] focus:border-transparent bg-white text-left flex items-center justify-between text-gray-700"
                         >
-                          <span className="text-sm">
+                          <span className="text-sm whitespace-nowrap">
                             {formatPrice(minFee)} - {formatPrice(maxFee)}
                           </span>
                           <svg
@@ -143,10 +143,10 @@ export const HomePage: React.FC = () => {
 
                         {/* Dropdown Content */}
                         {showPriceSlider && (
-                          <div className="absolute top-full left-0 right-0 z-20 mt-2 bg-white border border-gray-300 rounded-xl shadow-xl p-4">
+                          <div className="absolute top-full left-0 right-0 z-20 mt-2 bg-white border border-gray-300 rounded-xl shadow-xl p-4 min-w-[300px]">
                             <div className="space-y-4">
                               <div className="text-center">
-                                <span className="text-lg font-semibold text-gray-700">
+                                <span className="text-lg font-semibold text-gray-700 whitespace-nowrap">
                                   {formatPrice(minFee)} - {formatPrice(maxFee)}
                                 </span>
                               </div>
@@ -168,35 +168,6 @@ export const HomePage: React.FC = () => {
                                       }%`,
                                     }}
                                   />
-                                </div>
-
-                                <div className="absolute -top-8 w-full">
-                                  <div
-                                    className="absolute bg-green-600 text-white text-xs px-2 py-1 rounded shadow-lg"
-                                    style={{
-                                      left: `${
-                                        ((minFee - 100000) /
-                                          (1000000 - 100000)) *
-                                        100
-                                      }%`,
-                                      transform: "translateX(-50%)",
-                                    }}
-                                  >
-                                    {formatPrice(minFee)}
-                                  </div>
-                                  <div
-                                    className="absolute bg-amber-600 text-white text-xs px-2 py-1 rounded shadow-lg"
-                                    style={{
-                                      left: `${
-                                        ((maxFee - 100000) /
-                                          (1000000 - 100000)) *
-                                        100
-                                      }%`,
-                                      transform: "translateX(-50%)",
-                                    }}
-                                  >
-                                    {formatPrice(maxFee)}
-                                  </div>
                                 </div>
 
                                 <div className="relative">
@@ -320,14 +291,14 @@ export const HomePage: React.FC = () => {
         style={{ backgroundColor: "hsl(240deg 22.22% 96.47%)" }}
       >
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
+          {/* <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
               Các môn học phổ biến
             </h2>
             <p className="text-xl text-gray-600">
               Tìm gia sư cho môn học bạn quan tâm
             </p>
-          </div>
+          </div> */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {subjects.map((subject) => (
               <Link
@@ -344,10 +315,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Learning Benefits Section */}
-      <section
-        className="py-16 shadow-lg"
-        style={{ backgroundColor: "white" }}
-      >
+      <section className="py-16 shadow-lg" style={{ backgroundColor: "white" }}>
         <div className="container mx-auto px-4">
           <div className="flex flex-col lg:flex-row items-center">
             <div className="lg:w-1/2 lg:pr-12 mb-8 lg:mb-0">
@@ -502,10 +470,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Resources & Blog Section */}
-      <section
-        className="py-16 shadow-lg"
-        style={{ backgroundColor: "white" }}
-      >
+      <section className="py-16 shadow-lg" style={{ backgroundColor: "white" }}>
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
@@ -520,8 +485,22 @@ export const HomePage: React.FC = () => {
               className="rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
               style={{ backgroundColor: "hsl(240deg 22.22% 96.47%)" }}
             >
-              <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-4xl">📚</span>
+              <div className="w-full h-48 rounded-lg mb-4 overflow-hidden">
+                <img
+                  src="/images/phuongphap.webp"
+                  alt="Phương pháp học hiệu quả"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback nếu không có ảnh
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = "none";
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = "flex";
+                  }}
+                />
+                <div className="hidden w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg items-center justify-center">
+                  <span className="text-4xl">📚</span>
+                </div>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Phương pháp học hiệu quả
@@ -542,8 +521,22 @@ export const HomePage: React.FC = () => {
               className="rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
               style={{ backgroundColor: "hsl(240deg 22.22% 96.47%)" }}
             >
-              <div className="w-full h-48 bg-gradient-to-br from-green-100 to-green-200 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-4xl">💡</span>
+              <div className="w-full h-48 rounded-lg mb-4 overflow-hidden">
+                <img
+                  src="/images/tip.jpg"
+                  alt="Tips từ gia sư giỏi"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback nếu không có ảnh
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = "none";
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = "flex";
+                  }}
+                />
+                <div className="hidden w-full h-full bg-gradient-to-br from-green-100 to-green-200 rounded-lg items-center justify-center">
+                  <span className="text-4xl">💡</span>
+                </div>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Tips từ gia sư giỏi
@@ -564,8 +557,22 @@ export const HomePage: React.FC = () => {
               className="rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
               style={{ backgroundColor: "hsl(240deg 22.22% 96.47%)" }}
             >
-              <div className="w-full h-48 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-4xl">🎯</span>
+              <div className="w-full h-48 rounded-lg mb-4 overflow-hidden">
+                <img
+                  src="/images/lotrinh.jpg"
+                  alt="Lộ trình học tập"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback nếu không có ảnh
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = "none";
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = "flex";
+                  }}
+                />
+                <div className="hidden w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg items-center justify-center">
+                  <span className="text-4xl">🎯</span>
+                </div>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Lộ trình học tập

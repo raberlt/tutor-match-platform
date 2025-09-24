@@ -97,18 +97,24 @@ public class FileUploadController {
                 return ResponseEntity.badRequest().body(Map.of("error", "File không được để trống"));
             }
 
-            // Validate file type
+            // Validate file type - accept both images and PDFs
             String contentType = file.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Chỉ chấp nhận file ảnh"));
+            if (contentType == null || (!contentType.startsWith("image/") && 
+                !contentType.equals("application/pdf"))) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Chỉ chấp nhận file ảnh hoặc PDF"));
             }
 
             // Validate file size (10MB)
             if (file.getSize() > 10 * 1024 * 1024) {
-                return ResponseEntity.badRequest().body(Map.of("error", "File ảnh không được vượt quá 10MB"));
+                return ResponseEntity.badRequest().body(Map.of("error", "File không được vượt quá 10MB"));
             }
 
-            String url = cloudinaryService.uploadImage(file, "tutormatch/certificates");
+            String url;
+            if (contentType.startsWith("image/")) {
+                url = cloudinaryService.uploadImage(file, "tutormatch/certificates");
+            } else {
+                url = cloudinaryService.uploadDocument(file, "tutormatch/certificates");
+            }
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -128,18 +134,24 @@ public class FileUploadController {
                 return ResponseEntity.badRequest().body(Map.of("error", "File không được để trống"));
             }
 
-            // Validate file type
+            // Validate file type - accept both images and PDFs
             String contentType = file.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Chỉ chấp nhận file ảnh"));
+            if (contentType == null || (!contentType.startsWith("image/") && 
+                !contentType.equals("application/pdf"))) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Chỉ chấp nhận file ảnh hoặc PDF"));
             }
 
             // Validate file size (10MB)
             if (file.getSize() > 10 * 1024 * 1024) {
-                return ResponseEntity.badRequest().body(Map.of("error", "File ảnh không được vượt quá 10MB"));
+                return ResponseEntity.badRequest().body(Map.of("error", "File không được vượt quá 10MB"));
             }
 
-            String url = cloudinaryService.uploadImage(file, "tutormatch/degrees");
+            String url;
+            if (contentType.startsWith("image/")) {
+                url = cloudinaryService.uploadImage(file, "tutormatch/degrees");
+            } else {
+                url = cloudinaryService.uploadDocument(file, "tutormatch/degrees");
+            }
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

@@ -14,12 +14,21 @@ export const BookingProtectedRoute: React.FC<BookingProtectedRouteProps> = ({
   allowedRoles = ["STUDENT", "TUTOR", "ADMIN"],
   requireAuth = true,
 }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading, isInitialized } = useAuth();
   const location = useLocation();
 
   // Nếu không yêu cầu đăng nhập
   if (!requireAuth) {
     return <>{children}</>;
+  }
+
+  // Hiển thị loading khi đang khởi tạo
+  if (isLoading || !isInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   // Nếu chưa đăng nhập

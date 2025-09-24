@@ -120,16 +120,8 @@ public class StudentProfileService {
         
         User student = studentProfile.getUser();
         
-        // Update User info from approved profile
-        if (studentProfile.getFirstName() != null) {
-            student.setFirstName(studentProfile.getFirstName());
-        }
-        if (studentProfile.getLastName() != null) {
-            student.setLastName(studentProfile.getLastName());
-        }
-        if (studentProfile.getImageAvatar() != null) {
-            student.setImageAvatar(studentProfile.getImageAvatar());
-        }
+        // Personal info is already in User entity, no need to copy
+        // since studentProfile shares the same User as student
         
         // Update profile status
         studentProfile.setProfileStatus(ProfileStatus.ACTIVE);
@@ -154,16 +146,14 @@ public class StudentProfileService {
      * Update StudentProfile from request
      */
     private void updateStudentProfileFromRequest(StudentProfile profile, StudentProfileRequest request) {
-        // Update profile info (stored in profile for admin approval)
-        if (request.getFirstName() != null) profile.setFirstName(request.getFirstName());
-        if (request.getLastName() != null) profile.setLastName(request.getLastName());
-        if (request.getImageAvatar() != null) profile.setImageAvatar(request.getImageAvatar());
-        
         // Update student-specific fields
         if (request.getEducationLevel() != null) profile.setEducationLevel(request.getEducationLevel());
         
-        // Update user info (these can be updated directly as they're not subject to admin approval)
+        // Update user info - firstName, lastName, imageAvatar now go to User entity
         User user = profile.getUser();
+        if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
+        if (request.getLastName() != null) user.setLastName(request.getLastName());
+        if (request.getImageAvatar() != null) user.setImageAvatar(request.getImageAvatar());
         if (request.getDateOfBirth() != null) user.setDateOfBirth(request.getDateOfBirth());
         if (request.getGender() != null) user.setGender(request.getGender());
         if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty() && 

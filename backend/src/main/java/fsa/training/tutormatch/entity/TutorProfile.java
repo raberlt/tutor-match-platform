@@ -23,15 +23,8 @@ public class TutorProfile extends Profile {
         this.setProfileStatus(ProfileStatus.INACTIVE);
     }
 
-    // Personal information fields (moved from User for admin approval)
-    @Column(columnDefinition = "NVARCHAR(50)")
-    private String firstName;
-    
-    @Column(columnDefinition = "NVARCHAR(50)")
-    private String lastName;
-    
-    @Column(columnDefinition = "NVARCHAR(255)")
-    private String imageAvatar;
+    // Personal information fields are now in User entity only
+    // Use getFirstName(), getLastName(), getImageAvatar() methods to access from User
 
     // Tutor-specific fields
     @Column(nullable = true, columnDefinition = "NVARCHAR(2000)")
@@ -99,6 +92,19 @@ public class TutorProfile extends Profile {
     @Override
     public boolean canBePromoted() {
         return false;
+    }
+    
+    // Helper methods to access personal info from User
+    public String getFirstName() {
+        return getUser() != null ? getUser().getFirstName() : null;
+    }
+    
+    public String getLastName() {
+        return getUser() != null ? getUser().getLastName() : null;
+    }
+    
+    public String getImageAvatar() {
+        return getUser() != null ? getUser().getImageAvatar() : null;
     }
     
     // Override methods from parent to ensure they're accessible

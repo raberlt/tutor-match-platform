@@ -12,10 +12,11 @@ export interface User {
 
 export interface AuthContextType {
   user: any | null; // User từ authService
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<any | null>;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitialized: boolean;
 }
 
 // Booking Types - Cập nhật theo API mới

@@ -16,7 +16,7 @@
   appearance: none;
   width: 20px;
   height: 20px;
-  background: #3b82f6;
+  background: rgb(148, 204, 230);
   cursor: pointer;
   border-radius: 50%;
   border: 3px solid #ffffff;
@@ -29,7 +29,7 @@
 .slider::-moz-range-thumb {
   width: 20px;
   height: 20px;
-  background: #3b82f6;
+  background: rgb(148, 204, 230);
   cursor: pointer;
   border-radius: 50%;
   border: 3px solid #ffffff;
@@ -39,19 +39,19 @@
 
 /* Specific styles for min and max sliders */
 .min-slider::-webkit-slider-thumb {
-  background: #10b981;
+  background: rgb(148, 204, 230);
 }
 
 .min-slider::-moz-range-thumb {
-  background: #10b981;
+  background: rgb(148, 204, 230);
 }
 
 .max-slider::-webkit-slider-thumb {
-  background: #f59e0b;
+  background: rgb(148, 204, 230);
 }
 
 .max-slider::-moz-range-thumb {
-  background: #f59e0b;
+  background: rgb(148, 204, 230);
 }
 
 /* Hover effects */
@@ -81,6 +81,6 @@
 .dual-range-progress {
   position: absolute;
   height: 6px;
-  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  background: rgb(148, 204, 230);
   border-radius: 3px;
 }

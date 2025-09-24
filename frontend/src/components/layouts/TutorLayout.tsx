@@ -117,8 +117,16 @@ export const TutorLayout: React.FC = () => {
         <div className="p-6">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 mb-8">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">TM</span>
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: "rgb(148, 204, 230)" }}
+            >
+              <span
+                className="font-bold text-sm"
+                style={{ color: "rgb(252, 243, 245)" }}
+              >
+                TM
+              </span>
             </div>
             <span className="text-xl font-semibold text-gray-900">
               TutorMatch
@@ -131,12 +139,16 @@ export const TutorLayout: React.FC = () => {
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-blue-600 font-medium text-sm">
-                    {user.name.charAt(0)}
+                    {(user.name || user.firstName || "U")
+                      .charAt(0)
+                      .toUpperCase()}
                   </span>
                 </div>
                 <div>
                   <div className="text-sm font-medium text-gray-900">
-                    {user.name}
+                    {user.name ||
+                      `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+                      "User"}
                   </div>
                   <div className="text-xs text-gray-500">Gia sư</div>
                 </div>

@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -32,33 +33,39 @@ export const Header: React.FC = () => {
   }, []);
 
   const getNavigationItems = () => {
-    // Navigation for public pages
+    // Navigation for public pages (guests)
     if (!user) {
       return [
         { label: "Tìm gia sư", href: "/find-tutor" },
         { label: "Trở thành gia sư", href: "/become-tutor" },
-        { label: "Hộp thư", href: "/login" },
-        { label: "Buổi học của tôi", href: "/login" },
       ];
     }
 
     // User navigation for logged-in users
-    const baseNav = [
-      { label: "Tìm gia sư", href: "/find-tutor" },
-      { label: "Trở thành gia sư", href: "/become-tutor" },
-      { label: "Hộp thư", href: "/messages" },
-    ];
+    const baseNav = [{ label: "Hộp thư", href: "/messages" }];
 
     // Thêm navigation dựa trên role
     if (user.role === "STUDENT") {
+      baseNav.unshift(
+        { label: "Tìm gia sư", href: "/find-tutor" },
+        { label: "Trở thành gia sư", href: "/become-tutor" }
+      );
       baseNav.push({ label: "Buổi học của tôi", href: "/my-sessions" });
     } else if (user.role === "TUTOR") {
+      baseNav.unshift(
+        { label: "Tìm gia sư", href: "/find-tutor" },
+        { label: "Trở thành gia sư", href: "/become-tutor" }
+      );
       baseNav.push(
         { label: "Quản lý booking", href: "/tutor/bookings" },
         { label: "Lịch dạy", href: "/tutor/schedule" },
         { label: "Học sinh", href: "/tutor/students" }
       );
     } else if (user.role === "ADMIN") {
+      baseNav.unshift(
+        { label: "Tìm gia sư", href: "/find-tutor" },
+        { label: "Trở thành gia sư", href: "/become-tutor" }
+      );
       baseNav.push(
         { label: "Quản lý booking", href: "/admin/bookings" },
         { label: "Quản lý người dùng", href: "/admin/users" },
@@ -77,11 +84,11 @@ export const Header: React.FC = () => {
           <Link to="/" className="flex items-center space-x-2">
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: "#94cce6" }}
+              style={{ backgroundColor: "rgb(148, 204, 230)" }}
             >
               <span
                 className="font-black text-sm"
-                style={{ color: "oklch(0.97 0.01 0)" }}
+                style={{ color: "rgb(252, 243, 245)" }}
               >
                 TM
               </span>
@@ -93,27 +100,43 @@ export const Header: React.FC = () => {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            {getNavigationItems().map((item, index) => (
-              <Link
-                key={index}
-                to={item.href}
-                className="text-gray-600 hover:opacity-80 transition-colors px-3 py-2 rounded-lg hover:bg-opacity-10"
-                style={
-                  {
-                    "--hover-bg": "#94cce6",
-                  } as React.CSSProperties
-                }
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "rgba(148, 204, 230, 0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {getNavigationItems().map((item, index) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={index}
+                  to={item.href}
+                  className={`transition-colors px-3 py-2 rounded-lg ${
+                    isActive
+                      ? "hover:opacity-80"
+                      : "text-gray-600 hover:opacity-80 hover:bg-opacity-10"
+                  }`}
+                  style={
+                    isActive
+                      ? {
+                          backgroundColor: "rgb(148, 204, 230)",
+                          color: "rgb(252, 243, 245)",
+                        }
+                      : ({
+                          "--hover-bg": "#94cce6",
+                        } as React.CSSProperties)
+                  }
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor =
+                        "rgba(148, 204, 230, 0.1)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }
+                  }}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* User Menu */}
@@ -127,7 +150,7 @@ export const Header: React.FC = () => {
                 >
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: "#94cce6" }}
+                    style={{ backgroundColor: "rgb(148, 204, 230)" }}
                   >
                     {user.imageAvatar ? (
                       <img
@@ -138,7 +161,7 @@ export const Header: React.FC = () => {
                     ) : (
                       <span
                         className="font-medium text-sm"
-                        style={{ color: "oklch(0.97 0.01 0)" }}
+                        style={{ color: "rgb(252, 243, 245)" }}
                       >
                         {user.firstName?.charAt(0)?.toUpperCase() || ""}
                         {user.lastName?.charAt(0)?.toUpperCase() || ""}
@@ -206,6 +229,75 @@ export const Header: React.FC = () => {
                       Cài đặt
                     </Link>
 
+                    {/* Nút chuyển sang giao diện khác */}
+                    {user.role === "TUTOR" && (
+                      <Link
+                        to="/user-dashboard"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <svg
+                          className="w-4 h-4 mr-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                        Chuyển sang giao diện học sinh
+                      </Link>
+                    )}
+
+                    {user.role === "ADMIN" && (
+                      <>
+                        <Link
+                          to="/tutor-dashboard"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <svg
+                            className="w-4 h-4 mr-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                            />
+                          </svg>
+                          Chuyển sang giao diện gia sư
+                        </Link>
+                        <Link
+                          to="/user-dashboard"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <svg
+                            className="w-4 h-4 mr-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                          Chuyển sang giao diện học sinh
+                        </Link>
+                      </>
+                    )}
+
                     <button
                       onClick={handleLogout}
                       className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -229,16 +321,44 @@ export const Header: React.FC = () => {
                 )}
               </div>
             ) : (
-              <Link
-                to="/register"
-                className="px-4 py-2 rounded-lg hover:opacity-80 transition-colors"
-                style={{
-                  backgroundColor: "#94cce6",
-                  color: "oklch(0.97 0.01 0)",
-                }}
-              >
-                Đăng ký
-              </Link>
+              <div className="flex items-center space-x-3">
+                <Link
+                  to="/login"
+                  className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                    location.pathname === "/login"
+                      ? "hover:opacity-80"
+                      : "text-gray-700 hover:text-gray-900"
+                  }`}
+                  style={
+                    location.pathname === "/login"
+                      ? {
+                          backgroundColor: "rgb(148, 204, 230)",
+                          color: "rgb(252, 243, 245)",
+                        }
+                      : {}
+                  }
+                >
+                  Đăng nhập
+                </Link>
+                <Link
+                  to="/register"
+                  className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                    location.pathname === "/register"
+                      ? "hover:opacity-80"
+                      : "text-gray-700 hover:text-gray-900"
+                  }`}
+                  style={
+                    location.pathname === "/register"
+                      ? {
+                          backgroundColor: "rgb(148, 204, 230)",
+                          color: "rgb(252, 243, 245)",
+                        }
+                      : {}
+                  }
+                >
+                  Đăng ký
+                </Link>
+              </div>
             )}
           </div>
         </div>

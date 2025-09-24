@@ -11,11 +11,11 @@ export const Footer: React.FC = () => {
             <div className="flex items-center space-x-2 mb-4">
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: "#94cce6" }}
+                style={{ backgroundColor: "rgb(148, 204, 230)" }}
               >
                 <span
                   className="font-bold text-sm"
-                  style={{ color: "oklch(0.97 0.01 0)" }}
+                  style={{ color: "rgb(252, 243, 245)" }}
                 >
                   TM
                 </span>

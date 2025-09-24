@@ -2,20 +2,18 @@ package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.dto.BecomeTutorRequest;
 import fsa.training.tutormatch.dto.TutorDraftRequest;
-import fsa.training.tutormatch.entity.TutorProfile;
-import fsa.training.tutormatch.entity.User;
+import fsa.training.tutormatch.entity.*;
 import fsa.training.tutormatch.enums.ProfileStatus;
 import fsa.training.tutormatch.enums.UserRole;
-import fsa.training.tutormatch.repository.TutorProfileRepository;
-import fsa.training.tutormatch.repository.UserRepository;
+import fsa.training.tutormatch.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.time.LocalTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +22,11 @@ public class TutorProfileDraftService {
     
     private final TutorProfileRepository tutorProfileRepository;
     private final UserRepository userRepository;
+    private final EducationRepository educationRepository;
+    private final CertificateRepository certificateRepository;
+    private final ScheduleRepository scheduleRepository;
+    private final ProfileSubjectRepository profileSubjectRepository;
+    private final SubjectRepository subjectRepository;
 
     /**
      * Lưu nháp cho Student (chưa là tutor)
@@ -195,16 +198,8 @@ public class TutorProfileDraftService {
         draftProfile.setApprovedBy(admin);
         draftProfile.setApprovedAt(java.time.ZonedDateTime.now());
         
-        // Update User info from approved profile
-        if (draftProfile.getFirstName() != null) {
-            student.setFirstName(draftProfile.getFirstName());
-        }
-        if (draftProfile.getLastName() != null) {
-            student.setLastName(draftProfile.getLastName());
-        }
-        if (draftProfile.getImageAvatar() != null) {
-            student.setImageAvatar(draftProfile.getImageAvatar());
-        }
+        // Personal info is already in User entity, no need to copy
+        // since draftProfile shares the same User as student
         
         // Chuyển user thành TUTOR
         student.setRole(UserRole.TUTOR);
@@ -335,10 +330,8 @@ public class TutorProfileDraftService {
     private void copyDraftToPublic(TutorProfile source, TutorProfile target) {
         target.setUser(source.getUser());
         
-        // Copy personal info (firstName, lastName, imageAvatar)
-        target.setFirstName(source.getFirstName());
-        target.setLastName(source.getLastName());
-        target.setImageAvatar(source.getImageAvatar());
+        // Personal info (firstName, lastName, imageAvatar) is now in User entity
+        // No need to copy as both profiles share the same User
         
         // Copy tutor-specific fields
         target.setBio(source.getBio());
@@ -347,7 +340,9 @@ public class TutorProfileDraftService {
         target.setTeachingLevel(source.getTeachingLevel());
         target.setCvUrl(source.getCvUrl());
         target.setVideoIntro(source.getVideoIntro());
-        // TODO: Copy schedules, subjects, certificates, educations
+        
+        // Copy related entities
+        copyRelatedEntities(source, target);
     }
 
     /**
@@ -400,10 +395,16 @@ public class TutorProfileDraftService {
             log.info("Updating existing tutor profile draft for student: {}", username);
         }
 
-        // Update profile from request (firstName, lastName, imageAvatar stored in profile for admin approval)
-        updateProfileFromDraftRequest(draftProfile, request);
+        // Update basic profile fields first (excluding related entities)
+        updateProfileBasicFields(draftProfile, request);
         
-        // Save profile
+        // Save profile first to get ID for related entities
+        draftProfile = tutorProfileRepository.saveAndFlush(draftProfile);
+        
+        // Now update related entities with managed entity
+        updateRelatedEntities(draftProfile, request);
+        
+        // Save again after updating related entities
         draftProfile = tutorProfileRepository.save(draftProfile);
         
         Map<String, Object> result = new HashMap<>();
@@ -436,8 +437,17 @@ public class TutorProfileDraftService {
                 .findByUserAndIsDraft(user, true)
                 .orElseThrow(() -> new RuntimeException("Draft profile not found for tutor"));
 
-        // Update profile from request
-        updateProfileFromDraftRequest(draftProfile, request);
+        // Update basic profile fields first (excluding related entities)
+        updateProfileBasicFields(draftProfile, request);
+        
+        // Save draft profile first to get ID for related entities
+        draftProfile = tutorProfileRepository.saveAndFlush(draftProfile);
+        
+        // Now update related entities with managed entity
+        updateRelatedEntities(draftProfile, request);
+        
+        // Save again after updating related entities
+        draftProfile = tutorProfileRepository.save(draftProfile);
         
         // Auto-update public profile for certain fields (address, schedule, fees, teaching level)
         TutorProfile publicProfile = tutorProfileRepository
@@ -448,9 +458,6 @@ public class TutorProfileDraftService {
             autoUpdatePublicProfileFromDraft(publicProfile, draftProfile, request);
             tutorProfileRepository.save(publicProfile);
         }
-        
-        // Save draft profile
-        draftProfile = tutorProfileRepository.save(draftProfile);
         
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
@@ -464,15 +471,10 @@ public class TutorProfileDraftService {
     }
 
     /**
-     * Update profile from TutorDraftRequest
+     * Update basic profile fields (excluding related entities)
      */
-    private void updateProfileFromDraftRequest(TutorProfile profile, TutorDraftRequest request) {
-        // Update profile info (stored in profile for admin approval)
-        if (request.getFirstName() != null) profile.setFirstName(request.getFirstName());
-        if (request.getLastName() != null) profile.setLastName(request.getLastName());
-        if (request.getAvatar() != null) profile.setImageAvatar(request.getAvatar());
-        
-        // Update tutor-specific fields
+    private void updateProfileBasicFields(TutorProfile profile, TutorDraftRequest request) {
+        // Update tutor-specific fields in profile
         if (request.getBio() != null) profile.setBio(request.getBio());
         if (request.getHeadline() != null) profile.setHeadline(request.getHeadline());
         if (request.getExperience() != null) profile.setExperience(request.getExperience());
@@ -480,29 +482,28 @@ public class TutorProfileDraftService {
         if (request.getCvUrl() != null) profile.setCvUrl(request.getCvUrl());
         if (request.getVideoIntro() != null) profile.setVideoIntro(request.getVideoIntro());
         
-        // Update user info (these can be updated directly as they're not subject to admin approval)
+        // Update user info - firstName, lastName, imageAvatar now go to User entity
         User user = profile.getUser();
+        if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
+        if (request.getLastName() != null) user.setLastName(request.getLastName());
+        if (request.getAvatar() != null) user.setImageAvatar(request.getAvatar());
         if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty() && 
             request.getPhoneNumber().matches("^[0-9]{9,15}$")) {
             user.setPhoneNumber(request.getPhoneNumber());
         }
         if (request.getAddress() != null) user.setAddress(request.getAddress());
         if (request.getTimezone() != null) user.setTimezone(request.getTimezone());
-        
-        // TODO: Handle subjectFees, schedules, educations, certificates
-        // For now, just log them
-        if (request.getSubjectFees() != null) {
-            log.info("SubjectFees received: {}", request.getSubjectFees().size());
-        }
-        if (request.getSchedules() != null) {
-            log.info("Schedules received: {}", request.getSchedules().size());
-        }
-        if (request.getEducations() != null) {
-            log.info("Educations received: {}", request.getEducations().size());
-        }
-        if (request.getCertificates() != null) {
-            log.info("Certificates received: {}", request.getCertificates().size());
-        }
+    }
+
+    /**
+     * Update related entities (must be called after profile is saved)
+     */
+    private void updateRelatedEntities(TutorProfile profile, TutorDraftRequest request) {
+        // Handle related entities
+        updateEducations(profile, request.getEducations());
+        updateCertificates(profile, request.getCertificates());
+        updateSchedules(profile, request.getSchedules());
+        updateSubjectFees(profile, request.getSubjectFees());
     }
 
     /**
@@ -650,6 +651,12 @@ public class TutorProfileDraftService {
                 
                 result.put("createdAt", draftProfile.getCreatedAt());
                 result.put("updatedAt", draftProfile.getUpdatedAt());
+                
+                // Load related data
+                result.put("educations", getEducationsForProfile(draftProfile.getId()));
+                result.put("certificates", getCertificatesForProfile(draftProfile.getId()));
+                result.put("schedules", getSchedulesForProfile(draftProfile.getId()));
+                result.put("subjectFees", getSubjectFeesForProfile(draftProfile.getId()));
             } else {
                 result.put("hasDraft", false);
                 
@@ -694,6 +701,12 @@ public class TutorProfileDraftService {
                 result.put("cvUrl", draftProfile.getCvUrl());
                 result.put("videoIntro", draftProfile.getVideoIntro());
                 
+                // Load related data
+                result.put("educations", getEducationsForProfile(draftProfile.getId()));
+                result.put("certificates", getCertificatesForProfile(draftProfile.getId()));
+                result.put("schedules", getSchedulesForProfile(draftProfile.getId()));
+                result.put("subjectFees", getSubjectFeesForProfile(draftProfile.getId()));
+                
             } else if (publicProfile != null) {
                 result.put("hasDraft", false);
                 result.put("hasPublicProfile", true);
@@ -730,5 +743,281 @@ public class TutorProfileDraftService {
         
         result.put("message", "Draft profile data retrieved successfully");
         return result;
+    }
+
+    /**
+     * Update educations for profile
+     */
+    private void updateEducations(TutorProfile profile, List<TutorDraftRequest.EducationRequest> educationRequests) {
+        if (educationRequests == null) return;
+        
+        // Ensure profile has an ID (should be saved already)
+        if (profile.getId() == null) {
+            throw new RuntimeException("Profile must be saved before updating educations");
+        }
+        
+        // Delete existing educations for this profile
+        educationRepository.deleteByProfileId(profile.getId());
+        
+        // Refresh the profile entity to ensure it's managed
+        profile = tutorProfileRepository.findById(profile.getId()).orElse(profile);
+        
+        // Add new educations
+        for (TutorDraftRequest.EducationRequest eduRequest : educationRequests) {
+            Education education = new Education();
+            education.setProfile(profile);
+            education.setSchoolName(eduRequest.getSchoolName());
+            education.setDegree(eduRequest.getDegree());
+            education.setMajor(eduRequest.getMajor());
+            education.setFromTime(eduRequest.getFromTime());
+            education.setToTime(eduRequest.getToTime());
+            education.setDegreeImage(eduRequest.getDegreeImage());
+            education.setValid(false); // Will be validated by admin
+            
+            educationRepository.save(education);
+        }
+        
+        log.info("Updated {} educations for profile {}", educationRequests.size(), profile.getId());
+    }
+
+    /**
+     * Update certificates for profile
+     */
+    private void updateCertificates(TutorProfile profile, List<TutorDraftRequest.CertificateRequest> certificateRequests) {
+        if (certificateRequests == null) return;
+        
+        // Ensure profile has an ID (should be saved already)
+        if (profile.getId() == null) {
+            throw new RuntimeException("Profile must be saved before updating certificates");
+        }
+        
+        // Delete existing certificates for this profile
+        certificateRepository.deleteByProfileId(profile.getId());
+        
+        // Refresh the profile entity to ensure it's managed
+        profile = tutorProfileRepository.findById(profile.getId()).orElse(profile);
+        
+        // Add new certificates
+        for (TutorDraftRequest.CertificateRequest certRequest : certificateRequests) {
+            Certificate certificate = new Certificate();
+            certificate.setProfile(profile);
+            certificate.setName(certRequest.getName());
+            certificate.setIssuedBy(certRequest.getIssuedBy());
+            certificate.setDescription(certRequest.getDescription());
+            certificate.setCertImage(certRequest.getCertImage());
+            certificate.setValid(false); // Will be validated by admin
+            
+            certificateRepository.save(certificate);
+        }
+        
+        log.info("Updated {} certificates for profile {}", certificateRequests.size(), profile.getId());
+    }
+
+    /**
+     * Update schedules for profile
+     */
+    private void updateSchedules(TutorProfile profile, List<TutorDraftRequest.ScheduleRequest> scheduleRequests) {
+        if (scheduleRequests == null) return;
+        
+        // Ensure profile has an ID (should be saved already)
+        if (profile.getId() == null) {
+            throw new RuntimeException("Profile must be saved before updating schedules");
+        }
+        
+        // Delete existing schedules for this profile
+        scheduleRepository.deleteByProfileId(profile.getId());
+        
+        // Refresh the profile entity to ensure it's managed
+        profile = tutorProfileRepository.findById(profile.getId()).orElse(profile);
+        
+        // Add new schedules
+        for (TutorDraftRequest.ScheduleRequest schedRequest : scheduleRequests) {
+            Schedule schedule = new Schedule();
+            schedule.setProfile(profile);
+            schedule.setDayOfWeek(schedRequest.getDayOfWeek());
+            
+            // Parse time strings to LocalTime
+            try {
+                schedule.setFromTime(LocalTime.parse(schedRequest.getFromTime()));
+                schedule.setToTime(LocalTime.parse(schedRequest.getToTime()));
+            } catch (Exception e) {
+                log.warn("Invalid time format for schedule: {} - {}", schedRequest.getFromTime(), schedRequest.getToTime());
+                continue;
+            }
+            
+            schedule.setEnable(schedRequest.isEnable());
+            
+            scheduleRepository.save(schedule);
+        }
+        
+        log.info("Updated {} schedules for profile {}", scheduleRequests.size(), profile.getId());
+    }
+
+    /**
+     * Update subject fees for profile
+     */
+    private void updateSubjectFees(TutorProfile profile, List<TutorDraftRequest.SubjectFeeRequest> subjectFeeRequests) {
+        if (subjectFeeRequests == null) return;
+        
+        // Ensure profile has an ID (should be saved already)
+        if (profile.getId() == null) {
+            throw new RuntimeException("Profile must be saved before updating subject fees");
+        }
+        
+        // Delete existing subject fees for this profile
+        profileSubjectRepository.deleteByProfileId(profile.getId());
+        
+        // Refresh the profile entity to ensure it's managed
+        profile = tutorProfileRepository.findById(profile.getId()).orElse(profile);
+        
+        // Add new subject fees
+        for (TutorDraftRequest.SubjectFeeRequest feeRequest : subjectFeeRequests) {
+            // Find subject by ID
+            Subject subject = subjectRepository.findById(feeRequest.getSubjectId()).orElse(null);
+            if (subject == null) {
+                log.warn("Subject not found with ID: {}", feeRequest.getSubjectId());
+                continue;
+            }
+            
+            TutorProfileSubject tutorProfileSubject = new TutorProfileSubject();
+            tutorProfileSubject.setProfile(profile);
+            tutorProfileSubject.setSubject(subject);
+            tutorProfileSubject.setFees(feeRequest.getFees());
+            
+            profileSubjectRepository.save(tutorProfileSubject);
+        }
+        
+        log.info("Updated {} subject fees for profile {}", subjectFeeRequests.size(), profile.getId());
+    }
+
+    /**
+     * Get educations for profile
+     */
+    private List<Map<String, Object>> getEducationsForProfile(Integer profileId) {
+        List<Education> educations = educationRepository.findByProfileId(profileId);
+        return educations.stream().map(education -> {
+            Map<String, Object> eduData = new HashMap<>();
+            eduData.put("id", education.getId());
+            eduData.put("schoolName", education.getSchoolName());
+            eduData.put("degree", education.getDegree());
+            eduData.put("major", education.getMajor());
+            eduData.put("fromTime", education.getFromTime());
+            eduData.put("toTime", education.getToTime());
+            eduData.put("degreeImage", education.getDegreeImage());
+            eduData.put("valid", education.getValid());
+            return eduData;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * Get certificates for profile
+     */
+    private List<Map<String, Object>> getCertificatesForProfile(Integer profileId) {
+        List<Certificate> certificates = certificateRepository.findByProfileId(profileId);
+        return certificates.stream().map(certificate -> {
+            Map<String, Object> certData = new HashMap<>();
+            certData.put("id", certificate.getId());
+            certData.put("name", certificate.getName());
+            certData.put("issuedBy", certificate.getIssuedBy());
+            certData.put("description", certificate.getDescription());
+            certData.put("certImage", certificate.getCertImage());
+            certData.put("valid", certificate.getValid());
+            return certData;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * Get schedules for profile
+     */
+    private List<Map<String, Object>> getSchedulesForProfile(Integer profileId) {
+        List<Schedule> schedules = scheduleRepository.findByProfileId(profileId);
+        return schedules.stream().map(schedule -> {
+            Map<String, Object> schedData = new HashMap<>();
+            schedData.put("id", schedule.getId());
+            schedData.put("dayOfWeek", schedule.getDayOfWeek());
+            schedData.put("fromTime", schedule.getFromTime().toString());
+            schedData.put("toTime", schedule.getToTime().toString());
+            schedData.put("enable", schedule.getEnable());
+            return schedData;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * Get subject fees for profile
+     */
+    private List<Map<String, Object>> getSubjectFeesForProfile(Integer profileId) {
+        List<TutorProfileSubject> subjectFees = profileSubjectRepository.findByProfileId(profileId);
+        return subjectFees.stream().map(subjectFee -> {
+            Map<String, Object> feeData = new HashMap<>();
+            feeData.put("id", subjectFee.getId());
+            feeData.put("subjectId", subjectFee.getSubject().getId());
+            feeData.put("subjectName", subjectFee.getSubject().getName());
+            feeData.put("fees", subjectFee.getFees());
+            return feeData;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * Copy all related entities from source profile to target profile
+     */
+    private void copyRelatedEntities(TutorProfile source, TutorProfile target) {
+        log.info("Copying related entities from profile {} to profile {}", source.getId(), target.getId());
+        
+        // Copy educations
+        List<Education> sourceEducations = educationRepository.findByProfileId(source.getId());
+        for (Education sourceEdu : sourceEducations) {
+            Education targetEdu = new Education();
+            targetEdu.setProfile(target);
+            targetEdu.setSchoolName(sourceEdu.getSchoolName());
+            targetEdu.setDegree(sourceEdu.getDegree());
+            targetEdu.setMajor(sourceEdu.getMajor());
+            targetEdu.setFromTime(sourceEdu.getFromTime());
+            targetEdu.setToTime(sourceEdu.getToTime());
+            targetEdu.setDegreeImage(sourceEdu.getDegreeImage());
+            targetEdu.setValid(true); // Mark as valid when approved by admin
+            
+            educationRepository.save(targetEdu);
+        }
+        
+        // Copy certificates
+        List<Certificate> sourceCertificates = certificateRepository.findByProfileId(source.getId());
+        for (Certificate sourceCert : sourceCertificates) {
+            Certificate targetCert = new Certificate();
+            targetCert.setProfile(target);
+            targetCert.setName(sourceCert.getName());
+            targetCert.setIssuedBy(sourceCert.getIssuedBy());
+            targetCert.setDescription(sourceCert.getDescription());
+            targetCert.setCertImage(sourceCert.getCertImage());
+            targetCert.setValid(true); // Mark as valid when approved by admin
+            
+            certificateRepository.save(targetCert);
+        }
+        
+        // Copy schedules
+        List<Schedule> sourceSchedules = scheduleRepository.findByProfileId(source.getId());
+        for (Schedule sourceSchedule : sourceSchedules) {
+            Schedule targetSchedule = new Schedule();
+            targetSchedule.setProfile(target);
+            targetSchedule.setDayOfWeek(sourceSchedule.getDayOfWeek());
+            targetSchedule.setFromTime(sourceSchedule.getFromTime());
+            targetSchedule.setToTime(sourceSchedule.getToTime());
+            targetSchedule.setEnable(sourceSchedule.getEnable());
+            
+            scheduleRepository.save(targetSchedule);
+        }
+        
+        // Copy subject fees
+        List<TutorProfileSubject> sourceSubjectFees = profileSubjectRepository.findByProfileId(source.getId());
+        for (TutorProfileSubject sourceSubjectFee : sourceSubjectFees) {
+            TutorProfileSubject targetSubjectFee = new TutorProfileSubject();
+            targetSubjectFee.setProfile(target);
+            targetSubjectFee.setSubject(sourceSubjectFee.getSubject());
+            targetSubjectFee.setFees(sourceSubjectFee.getFees());
+            
+            profileSubjectRepository.save(targetSubjectFee);
+        }
+        
+        log.info("Successfully copied {} educations, {} certificates, {} schedules, {} subject fees",
+                sourceEducations.size(), sourceCertificates.size(), sourceSchedules.size(), sourceSubjectFees.size());
     }
 }

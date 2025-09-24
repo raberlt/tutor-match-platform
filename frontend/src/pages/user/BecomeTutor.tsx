@@ -29,6 +29,12 @@ export const BecomeTutor: React.FC = () => {
   >([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // States for upload modal
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadType, setUploadType] = useState<"avatar" | "cv">("avatar");
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
   const [formData, setFormData] = useState({
     // Step 1: Thông tin cơ bản
     firstName: user?.firstName || "",
@@ -143,7 +149,10 @@ export const BecomeTutor: React.FC = () => {
             formData.acceptTerms
           );
         case 2:
-          return formData.profileImage !== null && formData.cvFile !== null;
+          return (
+            (formData.profileImage !== null || formData.profileImageUrl) &&
+            (formData.cvFile !== null || formData.cvFileUrl)
+          );
         case 3:
           return (
             formData.noCertificates ||
@@ -170,8 +179,14 @@ export const BecomeTutor: React.FC = () => {
             formData.experience &&
             formData.teachingMethods.length > 0
           );
-        case 6:
-          return true; // Video không bắt buộc
+        case 6: {
+          // Video không bắt buộc nhưng cần kiểm tra có video hoặc link YouTube hợp lệ không
+          if (formData.introductionVideo !== null) return true;
+          if (formData.videoUrl.trim() === "") return false;
+          // Kiểm tra URL YouTube có hợp lệ không
+          const videoId = extractYouTubeVideoId(formData.videoUrl);
+          return videoId !== null;
+        }
         case 7:
           return (
             formData.availableDays.length > 0 &&
@@ -198,6 +213,246 @@ export const BecomeTutor: React.FC = () => {
     }
     setCompletedSteps(newCompletedSteps);
   }, [formData, isStepCompleted]);
+
+  // Load draft data đã lưu
+  useEffect(() => {
+    const loadDraftData = async () => {
+      console.log("🔍 Debug: isAuthenticated =", isAuthenticated);
+      console.log("🔍 Debug: user =", user);
+      const token = localStorage.getItem("token");
+      console.log("🔍 Debug: token =", token);
+
+      // Check both isAuthenticated and token existence
+      if (isAuthenticated && token) {
+        try {
+          console.log("✅ User is authenticated, loading draft data...");
+          const draftData = await TutorService.getDraftData();
+
+          if (draftData.success && draftData.hasDraft) {
+            console.log("✅ Loading saved draft data:", draftData);
+            console.log("📝 Current formData before update:", formData);
+            console.log("🔍 Draft data fields:", {
+              firstName: draftData.firstName,
+              lastName: draftData.lastName,
+              phoneNumber: draftData.phoneNumber,
+              bio: draftData.bio,
+              headline: draftData.headline,
+              experience: draftData.experience,
+            });
+
+            // Điền dữ liệu vào form
+            setFormData((prev) => {
+              const updatedData = {
+                ...prev,
+                // Step 1: Thông tin cơ bản
+                firstName: draftData.firstName || prev.firstName,
+                lastName: draftData.lastName || prev.lastName,
+                phone: draftData.phoneNumber || prev.phone,
+                email: draftData.email || prev.email,
+                province: draftData.address || prev.province, // Map address to province
+                timezone: draftData.timezone || prev.timezone,
+
+                // Step 2: Ảnh đại diện và CV
+                profileImageUrl: draftData.imageAvatar || prev.profileImageUrl,
+                cvFileUrl: draftData.cvUrl || prev.cvFileUrl,
+
+                // Step 5: Giới thiệu
+                title: draftData.headline || prev.title,
+                introduction: draftData.bio || prev.introduction,
+                experience: draftData.experience || prev.experience,
+                teachingLevel: draftData.teachingLevel || prev.teachingLevel,
+                videoUrl: draftData.videoIntro || prev.videoUrl, // Map videoIntro to videoUrl
+
+                // Các mảng dữ liệu
+                educations:
+                  draftData.educations && draftData.educations.length > 0
+                    ? draftData.educations
+                    : prev.educations,
+                // Map educations to degrees for display
+                degrees:
+                  draftData.educations && draftData.educations.length > 0
+                    ? draftData.educations.map((edu: any) => ({
+                        university: edu.schoolName || "",
+                        education: edu.degree || "",
+                        major: edu.major || "",
+                        startYear: edu.fromTime ? edu.fromTime.toString() : "",
+                        endYear: edu.toTime ? edu.toTime.toString() : "",
+                        imageUrl: edu.degreeImage || "",
+                      }))
+                    : prev.degrees,
+                certificates:
+                  draftData.certificates && draftData.certificates.length > 0
+                    ? draftData.certificates
+                    : prev.certificates,
+                schedules:
+                  draftData.schedules && draftData.schedules.length > 0
+                    ? draftData.schedules
+                    : prev.schedules,
+                // Map schedules to dayTimeSlots for display
+                dayTimeSlots:
+                  draftData.schedules && draftData.schedules.length > 0
+                    ? draftData.schedules.reduce((acc: any, sched: any) => {
+                        // Convert English enum to Vietnamese day names
+                        const englishToVietnamese: { [key: string]: string } = {
+                          MONDAY: "Thứ 2",
+                          TUESDAY: "Thứ 3",
+                          WEDNESDAY: "Thứ 4",
+                          THURSDAY: "Thứ 5",
+                          FRIDAY: "Thứ 6",
+                          SATURDAY: "Thứ 7",
+                          SUNDAY: "Chủ nhật",
+                        };
+
+                        const vietnameseDay =
+                          englishToVietnamese[sched.dayOfWeek];
+                        if (vietnameseDay) {
+                          if (!acc[vietnameseDay]) acc[vietnameseDay] = [];
+                          acc[vietnameseDay].push({
+                            start: sched.fromTime || "09:00",
+                            end: sched.toTime || "10:00",
+                          });
+                        }
+                        return acc;
+                      }, {})
+                    : prev.dayTimeSlots,
+                // Update availableDays based on dayTimeSlots
+                availableDays:
+                  draftData.schedules && draftData.schedules.length > 0
+                    ? draftData.schedules
+                        .map((sched: any) => {
+                          const englishToVietnamese: { [key: string]: string } =
+                            {
+                              MONDAY: "Thứ 2",
+                              TUESDAY: "Thứ 3",
+                              WEDNESDAY: "Thứ 4",
+                              THURSDAY: "Thứ 5",
+                              FRIDAY: "Thứ 6",
+                              SATURDAY: "Thứ 7",
+                              SUNDAY: "Chủ nhật",
+                            };
+                          return englishToVietnamese[sched.dayOfWeek];
+                        })
+                        .filter((day: string) => day) // Remove undefined values
+                    : prev.availableDays,
+                // Map teachingMethods from JSON string (convert English to Vietnamese)
+                teachingMethods: draftData.teachingMethods
+                  ? JSON.parse(draftData.teachingMethods).map(
+                      (method: string) => {
+                        const englishToVietnamese: { [key: string]: string } = {
+                          MIDDLE_SCHOOL: "Trung học cơ sở",
+                          HIGH_SCHOOL: "Trung học phổ thông",
+                          ELEMENTARY_SCHOOL: "Tiểu học",
+                          UNIVERSITY: "Đại học",
+                          GRADUATE: "Sau đại học",
+                        };
+                        return englishToVietnamese[method] || method;
+                      }
+                    )
+                  : prev.teachingMethods,
+                // Auto-check confirmations if draft data exists
+                confirmAge: true,
+                acceptTerms: true,
+                subjectFees:
+                  draftData.subjectFees && draftData.subjectFees.length > 0
+                    ? draftData.subjectFees
+                    : prev.subjectFees,
+                // Map subjectFees to subjects for display
+                subjects:
+                  draftData.subjectFees && draftData.subjectFees.length > 0
+                    ? draftData.subjectFees.map((fee: any) => ({
+                        name:
+                          getSubjectName(fee.subjectId) || "Unknown Subject",
+                        hourlyRate: fee.fees ? fee.fees.toString() : "0",
+                      }))
+                    : prev.subjects,
+              };
+
+              console.log("🔄 Updated formData:", updatedData);
+              return updatedData;
+            });
+
+            console.log("✅ Draft data loaded successfully");
+            console.log("🎯 Final formData state:", formData);
+          } else {
+            const message = draftData.message || "No hasDraft flag";
+            console.log("No draft data found:", message);
+
+            // Kiểm tra nếu cần authentication
+            if (
+              message.includes("Authentication") ||
+              message.includes("redirected")
+            ) {
+              console.warn("User authentication may be invalid or expired");
+              // Có thể thêm logic để redirect user về login page hoặc refresh token
+            }
+          }
+        } catch (error) {
+          console.error("❌ Error loading draft data:", error);
+        }
+      } else if (token) {
+        // Fallback: if we have token but isAuthenticated is false, try loading anyway
+        console.log(
+          "⚠️ isAuthenticated is false but token exists, trying to load draft data anyway..."
+        );
+        try {
+          const draftData = await TutorService.getDraftData();
+          if (draftData.success && draftData.hasDraft) {
+            console.log("✅ Loading saved draft data (fallback):", draftData);
+            // Same mapping logic as above
+            setFormData((prev) => {
+              const updatedData = {
+                ...prev,
+                // Step 1: Thông tin cơ bản
+                firstName: draftData.firstName || prev.firstName,
+                lastName: draftData.lastName || prev.lastName,
+                phone: draftData.phoneNumber || prev.phone,
+                email: draftData.email || prev.email,
+                province: draftData.address || prev.province,
+                timezone: draftData.timezone || prev.timezone,
+                // Step 2: Ảnh đại diện và CV
+                profileImageUrl: draftData.imageAvatar || prev.profileImageUrl,
+                cvFileUrl: draftData.cvUrl || prev.cvFileUrl,
+                // Step 5: Giới thiệu
+                title: draftData.headline || prev.title,
+                introduction: draftData.bio || prev.introduction,
+                experience: draftData.experience || prev.experience,
+                teachingLevel: draftData.teachingLevel || prev.teachingLevel,
+                videoUrl: draftData.videoIntro || prev.videoUrl,
+                // Map teachingMethods from JSON string (convert English to Vietnamese)
+                teachingMethods: draftData.teachingMethods
+                  ? JSON.parse(draftData.teachingMethods).map(
+                      (method: string) => {
+                        const englishToVietnamese: { [key: string]: string } = {
+                          MIDDLE_SCHOOL: "Trung học cơ sở",
+                          HIGH_SCHOOL: "Trung học phổ thông",
+                          ELEMENTARY_SCHOOL: "Tiểu học",
+                          UNIVERSITY: "Đại học",
+                          GRADUATE: "Sau đại học",
+                        };
+                        return englishToVietnamese[method] || method;
+                      }
+                    )
+                  : prev.teachingMethods,
+                // Auto-check confirmations if draft data exists
+                confirmAge: true,
+                acceptTerms: true,
+              };
+              console.log("🔄 Updated formData (fallback):", updatedData);
+              return updatedData;
+            });
+          }
+        } catch (error) {
+          console.error("❌ Error loading draft data (fallback):", error);
+        }
+      } else {
+        console.log("❌ No token found, skipping draft data load");
+        console.log("❌ Debug: isAuthenticated =", isAuthenticated);
+        console.log("❌ Debug: user =", user);
+      }
+    };
+
+    loadDraftData();
+  }, [isAuthenticated]);
 
   // Load dữ liệu mặc định
   useEffect(() => {
@@ -395,42 +650,6 @@ export const BecomeTutor: React.FC = () => {
     }));
   };
 
-  const uploadFileToCloudinary = async (
-    file: File,
-    type: "avatar" | "cv" | "certificate" | "degree",
-    onSuccess: (url: string) => void,
-    onError: (error: string) => void
-  ) => {
-    try {
-      let response: UploadResponse;
-
-      switch (type) {
-        case "avatar":
-          response = await FileUploadService.uploadAvatar(file);
-          break;
-        case "cv":
-          response = await FileUploadService.uploadCV(file);
-          break;
-        case "certificate":
-          response = await FileUploadService.uploadCertificate(file);
-          break;
-        case "degree":
-          response = await FileUploadService.uploadDegree(file);
-          break;
-        default:
-          throw new Error("Invalid upload type");
-      }
-
-      if (response.success) {
-        onSuccess(response.url);
-      } else {
-        onError(response.error || "Upload failed");
-      }
-    } catch (error) {
-      onError(error instanceof Error ? error.message : "Upload failed");
-    }
-  };
-
   const addTimeSlot = (day: string) => {
     const newTimeSlot = { start: "09:00", end: "10:30" };
     setFormData((prev) => ({
@@ -440,6 +659,143 @@ export const BecomeTutor: React.FC = () => {
         [day]: [...(prev.dayTimeSlots[day] || []), newTimeSlot],
       },
     }));
+  };
+
+  // Upload modal handlers
+  const handleFileSelect = (file: File, type: "avatar" | "cv") => {
+    // Validate file size
+    const maxSize = type === "avatar" ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB for avatar, 10MB for CV
+    if (file.size > maxSize) {
+      const maxSizeMB = type === "avatar" ? 5 : 10;
+      setErrors((prev) => ({
+        ...prev,
+        [type === "avatar"
+          ? "profileImage"
+          : "cvFile"]: `File quá lớn! Kích thước tối đa là ${maxSizeMB}MB`,
+      }));
+      return;
+    }
+
+    // Validate file type
+    if (type === "avatar" && !file.type.startsWith("image/")) {
+      setErrors((prev) => ({
+        ...prev,
+        profileImage: "Vui lòng chọn file ảnh hợp lệ",
+      }));
+      return;
+    }
+
+    if (
+      type === "cv" &&
+      !(
+        file.type === "application/pdf" ||
+        file.name.endsWith(".doc") ||
+        file.name.endsWith(".docx")
+      )
+    ) {
+      setErrors((prev) => ({
+        ...prev,
+        cvFile: "Vui lòng chọn file PDF, DOC hoặc DOCX",
+      }));
+      return;
+    }
+
+    // Clear errors and set file
+    setErrors((prev) => ({
+      ...prev,
+      [type === "avatar" ? "profileImage" : "cvFile"]: "",
+    }));
+
+    setPreviewFile(file);
+    setUploadType(type);
+  };
+
+  const handleOpenUploadModal = (type: "avatar" | "cv") => {
+    setUploadType(type);
+    setPreviewFile(null);
+    setShowUploadModal(true);
+  };
+
+  const handleConfirmUpload = async () => {
+    if (!previewFile) return;
+
+    setIsUploading(true);
+    setShowUploadModal(false);
+
+    try {
+      if (uploadType === "avatar") {
+        handleFileChange("profileImage", previewFile);
+
+        // Upload via backend
+        const formData = new FormData();
+        formData.append("file", previewFile);
+
+        const response = await fetch(
+          "http://localhost:8080/api/files/upload/avatar",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error("Backend upload error:", errorData);
+          throw new Error(
+            `Upload failed: ${response.status} ${response.statusText}`
+          );
+        }
+
+        const data = await response.json();
+        setFormData((prev) => ({
+          ...prev,
+          profileImageUrl: data.url,
+        }));
+      } else {
+        handleFileChange("cvFile", previewFile);
+
+        // Upload via backend
+        const formData = new FormData();
+        formData.append("file", previewFile);
+
+        const response = await fetch(
+          "http://localhost:8080/api/public/upload/image?folder=tutormatch/cvs",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error("Backend upload error:", errorData);
+          throw new Error(
+            `Upload failed: ${response.status} ${response.statusText}`
+          );
+        }
+
+        const data = await response.json();
+        setFormData((prev) => ({
+          ...prev,
+          cvFileUrl: data.url,
+        }));
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
+      setErrors((prev) => ({
+        ...prev,
+        [uploadType === "avatar" ? "profileImage" : "cvFile"]:
+          "Upload thất bại. Vui lòng thử lại.",
+      }));
+    } finally {
+      setIsUploading(false);
+      setPreviewFile(null);
+    }
+  };
+
+  const handleCancelUpload = () => {
+    setShowUploadModal(false);
+    setPreviewFile(null);
   };
 
   // Hàm xử lý khi chọn ngày - tự động thêm khung giờ mặc định
@@ -568,6 +924,38 @@ export const BecomeTutor: React.FC = () => {
       .padStart(2, "0")}`;
   };
 
+  // Chuyển đổi thời gian thành phút để dễ so sánh
+  const timeToMinutes = (time: string): number => {
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Kiểm tra lịch trùng nhau
+  const hasOverlappingSchedule = (
+    day: string,
+    slotIndex: number,
+    newSlot: { start: string; end: string }
+  ): boolean => {
+    const currentSlots = formData.dayTimeSlots[day] || [];
+
+    for (let i = 0; i < currentSlots.length; i++) {
+      if (i === slotIndex) continue; // Bỏ qua slot hiện tại đang edit
+
+      const existingSlot = currentSlots[i];
+      const existingStart = timeToMinutes(existingSlot.start);
+      const existingEnd = timeToMinutes(existingSlot.end);
+      const newStart = timeToMinutes(newSlot.start);
+      const newEnd = timeToMinutes(newSlot.end);
+
+      // Kiểm tra overlap: (newStart < existingEnd) && (newEnd > existingStart)
+      if (newStart < existingEnd && newEnd > existingStart) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   const updateTimeSlot = (
     day: string,
     slotIndex: number,
@@ -580,7 +968,19 @@ export const BecomeTutor: React.FC = () => {
         if (index === slotIndex) {
           if (field === "start") {
             // Khi thay đổi giờ bắt đầu, tự động tính giờ kết thúc
-            return { ...slot, start: value, end: calculateEndTime(value) };
+            const newSlot = {
+              ...slot,
+              start: value,
+              end: calculateEndTime(value),
+            };
+
+            // Kiểm tra lịch trùng nhau
+            if (hasOverlappingSchedule(day, slotIndex, newSlot)) {
+              alert("Lịch dạy này trùng với lịch khác trong cùng ngày!");
+              return slot; // Giữ nguyên giá trị cũ
+            }
+
+            return newSlot;
           } else {
             // Không cho phép thay đổi giờ kết thúc thủ công
             return slot;
@@ -635,9 +1035,24 @@ export const BecomeTutor: React.FC = () => {
     if (isStepCompleted(currentStep)) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
     } else {
-      alert(
-        "Vui lòng hoàn thành tất cả thông tin bắt buộc trước khi tiếp tục."
-      );
+      let errorMessage =
+        "Vui lòng hoàn thành tất cả thông tin bắt buộc trước khi tiếp tục.";
+
+      // Thông báo lỗi cụ thể cho từng step
+      if (currentStep === 6) {
+        if (
+          formData.videoUrl.trim() !== "" &&
+          extractYouTubeVideoId(formData.videoUrl) === null
+        ) {
+          errorMessage =
+            "Vui lòng nhập đúng định dạng URL YouTube (youtube.com/watch?v=, youtu.be/, youtube.com/embed/)";
+        } else {
+          errorMessage =
+            "Vui lòng thêm video giới thiệu hoặc nhập link YouTube hợp lệ.";
+        }
+      }
+
+      alert(errorMessage);
     }
   };
 
@@ -687,8 +1102,34 @@ export const BecomeTutor: React.FC = () => {
     return subjectMap[subjectName] || 1;
   };
 
+  const getSubjectName = (subjectId: number): string => {
+    const subjectMap: { [key: number]: string } = {
+      1: "Toán",
+      2: "Vật lý",
+      3: "Hóa học",
+      4: "Sinh học",
+      5: "Tiếng Anh",
+      6: "Văn học",
+      7: "Lịch sử",
+      8: "Địa lý",
+      9: "Tin học",
+      10: "Âm nhạc",
+      11: "Mỹ thuật",
+      12: "Thể dục",
+    };
+    return subjectMap[subjectId] || "Unknown Subject";
+  };
+
   const mapDayToEnum = (day: string): string => {
     const dayMap: { [key: string]: string } = {
+      "Thứ 2": "MONDAY",
+      "Thứ 3": "TUESDAY",
+      "Thứ 4": "WEDNESDAY",
+      "Thứ 5": "THURSDAY",
+      "Thứ 6": "FRIDAY",
+      "Thứ 7": "SATURDAY",
+      "Chủ nhật": "SUNDAY",
+      // Fallback for English keys
       monday: "MONDAY",
       tuesday: "TUESDAY",
       wednesday: "WEDNESDAY",
@@ -701,12 +1142,26 @@ export const BecomeTutor: React.FC = () => {
   };
 
   const convertFormDataToTutorData = () => {
+    // Convert Vietnamese teaching methods to English
+    const vietnameseToEnglish: { [key: string]: string } = {
+      "Trung học cơ sở": "MIDDLE_SCHOOL",
+      "Trung học phổ thông": "HIGH_SCHOOL",
+      "Tiểu học": "ELEMENTARY_SCHOOL",
+      "Đại học": "UNIVERSITY",
+      "Sau đại học": "GRADUATE",
+    };
+
+    const englishTeachingMethods = (formData.teachingMethods || []).map(
+      (method) => vietnameseToEnglish[method] || method
+    );
+
     return {
       // Thông tin cơ bản
       bio: formData.introduction || "",
       headline: formData.title || "",
       experience: formData.experience || "",
       teachingLevel: "MIDDLE_SCHOOL", // TODO: Map từ formData.teachingMethods
+      teachingMethods: JSON.stringify(englishTeachingMethods),
 
       // Thông tin cá nhân
       firstName: formData.firstName || "",
@@ -725,42 +1180,58 @@ export const BecomeTutor: React.FC = () => {
       videoIntro: formData.videoUrl || "",
 
       // Môn học với học phí
-      subjectFees: formData.subjects.map((subject) => ({
-        subjectId: getSubjectId(subject.name),
-        fees: parseInt(subject.hourlyRate.replace(/\D/g, "")) || 100000,
-      })),
+      subjectFees: formData.subjects
+        ? formData.subjects.map((subject) => ({
+            subjectId: getSubjectId(subject.name),
+            fees:
+              subject.hourlyRate &&
+              !isNaN(parseInt(subject.hourlyRate.replace(/\D/g, "")))
+                ? parseInt(subject.hourlyRate.replace(/\D/g, ""))
+                : 100000,
+          }))
+        : [],
 
       // Lịch dạy
-      schedules: Object.entries(formData.dayTimeSlots).flatMap(([day, slots]) =>
-        slots.map((slot) => ({
-          dayOfWeek: mapDayToEnum(day),
-          fromTime: slot.start,
-          toTime: slot.end,
-          enable: true,
-        }))
-      ),
+      schedules: formData.dayTimeSlots
+        ? Object.entries(formData.dayTimeSlots).flatMap(([day, slots]) =>
+            slots.map((slot) => ({
+              dayOfWeek: mapDayToEnum(day),
+              fromTime: slot.start || "09:00",
+              toTime: slot.end || "10:00",
+              enable: true,
+            }))
+          )
+        : [],
 
-      // Học vấn
-      educations: formData.noDegree
-        ? []
-        : formData.degrees.map((degree) => ({
-            schoolName: degree.university || "",
-            degree: degree.education || "",
-            major: degree.major || "",
-            fromTime: parseInt(degree.startYear) || 2020,
-            toTime: parseInt(degree.endYear) || 2024,
-            degreeImage: degree.imageUrl || "",
-          })),
+      // Học vấn - Chuyển đổi thành Array
+      educations:
+        formData.noDegree || !formData.degrees
+          ? []
+          : formData.degrees.map((degree) => ({
+              schoolName: degree.university || "",
+              degree: degree.education || "",
+              major: degree.major || "",
+              fromTime:
+                degree.startYear && !isNaN(parseInt(degree.startYear))
+                  ? parseInt(degree.startYear)
+                  : 2020,
+              toTime:
+                degree.endYear && !isNaN(parseInt(degree.endYear))
+                  ? parseInt(degree.endYear)
+                  : 2024,
+              degreeImage: degree.imageUrl || "",
+            })),
 
-      // Chứng chỉ
-      certificates: formData.noCertificates
-        ? []
-        : formData.certificates.map((cert) => ({
-            name: cert.name || "",
-            issuedBy: cert.issuedBy || "",
-            description: cert.description || "",
-            certImage: cert.imageUrl || "",
-          })),
+      // Chứng chỉ - Chuyển đổi thành Array
+      certificates:
+        formData.noCertificates || !formData.certificates
+          ? []
+          : formData.certificates.map((cert) => ({
+              name: cert.name || "",
+              issuedBy: cert.issuedBy || "",
+              description: cert.description || "",
+              certImage: cert.imageUrl || "",
+            })),
     };
   };
 
@@ -768,6 +1239,12 @@ export const BecomeTutor: React.FC = () => {
     setIsDraftSaving(true);
     try {
       const tutorData = convertFormDataToTutorData();
+      console.log(
+        "🔍 Data being sent to backend:",
+        JSON.stringify(tutorData, null, 2)
+      );
+      console.log("🔍 Educations structure:", tutorData.educations);
+      console.log("🔍 Certificates structure:", tutorData.certificates);
       const response = await TutorService.saveDraft(tutorData);
       if (response.success) {
         alert("Đã lưu nháp thành công!");
@@ -810,17 +1287,14 @@ export const BecomeTutor: React.FC = () => {
       case 1:
         return (
           <div className="max-w-4xl mx-auto">
-            <div
-              className="rounded-lg shadow-sm p-8"
-              style={{ backgroundColor: "#94cce6" }}
-            >
+            <div style={{ backgroundColor: "" }}>
               {/* <h2 className="text-2xl font-semibold text-gray-900 mb-8 text-center">
                 Thông tin cơ bản
               </h2> */}
 
               <div
                 className="space-y-6 p-6 rounded-lg"
-                style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
+                // style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
               >
                 {/* Thông tin cá nhân */}
                 <div>
@@ -1184,6 +1658,12 @@ export const BecomeTutor: React.FC = () => {
                         alt="Profile preview"
                         className="w-full h-full object-cover rounded-lg"
                       />
+                    ) : formData.profileImageUrl ? (
+                      <img
+                        src={formData.profileImageUrl}
+                        alt="Profile preview"
+                        className="w-full h-full object-cover rounded-lg"
+                      />
                     ) : (
                       <div className="text-center text-gray-500">
                         <div className="text-4xl mb-2">👤</div>
@@ -1198,33 +1678,21 @@ export const BecomeTutor: React.FC = () => {
                       type="file"
                       id="profile-image"
                       accept="image/*"
-                      onChange={async (e) => {
+                      disabled={isUploading}
+                      onChange={(e) => {
                         const file = e.target.files?.[0] || null;
                         if (file) {
-                          handleFileChange("profileImage", file);
-                          await uploadFileToCloudinary(
-                            file,
-                            "avatar",
-                            (url) => {
-                              setFormData((prev) => ({
-                                ...prev,
-                                profileImageUrl: url,
-                              }));
-                            },
-                            (error) => {
-                              setErrors((prev) => ({
-                                ...prev,
-                                profileImage: error,
-                              }));
-                            }
-                          );
+                          handleFileSelect(file, "avatar");
                         }
                       }}
                       className="hidden"
                     />
-                    <label
-                      htmlFor="profile-image"
-                      className="inline-flex items-center px-6 py-3 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium cursor-pointer"
+                    <button
+                      onClick={() => handleOpenUploadModal("avatar")}
+                      disabled={isUploading}
+                      className={`inline-flex items-center px-6 py-3 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium cursor-pointer ${
+                        isUploading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                       style={{ backgroundColor: "#94cce6" }}
                     >
                       <svg
@@ -1241,7 +1709,7 @@ export const BecomeTutor: React.FC = () => {
                         />
                       </svg>
                       Tải ảnh lên
-                    </label>
+                    </button>
                   </div>
 
                   {/* Requirements */}
@@ -1293,6 +1761,21 @@ export const BecomeTutor: React.FC = () => {
                           {(formData.cvFile.size / 1024 / 1024).toFixed(2)} MB
                         </p>
                       </div>
+                    ) : formData.cvFileUrl ? (
+                      <div className="text-center">
+                        <div className="text-4xl mb-2">📄</div>
+                        <p className="text-sm font-medium text-gray-900 mb-1">
+                          CV đã tải lên
+                        </p>
+                        <a
+                          href={formData.cvFileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-600 hover:text-blue-800 underline"
+                        >
+                          Xem CV
+                        </a>
+                      </div>
                     ) : (
                       <div className="text-center text-gray-500">
                         <div className="text-4xl mb-2">📄</div>
@@ -1307,30 +1790,21 @@ export const BecomeTutor: React.FC = () => {
                       type="file"
                       id="cv-file"
                       accept=".pdf,.doc,.docx"
-                      onChange={async (e) => {
+                      disabled={isUploading}
+                      onChange={(e) => {
                         const file = e.target.files?.[0] || null;
                         if (file) {
-                          handleFileChange("cvFile", file);
-                          await uploadFileToCloudinary(
-                            file,
-                            "cv",
-                            (url) => {
-                              setFormData((prev) => ({
-                                ...prev,
-                                cvFileUrl: url,
-                              }));
-                            },
-                            (error) => {
-                              setErrors((prev) => ({ ...prev, cvFile: error }));
-                            }
-                          );
+                          handleFileSelect(file, "cv");
                         }
                       }}
                       className="hidden"
                     />
-                    <label
-                      htmlFor="cv-file"
-                      className="inline-flex items-center px-6 py-3 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium cursor-pointer"
+                    <button
+                      onClick={() => handleOpenUploadModal("cv")}
+                      disabled={isUploading}
+                      className={`inline-flex items-center px-6 py-3 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium cursor-pointer ${
+                        isUploading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                       style={{ backgroundColor: "#94cce6" }}
                     >
                       <svg
@@ -1347,7 +1821,7 @@ export const BecomeTutor: React.FC = () => {
                         />
                       </svg>
                       Tải CV lên
-                    </label>
+                    </button>
                   </div>
 
                   {/* Requirements */}
@@ -1381,8 +1855,21 @@ export const BecomeTutor: React.FC = () => {
               </div>
             </div>
 
+            {/* Loading Indicator */}
+            {isUploading && (
+              <div className="text-center space-y-4">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Đang tải lên {uploadType === "avatar" ? "ảnh đại diện" : "CV"}
+                  ...
+                </p>
+              </div>
+            )}
+
             {/* Error Messages */}
-            {(errors.profileImage || errors.cvFile) && (
+            {!isUploading && (errors.profileImage || errors.cvFile) && (
               <div className="text-center space-y-2">
                 {errors.profileImage && (
                   <p className="text-red-500 text-sm">{errors.profileImage}</p>
@@ -1566,10 +2053,65 @@ export const BecomeTutor: React.FC = () => {
                         <input
                           type="file"
                           accept="image/*,.pdf"
-                          onChange={(e) => {
-                            const newCerts = [...formData.certificates];
-                            newCerts[index].file = e.target.files?.[0] || null;
-                            handleInputChange("certificates", newCerts);
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0] || null;
+                            console.log("Certificate file selected:", file);
+                            if (file) {
+                              console.log("File details:", {
+                                name: file.name,
+                                type: file.type,
+                                size: file.size,
+                              });
+
+                              // Upload to backend
+                              try {
+                                const uploadFormData = new FormData();
+                                uploadFormData.append("file", file);
+
+                                console.log(
+                                  "Uploading certificate to backend..."
+                                );
+                                const response = await fetch(
+                                  "http://localhost:8080/api/files/upload/certificate",
+                                  {
+                                    method: "POST",
+                                    body: uploadFormData,
+                                  }
+                                );
+
+                                console.log(
+                                  "Certificate upload response:",
+                                  response.status,
+                                  response.statusText
+                                );
+
+                                if (response.ok) {
+                                  const data = await response.json();
+                                  console.log(
+                                    "Certificate upload success:",
+                                    data
+                                  );
+                                  const newCerts = [...formData.certificates];
+                                  newCerts[index].file = file;
+                                  newCerts[index].url = data.url; // Store the uploaded URL
+                                  handleInputChange("certificates", newCerts);
+                                } else {
+                                  const errorData = await response.text();
+                                  console.error(
+                                    "Certificate upload failed:",
+                                    response.status,
+                                    errorData
+                                  );
+                                }
+                              } catch (error) {
+                                console.error(
+                                  "Certificate upload error:",
+                                  error
+                                );
+                              }
+                            } else {
+                              console.log("No file selected for certificate");
+                            }
                           }}
                           className="hidden"
                           id={`cert-file-${index}`}
@@ -1981,13 +2523,56 @@ export const BecomeTutor: React.FC = () => {
                         accept="image/*,.pdf"
                         className="hidden"
                         id={`degree-file-${degree.id}`}
-                        onChange={(e) =>
-                          updateDegree(
-                            degree.id,
-                            "file",
-                            e.target.files?.[0] || null
-                          )
-                        }
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0] || null;
+                          console.log("Degree file selected:", file);
+                          if (file) {
+                            console.log("File details:", {
+                              name: file.name,
+                              type: file.type,
+                              size: file.size,
+                            });
+
+                            // Upload to backend
+                            try {
+                              const uploadFormData = new FormData();
+                              uploadFormData.append("file", file);
+
+                              console.log("Uploading degree to backend...");
+                              const response = await fetch(
+                                "http://localhost:8080/api/files/upload/degree",
+                                {
+                                  method: "POST",
+                                  body: uploadFormData,
+                                }
+                              );
+
+                              console.log(
+                                "Degree upload response:",
+                                response.status,
+                                response.statusText
+                              );
+
+                              if (response.ok) {
+                                const data = await response.json();
+                                console.log("Degree upload success:", data);
+                                updateDegree(degree.id, "file", file);
+                                updateDegree(degree.id, "url", data.url); // Store the uploaded URL
+                              } else {
+                                const errorData = await response.text();
+                                console.error(
+                                  "Degree upload failed:",
+                                  response.status,
+                                  errorData
+                                );
+                              }
+                            } catch (error) {
+                              console.error("Degree upload error:", error);
+                            }
+                          } else {
+                            console.log("No file selected for degree");
+                          }
+                        }}
                       />
                       <label
                         htmlFor={`degree-file-${degree.id}`}
@@ -2607,7 +3192,7 @@ export const BecomeTutor: React.FC = () => {
       {/* Header Section - Larger and more prominent */}
       <div
         className="shadow-2xl"
-        style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
+        // style={{ backgroundColor: "rgb(148, 204, 230)" }}
       >
         <div className="container mx-auto px-4 py-6">
           {/* Progress Steps - Desktop */}
@@ -2619,13 +3204,27 @@ export const BecomeTutor: React.FC = () => {
                     <div
                       className={`px-3 py-2 rounded text-sm font-medium transition-all duration-200 ${
                         step === currentStep
-                          ? "bg-white text-[#94cce6]"
+                          ? "bg-white cursor-pointer"
                           : completedSteps.has(step)
-                          ? "bg-green-500 text-white hover:bg-green-600 cursor-pointer"
+                          ? "text-white hover:opacity-80 cursor-pointer"
                           : canNavigateToStep(step)
                           ? "bg-white/20 text-white hover:bg-white/30 cursor-pointer"
                           : "bg-gray-400/50 text-gray-500 cursor-not-allowed"
                       }`}
+                      style={{
+                        backgroundColor:
+                          step === currentStep
+                            ? "white"
+                            : completedSteps.has(step)
+                            ? "rgb(148, 204, 230)"
+                            : undefined,
+                        color:
+                          step === currentStep
+                            ? "rgb(31, 41, 55)" // Màu xám đậm để dễ đọc trên nền trắng
+                            : completedSteps.has(step)
+                            ? "white"
+                            : undefined,
+                      }}
                       onClick={() => canNavigateToStep(step) && goToStep(step)}
                     >
                       {step} {getStepTitle(step)}
@@ -2648,13 +3247,27 @@ export const BecomeTutor: React.FC = () => {
                     <div
                       className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap transition-all duration-200 ${
                         step === currentStep
-                          ? "bg-white text-[#94cce6]"
+                          ? "bg-white cursor-pointer"
                           : completedSteps.has(step)
-                          ? "bg-green-500 text-white hover:bg-green-600 cursor-pointer"
+                          ? "text-white hover:opacity-80 cursor-pointer"
                           : canNavigateToStep(step)
                           ? "bg-white/20 text-white hover:bg-white/30 cursor-pointer"
                           : "bg-gray-400/50 text-gray-500 cursor-not-allowed"
                       }`}
+                      style={{
+                        backgroundColor:
+                          step === currentStep
+                            ? "white"
+                            : completedSteps.has(step)
+                            ? "rgb(148, 204, 230)"
+                            : undefined,
+                        color:
+                          step === currentStep
+                            ? "rgb(31, 41, 55)" // Màu xám đậm để dễ đọc trên nền trắng
+                            : completedSteps.has(step)
+                            ? "white"
+                            : undefined,
+                      }}
                       onClick={() => canNavigateToStep(step) && goToStep(step)}
                     >
                       {step} {getStepTitle(step)}
@@ -2676,11 +3289,14 @@ export const BecomeTutor: React.FC = () => {
           {/* Form Content */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
             {/* Form Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6">
+            <div
+              className="px-8 py-6"
+              style={{ backgroundColor: "rgb(148, 204, 230)" }}
+            >
               <h3 className="text-2xl font-bold text-white mb-2">
                 {getStepTitle(currentStep)}
               </h3>
-              <p className="text-blue-100 text-sm">
+              <p className="text-white text-sm opacity-90">
                 {currentStep === 1 &&
                   "Bắt đầu đăng ký hồ sơ ngay. Thông tin của bạn sẽ được lưu và có thể chỉnh sửa lại bất cứ khi nào sau khi đăng ký."}
                 {currentStep === 2 &&
@@ -2814,6 +3430,168 @@ export const BecomeTutor: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Upload Preview Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Tải lên</h3>
+              <button
+                onClick={handleCancelUpload}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="text-center mb-6">
+              {!previewFile ? (
+                <>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Chọn hoặc kéo thả file
+                  </p>
+
+                  <div
+                    className="w-full p-8 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center bg-gray-50 min-h-[200px] cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                    onClick={() => {
+                      const input = document.getElementById(
+                        uploadType === "avatar" ? "profile-image" : "cv-file"
+                      );
+                      input?.click();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const files = e.dataTransfer.files;
+                      if (files.length > 0) {
+                        const file = files[0];
+                        if (
+                          uploadType === "avatar" &&
+                          file.type.startsWith("image/")
+                        ) {
+                          handleFileSelect(file, "avatar");
+                        } else if (
+                          uploadType === "cv" &&
+                          (file.type === "application/pdf" ||
+                            file.name.endsWith(".doc") ||
+                            file.name.endsWith(".docx"))
+                        ) {
+                          handleFileSelect(file, "cv");
+                        }
+                      }
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                    }}
+                    onDragEnter={(e) => {
+                      e.preventDefault();
+                    }}
+                  >
+                    <div className="text-center">
+                      <svg
+                        className="w-12 h-12 text-gray-400 mx-auto mb-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Chọn file hoặc kéo thả tại đây
+                      </p>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const input = document.getElementById(
+                            uploadType === "avatar"
+                              ? "profile-image"
+                              : "cv-file"
+                          );
+                          input?.click();
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Browse File
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  {uploadType === "avatar" ? (
+                    <div className="w-40 h-40 mx-auto border border-gray-300 rounded-lg overflow-hidden">
+                      <img
+                        src={URL.createObjectURL(previewFile)}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">📄</div>
+                      <p className="text-sm font-medium text-gray-900 mb-1">
+                        {previewFile.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {(previewFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => setPreviewFile(null)}
+                    className="px-3 py-1 text-sm text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Xoá
+                  </button>
+                </div>
+              )}
+
+              {/* Error message */}
+              {(errors.profileImage || errors.cvFile) && (
+                <div className="mt-2 text-sm text-red-600">
+                  {errors.profileImage || errors.cvFile}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-between">
+              <button
+                onClick={handleCancelUpload}
+                className="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Huỷ
+              </button>
+              {previewFile && (
+                <button
+                  onClick={handleConfirmUpload}
+                  className="px-4 py-2 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  style={{ backgroundColor: "#94cce6" }}
+                >
+                  Áp dụng
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

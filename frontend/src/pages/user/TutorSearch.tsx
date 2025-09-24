@@ -337,39 +337,6 @@ const TutorSearch: React.FC = () => {
                           />
                         </div>
 
-                        {/* Value tooltips */}
-                        <div className="absolute -top-8 w-full">
-                          {/* Min value tooltip */}
-                          <div
-                            className="absolute bg-green-600 text-white text-xs px-2 py-1 rounded shadow-lg"
-                            style={{
-                              left: `${
-                                (((filters.minFee || 100000) - 100000) /
-                                  (1000000 - 100000)) *
-                                100
-                              }%`,
-                              transform: "translateX(-50%)",
-                            }}
-                          >
-                            {formatPrice(filters.minFee || 100000)}
-                          </div>
-
-                          {/* Max value tooltip */}
-                          <div
-                            className="absolute bg-amber-600 text-white text-xs px-2 py-1 rounded shadow-lg"
-                            style={{
-                              left: `${
-                                (((filters.maxFee || 500000) - 100000) /
-                                  (1000000 - 100000)) *
-                                100
-                              }%`,
-                              transform: "translateX(-50%)",
-                            }}
-                          >
-                            {formatPrice(filters.maxFee || 500000)}
-                          </div>
-                        </div>
-
                         {/* Range Sliders */}
                         <div className="relative">
                           {/* Min Price Slider */}

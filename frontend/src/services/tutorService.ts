@@ -75,7 +75,7 @@ export class TutorService {
   ): Promise<TutorRegistrationResponse> {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/tutor/draft/${endpoint}`,
+        `${API_BASE_URL}/api/applications/${endpoint}`,
         {
           method,
           headers: {
@@ -103,6 +103,89 @@ export class TutorService {
     }
   }
 
+  // Lấy dữ liệu draft đã lưu
+  static async getDraftData(): Promise<any> {
+    try {
+      const token = localStorage.getItem("token");
+      console.log(
+        "TutorService: Token from localStorage:",
+        token ? "EXISTS" : "NOT FOUND"
+      );
+
+      // Kiểm tra có token không
+      if (!token) {
+        console.log("TutorService: No token found, returning error");
+        return {
+          success: false,
+          hasDraft: false,
+          message: "No authentication token found",
+        };
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/applications/tutor/draft`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          redirect: "manual", // Không follow redirect tự động
+        }
+      );
+
+      // Kiểm tra redirect (Spring Security redirect về login)
+      if (response.status === 302 || response.status === 0) {
+        console.warn("Server redirected, likely authentication failed");
+        return {
+          success: false,
+          hasDraft: false,
+          message: "Authentication required - redirected to login",
+        };
+      }
+
+      // Kiểm tra authentication errors
+      if (response.status === 401 || response.status === 403) {
+        console.warn("Authentication failed, user may need to login again");
+        return {
+          success: false,
+          hasDraft: false,
+          message: "Authentication required",
+        };
+      }
+
+      // Kiểm tra response type
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        // Server trả về HTML thay vì JSON, có thể là lỗi server
+        console.warn("Server returned non-JSON response, possibly error page");
+        return {
+          success: false,
+          hasDraft: false,
+          message: "Server error - non-JSON response",
+        };
+      }
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || result.message || "Failed to get draft data"
+        );
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error getting draft data:", error);
+      return {
+        success: false,
+        hasDraft: false,
+        error:
+          error instanceof Error ? error.message : "Failed to get draft data",
+      };
+    }
+  }
+
   // Lưu nháp hồ sơ gia sư
   static async saveDraft(
     data: Partial<TutorRegistrationData>
@@ -118,14 +201,16 @@ export class TutorService {
       })
     );
 
-    return this.makeRequest("save", "POST", cleanData);
+    // Use real endpoint with authentication
+    return this.makeRequest("tutor/draft", "POST", cleanData);
   }
 
   // Gửi hồ sơ gia sư để duyệt
   static async submitApplication(
     data: TutorRegistrationData
   ): Promise<TutorRegistrationResponse> {
-    return this.makeRequest("submit", "POST", data);
+    // Use real endpoint with authentication
+    return this.makeRequest("tutor/submit", "POST", data);
   }
 
   // Lấy hồ sơ gia sư hiện tại

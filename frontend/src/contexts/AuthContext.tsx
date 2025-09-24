@@ -30,15 +30,24 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     // Kiểm tra localStorage để khôi phục trạng thái đăng nhập
+    console.log("AuthContext: Checking localStorage for saved user");
     const savedUser = authService.getCurrentUser();
+    console.log("AuthContext: Saved user from localStorage:", savedUser);
+
     if (savedUser) {
       // Map role từ backend sang frontend
       savedUser.role = mapRole(savedUser.role);
+      console.log("AuthContext: Setting user:", savedUser);
       setUser(savedUser);
+    } else {
+      console.log("AuthContext: No saved user found");
     }
+
+    setIsInitialized(true);
     setIsLoading(false);
   }, []);
 
@@ -56,7 +65,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Map role từ backend sang frontend
         user.role = mapRole(user.role);
         setUser(user);
+        return user; // Return user object
       }
+      return null;
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
@@ -76,6 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     isAuthenticated: !!user,
     isLoading,
+    isInitialized,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

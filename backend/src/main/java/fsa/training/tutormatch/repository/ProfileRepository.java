@@ -20,24 +20,24 @@ public interface ProfileRepository extends JpaRepository<Profile, Integer> {
     Optional<Profile> findByUserId(Integer userId);
     
     // Query to find approved tutors
-    @Query("SELECT p FROM TutorProfile p WHERE p.profileStatus = 'APPROVED'")
+    @Query("SELECT p FROM TutorProfile p WHERE p.profileStatus = 'ACTIVE'")
     List<TutorProfile> findApprovedTutors();
     
     // Find tutors by subject
-    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.subject.name = :subjectName AND p.profileStatus = 'APPROVED'")
+    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.subject.name = :subjectName AND p.profileStatus = 'ACTIVE'")
     List<TutorProfile> findBySubjectName(@Param("subjectName") String subjectName);
     
     // Search tutors by keyword
-    @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'APPROVED'")
+    @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'ACTIVE'")
     List<TutorProfile> findByKeyword(@Param("keyword") String keyword);
     
     // Find tutors by location - REMOVED: city field no longer exists
     
     // Methods for TutorSearchService
-    @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'APPROVED'")
+    @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'ACTIVE'")
     List<TutorProfile> findTutorsByKeyword(@Param("keyword") String keyword);
     
-    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.subject.name = :subject AND p.profileStatus = 'APPROVED'")
+    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.subject.name = :subject AND p.profileStatus = 'ACTIVE'")
     List<TutorProfile> findTutorsBySubject(@Param("subject") String subject);
     
     // REMOVED: findTutorsByLocation - city field no longer exists

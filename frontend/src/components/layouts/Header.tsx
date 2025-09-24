@@ -168,11 +168,6 @@ export const Header: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <div className="hidden md:block text-left">
-                    <div className="text-gray-700 font-medium">
-                      {user.firstName || "User"} {user.lastName || ""}
-                    </div>
-                  </div>
                   <svg
                     className={`w-4 h-4 text-gray-400 transition-transform ${
                       isDropdownOpen ? "rotate-180" : ""
@@ -193,15 +188,6 @@ export const Header: React.FC = () => {
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <div className="text-sm font-medium text-gray-900">
-                        {user.firstName || "User"} {user.lastName || ""}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {user.email || "No email"}
-                      </div>
-                    </div>
-
                     <Link
                       to="/settings"
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"

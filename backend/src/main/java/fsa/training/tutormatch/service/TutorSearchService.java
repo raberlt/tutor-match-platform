@@ -53,6 +53,7 @@ public class TutorSearchService {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<TutorProfile> tutors;
         
+        // For now, use basic search - can be enhanced later with more complex filtering
         if (keyword != null && !keyword.isEmpty()) {
             tutors = profileRepository.findTutorsByKeywordPaged(keyword, pageable);
         } else {
@@ -72,7 +73,8 @@ public class TutorSearchService {
     public Map<String, Object> searchTutorPreviewsWithFilters(String keyword, Integer subjectId, BigDecimal minFee, 
                                                              BigDecimal maxFee, Double minRating, String city, 
                                                              int page, int size, String sortBy, String sortDirection) {
-        // Similar to searchTutorsWithFilters but returns preview data
+        // For preview, we return the same data but could be filtered to show limited info
+        // For now, return the same as full search
         return searchTutorsWithFilters(keyword, subjectId, minFee, maxFee, minRating, city, page, size, sortBy, sortDirection);
     }
 }

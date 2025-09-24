@@ -264,8 +264,17 @@ export interface TutorProfile {
   ratePointAverage?: number;
   totalPoint?: number;
   city?: string;
-  subjects: TutorSubjectDetail[];
-  schedules: TutorSchedule[];
+  subjects?: TutorSubjectDetail[];
+  schedules?: TutorSchedule[];
+  profileSubjects?: TutorProfileSubject[];
+}
+
+export interface TutorProfileSubject {
+  id: number;
+  subject: Subject;
+  fees: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface TutorSubjectDetail {

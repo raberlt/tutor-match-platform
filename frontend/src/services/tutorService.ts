@@ -104,7 +104,7 @@ export class TutorService {
   }
 
   // Lấy dữ liệu draft đã lưu
-  static async getDraftData(): Promise<any> {
+  static async getDraftData(): Promise<unknown> {
     try {
       const token = localStorage.getItem("token");
       console.log(
@@ -192,7 +192,7 @@ export class TutorService {
   ): Promise<TutorRegistrationResponse> {
     // Filter out empty/invalid fields for draft
     const cleanData = Object.fromEntries(
-      Object.entries(data).filter(([key, value]) => {
+      Object.entries(data).filter(([, value]) => {
         // Keep non-empty strings, non-empty arrays, and non-null values
         if (typeof value === "string") return value.trim() !== "";
         if (Array.isArray(value)) return value.length > 0;
@@ -342,8 +342,8 @@ export class TutorService {
     filters: TutorSearchFilters,
     page: number = 1,
     size: number = 10,
-    sortBy: string = "createdAt",
-    sortDirection: string = "desc"
+    sortBy: string = "id",
+    sortDirection: string = "asc"
   ): Promise<{
     content: unknown[];
     totalPages: number;
@@ -390,10 +390,16 @@ export class TutorService {
         throw new Error("Failed to search tutor previews");
       }
 
-      return await response.json();
+      const data = await response.json();
+      return {
+        content: data.content || [],
+        totalPages: data.totalPages || 0,
+        currentPage: data.currentPage || 0,
+        totalElements: data.totalElements || 0,
+      };
     } catch (error) {
       console.error("Error searching tutor previews:", error);
-      return { content: [], totalPages: 0, currentPage: 1, totalElements: 0 };
+      return { content: [], totalPages: 0, currentPage: 0, totalElements: 0 };
     }
   }
 }

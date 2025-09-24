@@ -42,6 +42,9 @@ const TutorSearch: React.FC = () => {
 
   // UI State
   const [showPriceSlider, setShowPriceSlider] = useState(false);
+  const [selectedSubject, setSelectedSubject] = useState<{
+    [tutorId: number]: number;
+  }>({});
 
   const loadSubjects = async () => {
     try {
@@ -57,28 +60,44 @@ const TutorSearch: React.FC = () => {
     setError(null);
 
     try {
-      let response;
-      if (isAuthenticated) {
-        response = await TutorService.searchTutors(
-          filters,
-          currentPage,
-          pageSize,
-          sortBy,
-          sortDirection
-        );
-      } else {
-        response = await TutorService.searchTutorPreviews(
-          filters,
-          currentPage,
-          pageSize,
-          sortBy,
-          sortDirection
-        );
+      // Sử dụng API public cho tất cả user (cả đã đăng nhập và chưa đăng nhập)
+      // Nếu sortBy là "id" (mặc định), sử dụng random sort bằng cách thêm timestamp
+      const actualSortBy = sortBy === "id" ? "id" : sortBy;
+      const actualSortDirection = sortBy === "id" ? "desc" : sortDirection;
+      const response = await TutorService.searchTutorPreviews(
+        filters,
+        currentPage + 1,
+        pageSize,
+        actualSortBy,
+        actualSortDirection
+      );
+
+      let tutorsData = response.content as (
+        | TutorPreviewProfile
+        | TutorProfile
+      )[];
+
+      // Nếu sortBy là "id" (mặc định), shuffle dữ liệu để tạo random
+      if (sortBy === "id") {
+        tutorsData = tutorsData.sort(() => Math.random() - 0.5);
       }
 
-      setTutors(response.content as (TutorPreviewProfile | TutorProfile)[]);
+      setTutors(tutorsData);
       setTotalPages(response.totalPages);
       setTotalElements(response.totalElements);
+
+      // Auto-select first subject for each tutor
+      const newSelectedSubjects: { [tutorId: number]: number } = {};
+      tutorsData.forEach((tutor) => {
+        if (
+          "profileSubjects" in tutor &&
+          tutor.profileSubjects &&
+          tutor.profileSubjects.length > 0
+        ) {
+          newSelectedSubjects[tutor.id] = tutor.profileSubjects[0].subject.id;
+        }
+      });
+      setSelectedSubject(newSelectedSubjects);
     } catch (error: unknown) {
       setError((error as Error).message);
     } finally {
@@ -100,11 +119,10 @@ const TutorSearch: React.FC = () => {
   ) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setCurrentPage(0); // Reset to first page when filters change
-  };
-
-  const handleSearch = () => {
-    setCurrentPage(0);
-    searchTutors();
+    // Tự động tìm kiếm khi filter thay đổi
+    setTimeout(() => {
+      searchTutors();
+    }, 300); // Debounce 300ms để tránh gọi API quá nhiều
   };
 
   const clearFilters = () => {
@@ -150,6 +168,34 @@ const TutorSearch: React.FC = () => {
       style: "currency",
       currency: "VND",
     }).format(price);
+  };
+
+  const handleSubjectClick = (tutorId: number, subjectId: number) => {
+    setSelectedSubject((prev) => ({
+      ...prev,
+      [tutorId]: subjectId,
+    }));
+  };
+
+  const getSelectedSubjectPrice = (
+    tutor: TutorPreviewProfile | TutorProfile
+  ) => {
+    const selectedId = selectedSubject[tutor.id];
+
+    if ("profileSubjects" in tutor && tutor.profileSubjects) {
+      // If a subject is selected, return its price
+      if (selectedId) {
+        const subject = tutor.profileSubjects.find(
+          (ps) => ps.subject.id === selectedId
+        );
+        return subject ? subject.fees : null;
+      }
+      // If no subject selected, return price of first subject (default)
+      return tutor.profileSubjects.length > 0
+        ? tutor.profileSubjects[0].fees
+        : null;
+    }
+    return null;
   };
 
   const renderStars = (rating?: number) => {
@@ -467,13 +513,6 @@ const TutorSearch: React.FC = () => {
             {/* Action Buttons */}
             <div className="space-y-3">
               <button
-                onClick={handleSearch}
-                className="w-full text-white py-3 px-4 rounded-lg hover:opacity-80 transition-colors font-medium shadow-md"
-                style={{ backgroundColor: "#94cce6" }}
-              >
-                🔍 Tìm kiếm gia sư
-              </button>
-              <button
                 onClick={clearFilters}
                 className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium border border-gray-300"
               >
@@ -513,139 +552,51 @@ const TutorSearch: React.FC = () => {
           {/* Tutor List */}
           {!loading && !error && (
             <>
-              <div className="space-y-6">
+              <div className="grid gap-6">
                 {tutors.map((tutor) => (
                   <div
                     key={tutor.id}
-                    className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
+                    className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group"
                   >
-                    <div className="flex items-start space-x-6">
-                      {/* Avatar */}
-                      <div className="flex-shrink-0">
-                        {tutor.imageAvatar ? (
-                          <img
-                            src={tutor.imageAvatar}
-                            alt={`${tutor.firstName} ${tutor.lastName}`}
-                            className="w-20 h-20 rounded-full object-cover border-2 border-gray-100"
-                          />
-                        ) : (
-                          <div
-                            className="w-20 h-20 rounded-full flex items-center justify-center border-2 border-gray-100"
-                            style={{ backgroundColor: "#f0f8ff" }}
-                          >
-                            <span
-                              className="text-2xl font-bold"
-                              style={{ color: "#94cce6" }}
-                            >
-                              {tutor.firstName?.charAt(0) || "T"}
-                              {tutor.lastName?.charAt(0) || "U"}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Tutor Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            {/* Name with verification badge */}
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h3 className="text-xl font-bold text-gray-900">
-                                {tutor.firstName} {tutor.lastName}
-                              </h3>
-                              <div className="flex items-center">
-                                <svg
-                                  className="w-5 h-5 text-blue-500"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
+                    <div className="p-6">
+                      <div className="flex items-start space-x-6">
+                        {/* Left Column: Avatar + Action Buttons */}
+                        <div className="flex-shrink-0 flex flex-col items-center space-y-4">
+                          {/* Avatar */}
+                          <div>
+                            {tutor.imageAvatar ? (
+                              <img
+                                src={tutor.imageAvatar}
+                                alt={`${tutor.firstName} ${tutor.lastName}`}
+                                className="w-32 h-32 rounded-2xl object-cover border-2 border-gray-100 shadow-sm"
+                              />
+                            ) : (
+                              <div
+                                className="w-32 h-32 rounded-2xl flex items-center justify-center border-2 border-gray-100 shadow-sm"
+                                style={{ backgroundColor: "#f0f8ff" }}
+                              >
+                                <span
+                                  className="text-3xl font-bold"
+                                  style={{ color: "#94cce6" }}
                                 >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
+                                  {tutor.firstName?.charAt(0) || "T"}
+                                  {tutor.lastName?.charAt(0) || "U"}
+                                </span>
                               </div>
-                            </div>
-
-                            {/* Subjects with Prices */}
-                            <div className="mb-3">
-                              <div className="space-y-2">
-                                {"subjectNames" in tutor
-                                  ? tutor.subjectNames.map((subject, index) => (
-                                      <div
-                                        key={index}
-                                        className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2"
-                                      >
-                                        <span className="text-sm font-medium text-gray-700">
-                                          {subject}
-                                        </span>
-                                        <span className="text-sm font-bold text-blue-600">
-                                          {formatPrice(tutor.fees)} VND/buổi
-                                        </span>
-                                      </div>
-                                    ))
-                                  : "subjects" in tutor &&
-                                    tutor.subjects.map((subject) => (
-                                      <div
-                                        key={subject.id}
-                                        className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2"
-                                      >
-                                        <span className="text-sm font-medium text-gray-700">
-                                          {subject.name}
-                                        </span>
-                                        <span className="text-sm font-bold text-blue-600">
-                                          {formatPrice((subject as { fees?: number }).fees || tutor.fees)} VND/buổi
-                                        </span>
-                                      </div>
-                                    ))}
-                              </div>
-                            </div>
-
-                            {/* Rating */}
-                            {tutor.ratePointAverage &&
-                              tutor.ratePointAverage > 0 && (
-                                <div className="flex items-center space-x-1 mb-3">
-                                  {renderStars(tutor.ratePointAverage)}
-                                  <span className="text-sm text-gray-600 ml-1">
-                                    ({tutor.ratePointAverage.toFixed(1)})
-                                  </span>
-                                </div>
-                              )}
-
-                            {/* Bio/Experience (for authenticated users) */}
-                            {"bio" in tutor && tutor.bio && (
-                              <p className="text-gray-600 text-sm line-clamp-2 mb-2">
-                                {tutor.bio}
-                              </p>
                             )}
-
-                            {/* See details link */}
-                            <button
-                              onClick={() => {
-                                if (isAuthenticated) {
-                                  navigate(`/tutor/${tutor.id}`);
-                                } else {
-                                  navigate('/login');
-                                }
-                              }}
-                              className="text-blue-600 text-sm font-medium hover:text-blue-800 transition-colors"
-                            >
-                              Xem chi tiết
-                            </button>
                           </div>
 
-                          {/* Action Buttons */}
-                          <div className="flex-shrink-0 ml-4 space-y-2">
+                          {/* Action Buttons - Below Avatar */}
+                          <div className="flex flex-col space-y-2 w-full">
                             <button
                               onClick={() => {
                                 if (isAuthenticated) {
                                   navigate(`/tutor/${tutor.id}`);
                                 } else {
-                                  navigate('/login');
+                                  navigate("/login");
                                 }
                               }}
-                              className="w-full text-blue-600 px-4 py-2 rounded-lg border border-blue-600 hover:bg-blue-50 transition-all duration-200 text-sm font-medium"
+                              className="w-full text-blue-600 px-4 py-2.5 rounded-lg border-2 border-blue-600 hover:bg-blue-50 transition-all duration-200 text-sm font-semibold"
                             >
                               Xem chi tiết
                             </button>
@@ -654,15 +605,140 @@ const TutorSearch: React.FC = () => {
                                 if (isAuthenticated) {
                                   handleBooking(tutor);
                                 } else {
-                                  navigate('/login');
+                                  navigate("/login");
                                 }
                               }}
-                              className="w-full text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
+                              className="w-full text-white px-4 py-2.5 rounded-lg hover:opacity-90 transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-xl"
                               style={{ backgroundColor: "#94cce6" }}
                             >
-                              {isAuthenticated ? "Đặt lịch học" : "Đăng nhập"}
+                              Đặt lịch học
                             </button>
                           </div>
+                        </div>
+
+                        {/* Right Column: Tutor Info */}
+                        <div className="flex-1 min-w-0">
+                          {/* Name with verification badge */}
+                          <div className="flex items-center space-x-3 mb-3">
+                            <h3 className="text-2xl font-bold text-gray-900">
+                              {tutor.firstName} {tutor.lastName}
+                            </h3>
+                            <div className="flex items-center bg-green-50 px-2 py-1 rounded-full">
+                              <svg
+                                className="w-4 h-4 text-green-600 mr-1"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              <span className="text-xs font-medium text-green-700">
+                                Đã xác thực
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Rating */}
+                          {tutor.ratePointAverage &&
+                            tutor.ratePointAverage > 0 && (
+                              <div className="flex items-center space-x-2 mb-4">
+                                {renderStars(tutor.ratePointAverage)}
+                                <span className="text-sm font-medium text-gray-600">
+                                  {tutor.ratePointAverage.toFixed(1)}/5.0
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  (Đánh giá)
+                                </span>
+                              </div>
+                            )}
+
+                          {/* Subject Tags */}
+                          <div className="mb-4">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                              Môn học:
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              {"subjectNames" in tutor
+                                ? tutor.subjectNames.map((subject, index) => (
+                                    <button
+                                      key={index}
+                                      onClick={() =>
+                                        handleSubjectClick(tutor.id, index)
+                                      }
+                                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                                        selectedSubject[tutor.id] === index
+                                          ? "bg-blue-100 text-blue-700 border-2 border-blue-300"
+                                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                                      }`}
+                                    >
+                                      {subject}
+                                    </button>
+                                  ))
+                                : "profileSubjects" in tutor &&
+                                  tutor.profileSubjects
+                                ? tutor.profileSubjects.map(
+                                    (profileSubject) => (
+                                      <button
+                                        key={profileSubject.id}
+                                        onClick={() =>
+                                          handleSubjectClick(
+                                            tutor.id,
+                                            profileSubject.subject.id
+                                          )
+                                        }
+                                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                                          selectedSubject[tutor.id] ===
+                                          profileSubject.subject.id
+                                            ? "bg-blue-100 text-blue-700 border-2 border-blue-300"
+                                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                                        }`}
+                                      >
+                                        {profileSubject.subject.name}
+                                      </button>
+                                    )
+                                  )
+                                : "subjects" in tutor &&
+                                  tutor.subjects?.map((subject) => (
+                                    <button
+                                      key={subject.id}
+                                      onClick={() =>
+                                        handleSubjectClick(tutor.id, subject.id)
+                                      }
+                                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                                        selectedSubject[tutor.id] === subject.id
+                                          ? "bg-blue-100 text-blue-700 border-2 border-blue-300"
+                                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                                      }`}
+                                    >
+                                      {subject.name}
+                                    </button>
+                                  ))}
+                            </div>
+                          </div>
+
+                          {/* Price Display */}
+                          {getSelectedSubjectPrice(tutor) && (
+                            <div className="mb-4">
+                              <div className="inline-flex items-center space-x-2">
+                                <span className="text-lg font-bold text-blue-600">
+                                  {formatPrice(getSelectedSubjectPrice(tutor))}
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  /buổi học
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Bio/Experience */}
+                          {"bio" in tutor && tutor.bio && (
+                            <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-2">
+                              {tutor.bio}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>

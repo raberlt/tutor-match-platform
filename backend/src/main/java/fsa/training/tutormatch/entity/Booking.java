@@ -69,14 +69,17 @@ public class Booking {
     @Column(name = "payment_date")
     private ZonedDateTime paymentDate;
 
-    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Contract contract;
+    // @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private Contract contract;
     
     @Column(name = "contract_duration")
     private Integer contractDuration;
     
     @Column(name = "sessions_per_week")
     private Integer sessionsPerWeek;
+
+    @Column(columnDefinition = "NVARCHAR(1000)")
+    private String adminNote; // Ghi chú của admin
 
     @CreationTimestamp
     @Column(updatable = false)

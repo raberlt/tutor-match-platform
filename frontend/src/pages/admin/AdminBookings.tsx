@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { bookingService } from "../../services/bookingService";
+import { adminService } from "../../services/adminService";
 import type {
   Booking,
   BookingListResponse,
@@ -26,15 +26,31 @@ const AdminBookings: React.FC = () => {
   const loadBookings = async () => {
     try {
       setLoading(true);
-      const response = await bookingService.getAllBookings(
+      const response = await adminService.getBookings(
         currentPage,
         10,
+        "createdAt",
+        "desc",
         selectedStatus
       );
-      setBookings(response.content);
-      setTotalPages(response.totalPages);
+
+      // Handle different response formats
+      if (response.bookings) {
+        setBookings(response.bookings || []);
+        setTotalPages(response.totalPages || 0);
+      } else if (response.content) {
+        setBookings(response.content || []);
+        setTotalPages(response.totalPages || 0);
+      } else if (Array.isArray(response)) {
+        setBookings(response);
+        setTotalPages(1);
+      } else {
+        setBookings([]);
+        setTotalPages(0);
+      }
     } catch (error: any) {
-      setError(error.message);
+      setError(error.message || "Lỗi khi tải dữ liệu booking");
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -42,7 +58,7 @@ const AdminBookings: React.FC = () => {
 
   const loadStats = async () => {
     try {
-      const statsData = await bookingService.getAdminBookingStats();
+      const statsData = await adminService.getBookingStats();
       setStats(statsData);
     } catch (error) {
       console.error("Error loading stats:", error);
@@ -64,7 +80,7 @@ const AdminBookings: React.FC = () => {
     }
 
     try {
-      await bookingService.updateBookingStatus(bookingId, newStatus);
+      await adminService.updateBookingStatus(bookingId, newStatus);
       loadBookings();
       loadStats();
     } catch (error: any) {
@@ -78,7 +94,7 @@ const AdminBookings: React.FC = () => {
     }
 
     try {
-      await bookingService.deleteBooking(bookingId);
+      await adminService.deleteBooking(bookingId);
       loadBookings();
       loadStats();
     } catch (error: any) {
@@ -435,91 +451,102 @@ const AdminBookings: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {bookings.map((booking) => (
-                  <tr key={booking.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{booking.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {booking.student.user.firstName}{" "}
-                      {booking.student.user.lastName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {booking.tutor.user.firstName}{" "}
-                      {booking.tutor.user.lastName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {booking.subject.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {getBookingTypeText(booking.bookingType)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                          booking.status
-                        )}`}
-                      >
-                        {getStatusText(booking.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(booking.date).toLocaleDateString("vi-VN")}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {booking.amount > 0
-                        ? `${booking.amount.toLocaleString("vi-VN")} VNĐ`
-                        : "Miễn phí"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() =>
-                            window.open(
-                              `/admin/booking-detail/${booking.id}`,
-                              "_blank"
-                            )
-                          }
-                          className="text-blue-600 hover:text-blue-900"
+                {bookings && bookings.length > 0 ? (
+                  bookings.map((booking) => (
+                    <tr key={booking.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        #{booking.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {booking.student.user.firstName}{" "}
+                        {booking.student.user.lastName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {booking.tutor.user.firstName}{" "}
+                        {booking.tutor.user.lastName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {booking.subject.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {getBookingTypeText(booking.bookingType)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                            booking.status
+                          )}`}
                         >
-                          Xem
-                        </button>
-                        <select
-                          onChange={(e) =>
-                            handleUpdateStatus(
-                              booking.id,
-                              e.target.value as BookingStatus
-                            )
-                          }
-                          className="text-xs border border-gray-300 rounded px-2 py-1"
-                          defaultValue={booking.status}
-                        >
-                          <option value="PENDING">Chờ xử lý</option>
-                          <option value="TUTOR_APPROVED">
-                            Giảng viên đã chấp nhận
-                          </option>
-                          <option value="PAYMENT_PENDING">
-                            Chờ thanh toán
-                          </option>
-                          <option value="PAID">Đã thanh toán</option>
-                          <option value="CONFIRMED">Đã xác nhận</option>
-                          <option value="IN_PROGRESS">Đang diễn ra</option>
-                          <option value="COMPLETED">Hoàn thành</option>
-                          <option value="CANCELLED">Đã hủy</option>
-                          <option value="REJECTED">Bị từ chối</option>
-                        </select>
-                        <button
-                          onClick={() => handleDeleteBooking(booking.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Xóa
-                        </button>
-                      </div>
+                          {getStatusText(booking.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(booking.date).toLocaleDateString("vi-VN")}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {booking.amount > 0
+                          ? `${booking.amount.toLocaleString("vi-VN")} VNĐ`
+                          : "Miễn phí"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() =>
+                              window.open(
+                                `/admin/booking-detail/${booking.id}`,
+                                "_blank"
+                              )
+                            }
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            Xem
+                          </button>
+                          <select
+                            onChange={(e) =>
+                              handleUpdateStatus(
+                                booking.id,
+                                e.target.value as BookingStatus
+                              )
+                            }
+                            className="text-xs border border-gray-300 rounded px-2 py-1"
+                            defaultValue={booking.status}
+                          >
+                            <option value="PENDING">Chờ xử lý</option>
+                            <option value="TUTOR_APPROVED">
+                              Giảng viên đã chấp nhận
+                            </option>
+                            <option value="PAYMENT_PENDING">
+                              Chờ thanh toán
+                            </option>
+                            <option value="PAID">Đã thanh toán</option>
+                            <option value="CONFIRMED">Đã xác nhận</option>
+                            <option value="IN_PROGRESS">Đang diễn ra</option>
+                            <option value="COMPLETED">Hoàn thành</option>
+                            <option value="CANCELLED">Đã hủy</option>
+                            <option value="REJECTED">Bị từ chối</option>
+                          </select>
+                          <button
+                            onClick={() => handleDeleteBooking(booking.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-6 py-4 text-center text-sm text-gray-500"
+                    >
+                      Không có dữ liệu booking
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

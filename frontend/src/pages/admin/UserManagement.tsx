@@ -1,77 +1,80 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { adminService } from "../../services/adminService";
 
 interface User {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  role: "user" | "tutor" | "admin";
-  status: "active" | "inactive" | "banned";
+  role: "STUDENT" | "TUTOR" | "ADMIN";
+  status: "ACTIVE" | "INACTIVE" | "BANNED";
   createdAt: string;
   lastLogin?: string;
 }
 
 export const UserManagement: React.FC = () => {
-  const [users] = useState<User[]>([
-    {
-      id: "1",
-      name: "Nguyễn Văn An",
-      email: "an@example.com",
-      role: "user",
-      status: "active",
-      createdAt: "2025-01-01",
-      lastLogin: "2025-01-12",
-    },
-    {
-      id: "2",
-      name: "Trần Thị Bình",
-      email: "binh@example.com",
-      role: "tutor",
-      status: "active",
-      createdAt: "2024-12-15",
-      lastLogin: "2025-01-11",
-    },
-    {
-      id: "3",
-      name: "Lê Văn Cường",
-      email: "cuong@example.com",
-      role: "user",
-      status: "inactive",
-      createdAt: "2024-11-20",
-      lastLogin: "2024-12-25",
-    },
-    {
-      id: "4",
-      name: "Phạm Thị Dung",
-      email: "dung@example.com",
-      role: "tutor",
-      status: "banned",
-      createdAt: "2024-10-10",
-      lastLogin: "2024-12-30",
-    },
-  ]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = filterRole === "all" || user.role === filterRole;
-    const matchesStatus =
-      filterStatus === "all" || user.status === filterStatus;
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await adminService.getUsers();
+      console.log("API Response:", data);
+
+      // Xử lý response có thể là array hoặc paginated object
+      if (Array.isArray(data)) {
+        setUsers(data);
+      } else if (data && Array.isArray(data.content)) {
+        // Paginated response
+        setUsers(data.content);
+      } else if (data && Array.isArray(data.data)) {
+        // Wrapped response
+        setUsers(data.data);
+      } else {
+        console.error("Unexpected API response format:", data);
+        setUsers([]);
+        setError("Định dạng dữ liệu không đúng");
+      }
+    } catch (err: any) {
+      console.error("Error loading users:", err);
+      setError(err.message || "Lỗi khi tải danh sách người dùng");
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredUsers = Array.isArray(users)
+    ? users.filter((user) => {
+        const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+        const matchesSearch =
+          fullName.includes(searchTerm.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesRole = filterRole === "all" || user.role === filterRole;
+        const matchesStatus =
+          filterStatus === "all" || user.status === filterStatus;
+
+        return matchesSearch && matchesRole && matchesStatus;
+      })
+    : [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active":
+      case "ACTIVE":
         return "bg-green-100 text-green-800";
-      case "inactive":
+      case "INACTIVE":
         return "bg-yellow-100 text-yellow-800";
-      case "banned":
+      case "BANNED":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -80,16 +83,40 @@ export const UserManagement: React.FC = () => {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case "admin":
+      case "ADMIN":
         return "bg-red-100 text-red-800";
-      case "tutor":
+      case "TUTOR":
         return "bg-blue-100 text-blue-800";
-      case "user":
+      case "STUDENT":
         return "bg-green-100 text-green-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-xl mb-4">Lỗi: {error}</div>
+          <button
+            onClick={loadUsers}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -187,9 +214,9 @@ export const UserManagement: React.FC = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
             >
               <option value="all">Tất cả vai trò</option>
-              <option value="user">Học viên</option>
-              <option value="tutor">Gia sư</option>
-              <option value="admin">Admin</option>
+              <option value="STUDENT">Học viên</option>
+              <option value="TUTOR">Gia sư</option>
+              <option value="ADMIN">Admin</option>
             </select>
           </div>
 
@@ -203,9 +230,9 @@ export const UserManagement: React.FC = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
             >
               <option value="all">Tất cả trạng thái</option>
-              <option value="active">Hoạt động</option>
-              <option value="inactive">Không hoạt động</option>
-              <option value="banned">Bị cấm</option>
+              <option value="ACTIVE">Hoạt động</option>
+              <option value="INACTIVE">Không hoạt động</option>
+              <option value="BANNED">Bị cấm</option>
             </select>
           </div>
         </div>
@@ -251,13 +278,13 @@ export const UserManagement: React.FC = () => {
                       <div className="flex-shrink-0 h-10 w-10">
                         <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                           <span className="text-blue-600 font-medium text-sm">
-                            {user.name.charAt(0)}
+                            {user.firstName.charAt(0)}
                           </span>
                         </div>
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {user.name}
+                          {user.firstName} {user.lastName}
                         </div>
                         <div className="text-sm text-gray-500">
                           {user.email}
@@ -271,9 +298,9 @@ export const UserManagement: React.FC = () => {
                         user.role
                       )}`}
                     >
-                      {user.role === "user"
+                      {user.role === "STUDENT"
                         ? "Học viên"
-                        : user.role === "tutor"
+                        : user.role === "TUTOR"
                         ? "Gia sư"
                         : "Admin"}
                     </span>
@@ -284,9 +311,9 @@ export const UserManagement: React.FC = () => {
                         user.status
                       )}`}
                     >
-                      {user.status === "active"
+                      {user.status === "ACTIVE"
                         ? "Hoạt động"
-                        : user.status === "inactive"
+                        : user.status === "INACTIVE"
                         ? "Không hoạt động"
                         : "Bị cấm"}
                     </span>

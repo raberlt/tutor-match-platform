@@ -42,13 +42,13 @@ public interface ProfileRepository extends JpaRepository<Profile, Integer> {
     
     // REMOVED: findTutorsByLocation - city field no longer exists
     
-    @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'APPROVED'")
+    @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'ACTIVE'")
     Page<TutorProfile> findTutorsByKeywordPaged(@Param("keyword") String keyword, Pageable pageable);
     
-    @Query("SELECT p FROM TutorProfile p WHERE p.profileStatus = 'APPROVED'")
+    @Query("SELECT p FROM TutorProfile p WHERE p.profileStatus = 'ACTIVE'")
     Page<TutorProfile> findAllTutorsPaged(Pageable pageable);
     
-    @Query("SELECT p FROM TutorProfile p WHERE p.profileStatus = 'APPROVED' ORDER BY p.ratePointAverage DESC LIMIT :limit")
+    @Query("SELECT p FROM TutorProfile p WHERE p.profileStatus = 'ACTIVE' ORDER BY p.ratePointAverage DESC LIMIT :limit")
     List<TutorProfile> findTopRatedTutors(@Param("limit") int limit);
     
     @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.fees BETWEEN :minPrice AND :maxPrice AND p.profileStatus = 'ACTIVE'")
@@ -57,7 +57,7 @@ public interface ProfileRepository extends JpaRepository<Profile, Integer> {
     // Count methods for dashboard
     long countByProfileStatus(ProfileStatus status);
     
-    @Query("SELECT COUNT(p) FROM TutorProfile p WHERE p.profileStatus = 'APPROVED'")
+    @Query("SELECT COUNT(p) FROM TutorProfile p WHERE p.profileStatus = 'ACTIVE'")
     long countApprovedTutors();
     
     @Query("SELECT COUNT(p) FROM StudentProfile p")

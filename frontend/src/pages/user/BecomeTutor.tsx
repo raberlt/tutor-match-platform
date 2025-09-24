@@ -231,6 +231,10 @@ export const BecomeTutor: React.FC = () => {
           if (draftData.success && draftData.hasDraft) {
             console.log("✅ Loading saved draft data:", draftData);
             console.log("📝 Current formData before update:", formData);
+            console.log(
+              "🔍 Raw draftData from backend:",
+              JSON.stringify(draftData, null, 2)
+            );
             console.log("🔍 Draft data fields:", {
               firstName: draftData.firstName,
               lastName: draftData.lastName,
@@ -239,6 +243,16 @@ export const BecomeTutor: React.FC = () => {
               headline: draftData.headline,
               experience: draftData.experience,
             });
+            console.log("🔍 Draft certificates:", draftData.certificates);
+            console.log("🔍 Draft educations:", draftData.educations);
+            console.log(
+              "🔍 Draft certificates length:",
+              draftData.certificates?.length
+            );
+            console.log(
+              "🔍 Draft educations length:",
+              draftData.educations?.length
+            );
 
             // Điền dữ liệu vào form
             setFormData((prev) => {
@@ -277,12 +291,19 @@ export const BecomeTutor: React.FC = () => {
                         major: edu.major || "",
                         startYear: edu.fromTime ? edu.fromTime.toString() : "",
                         endYear: edu.toTime ? edu.toTime.toString() : "",
-                        imageUrl: edu.degreeImage || "",
+                        file: null, // Reset file object
+                        imageUrl: edu.degreeImage || edu.url || "",
                       }))
                     : prev.degrees,
                 certificates:
                   draftData.certificates && draftData.certificates.length > 0
-                    ? draftData.certificates
+                    ? draftData.certificates.map((cert: any) => ({
+                        name: cert.name || "",
+                        description: cert.description || "",
+                        issuedBy: cert.issuedBy || "",
+                        file: null, // Reset file object
+                        imageUrl: cert.certImage || cert.url || "",
+                      }))
                     : prev.certificates,
                 schedules:
                   draftData.schedules && draftData.schedules.length > 0
@@ -368,6 +389,8 @@ export const BecomeTutor: React.FC = () => {
               };
 
               console.log("🔄 Updated formData:", updatedData);
+              console.log("🔄 Updated certificates:", updatedData.certificates);
+              console.log("🔄 Updated degrees:", updatedData.degrees);
               return updatedData;
             });
 
@@ -438,6 +461,14 @@ export const BecomeTutor: React.FC = () => {
                 acceptTerms: true,
               };
               console.log("🔄 Updated formData (fallback):", updatedData);
+              console.log(
+                "🔄 Updated certificates (fallback):",
+                updatedData.certificates
+              );
+              console.log(
+                "🔄 Updated degrees (fallback):",
+                updatedData.degrees
+              );
               return updatedData;
             });
           }
@@ -456,36 +487,48 @@ export const BecomeTutor: React.FC = () => {
 
   // Load dữ liệu mặc định
   useEffect(() => {
-    // Danh sách môn học mặc định
-    const defaultSubjects = [
-      { id: 1, name: "Tiếng Anh" },
-      { id: 2, name: "Toán" },
-      { id: 3, name: "Ngữ văn" },
-      { id: 4, name: "IELTS" },
-      { id: 5, name: "Tiếng Trung" },
-      { id: 6, name: "Tiếng Hàn" },
-      { id: 7, name: "Hóa học" },
-      { id: 8, name: "Vật lý" },
-      { id: 9, name: "Luyện thi ĐGNL" },
-      { id: 10, name: "Tiếng Pháp" },
-      { id: 11, name: "Tiếng Nhật" },
-      { id: 12, name: "Tiếng Đức" },
-      { id: 13, name: "TOEIC" },
-      { id: 14, name: "HSK" },
-      { id: 15, name: "DELF & TCF" },
-      { id: 16, name: "JLPT" },
-      { id: 17, name: "TOPIK" },
-      { id: 18, name: "SAT" },
-      { id: 19, name: "TOEFL iBT" },
-      { id: 20, name: "Cambridge" },
-      { id: 21, name: "PTE Academic" },
-      { id: 22, name: "ACT" },
-      { id: 23, name: "Địa Lý" },
-      { id: 24, name: "MOS" },
-      { id: 25, name: "Giáo dục công dân" },
-      { id: 26, name: "Sinh học" },
-      { id: 27, name: "Lịch sử" },
-    ];
+    // Load subjects from API
+    const loadSubjects = async () => {
+      try {
+        const subjectsData = await TutorService.getSubjects();
+        setSubjects(subjectsData);
+      } catch (error) {
+        console.error("Error loading subjects:", error);
+        // Fallback to default subjects if API fails
+        const defaultSubjects = [
+          { id: 1, name: "Tiếng Anh" },
+          { id: 2, name: "Toán" },
+          { id: 3, name: "Ngữ văn" },
+          { id: 4, name: "IELTS" },
+          { id: 5, name: "Tiếng Trung" },
+          { id: 6, name: "Tiếng Hàn" },
+          { id: 7, name: "Hóa học" },
+          { id: 8, name: "Vật lý" },
+          { id: 9, name: "Luyện thi ĐGNL" },
+          { id: 10, name: "Tiếng Pháp" },
+          { id: 11, name: "Tiếng Nhật" },
+          { id: 12, name: "Tiếng Đức" },
+          { id: 13, name: "TOEIC" },
+          { id: 14, name: "HSK" },
+          { id: 15, name: "DELF & TCF" },
+          { id: 16, name: "JLPT" },
+          { id: 17, name: "TOPIK" },
+          { id: 18, name: "SAT" },
+          { id: 19, name: "TOEFL iBT" },
+          { id: 20, name: "Cambridge" },
+          { id: 21, name: "PTE Academic" },
+          { id: 22, name: "ACT" },
+          { id: 23, name: "Địa Lý" },
+          { id: 24, name: "MOS" },
+          { id: 25, name: "Giáo dục công dân" },
+          { id: 26, name: "Sinh học" },
+          { id: 27, name: "Lịch sử" },
+        ];
+        setSubjects(defaultSubjects);
+      }
+    };
+
+    loadSubjects();
 
     // Danh sách tỉnh/thành phố Việt Nam
     const vietnamProvinces = [
@@ -554,7 +597,6 @@ export const BecomeTutor: React.FC = () => {
       { id: 63, name: "Yên Bái" },
     ];
 
-    setSubjects(defaultSubjects);
     setProvinces(vietnamProvinces);
     setFilteredProvinces(vietnamProvinces);
   }, []);
@@ -1245,6 +1287,10 @@ export const BecomeTutor: React.FC = () => {
       );
       console.log("🔍 Educations structure:", tutorData.educations);
       console.log("🔍 Certificates structure:", tutorData.certificates);
+      console.log("🔍 FormData noDegree:", formData.noDegree);
+      console.log("🔍 FormData noCertificates:", formData.noCertificates);
+      console.log("🔍 FormData degrees:", formData.degrees);
+      console.log("🔍 FormData certificates:", formData.certificates);
       const response = await TutorService.saveDraft(tutorData);
       if (response.success) {
         alert("Đã lưu nháp thành công!");
@@ -2091,15 +2137,21 @@ export const BecomeTutor: React.FC = () => {
                                     "Certificate upload success:",
                                     data
                                   );
+                                  console.log("🔍 Certificate URL:", data.url);
                                   const newCerts = [...formData.certificates];
                                   newCerts[index].file = file;
                                   newCerts[index].url = data.url; // Store the uploaded URL
+                                  newCerts[index].imageUrl = data.url; // Also store in imageUrl
                                   handleInputChange("certificates", newCerts);
                                 } else {
                                   const errorData = await response.text();
                                   console.error(
                                     "Certificate upload failed:",
                                     response.status,
+                                    errorData
+                                  );
+                                  console.error(
+                                    "🔍 Certificate upload error details:",
                                     errorData
                                   );
                                 }
@@ -2151,24 +2203,40 @@ export const BecomeTutor: React.FC = () => {
                           <span className="text-sm font-medium text-gray-600">
                             {cert.file
                               ? cert.file.name
+                              : cert.imageUrl
+                              ? "File đã tải lên từ trước"
                               : "Chọn file hoặc kéo thả vào đây"}
                           </span>
                         </label>
-                        {cert.file && (
-                          <p className="text-xs text-green-600 mt-2 flex items-center">
-                            <svg
-                              className="w-4 h-4 mr-1"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            File đã được chọn
-                          </p>
+                        {(cert.file || cert.imageUrl) && (
+                          <div className="mt-2">
+                            <p className="text-xs text-green-600 flex items-center mb-1">
+                              <svg
+                                className="w-4 h-4 mr-1"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              {cert.file
+                                ? cert.file.name
+                                : "Chứng chỉ đã tải lên"}
+                            </p>
+                            {cert.imageUrl && (
+                              <a
+                                href={cert.imageUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:text-blue-800 underline"
+                              >
+                                Xem chứng chỉ
+                              </a>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -2556,13 +2624,19 @@ export const BecomeTutor: React.FC = () => {
                               if (response.ok) {
                                 const data = await response.json();
                                 console.log("Degree upload success:", data);
+                                console.log("🔍 Degree URL:", data.url);
                                 updateDegree(degree.id, "file", file);
                                 updateDegree(degree.id, "url", data.url); // Store the uploaded URL
+                                updateDegree(degree.id, "imageUrl", data.url); // Also store in imageUrl
                               } else {
                                 const errorData = await response.text();
                                 console.error(
                                   "Degree upload failed:",
                                   response.status,
+                                  errorData
+                                );
+                                console.error(
+                                  "🔍 Degree upload error details:",
                                   errorData
                                 );
                               }
@@ -2594,9 +2668,41 @@ export const BecomeTutor: React.FC = () => {
                         <span className="text-sm font-medium text-gray-600">
                           {degree.file
                             ? degree.file.name
+                            : degree.imageUrl
+                            ? "File đã tải lên từ trước"
                             : "Chọn file hoặc kéo thả vào đây"}
                         </span>
                       </label>
+                      {(degree.file || degree.imageUrl) && (
+                        <div className="mt-2">
+                          <p className="text-xs text-green-600 flex items-center mb-1">
+                            <svg
+                              className="w-4 h-4 mr-1"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            {degree.file
+                              ? degree.file.name
+                              : "Bằng cấp đã tải lên"}
+                          </p>
+                          {degree.imageUrl && (
+                            <a
+                              href={degree.imageUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:text-blue-800 underline"
+                            >
+                              Xem bằng cấp
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -3217,13 +3323,17 @@ export const BecomeTutor: React.FC = () => {
                             ? "white"
                             : completedSteps.has(step)
                             ? "rgb(148, 204, 230)"
-                            : undefined,
+                            : canNavigateToStep(step)
+                            ? "rgba(255, 255, 255, 0.2)"
+                            : "rgba(156, 163, 175, 0.5)",
                         color:
                           step === currentStep
                             ? "rgb(31, 41, 55)" // Màu xám đậm để dễ đọc trên nền trắng
                             : completedSteps.has(step)
                             ? "white"
-                            : undefined,
+                            : canNavigateToStep(step)
+                            ? "white"
+                            : "rgb(107, 114, 128)",
                       }}
                       onClick={() => canNavigateToStep(step) && goToStep(step)}
                     >
@@ -3260,13 +3370,17 @@ export const BecomeTutor: React.FC = () => {
                             ? "white"
                             : completedSteps.has(step)
                             ? "rgb(148, 204, 230)"
-                            : undefined,
+                            : canNavigateToStep(step)
+                            ? "rgba(255, 255, 255, 0.2)"
+                            : "rgba(156, 163, 175, 0.5)",
                         color:
                           step === currentStep
                             ? "rgb(31, 41, 55)" // Màu xám đậm để dễ đọc trên nền trắng
                             : completedSteps.has(step)
                             ? "white"
-                            : undefined,
+                            : canNavigateToStep(step)
+                            ? "white"
+                            : "rgb(107, 114, 128)",
                       }}
                       onClick={() => canNavigateToStep(step) && goToStep(step)}
                     >

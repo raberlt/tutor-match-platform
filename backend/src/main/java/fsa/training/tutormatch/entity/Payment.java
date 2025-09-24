@@ -62,6 +62,9 @@ public class Payment {
     @Column(columnDefinition = "NVARCHAR(1000)")
     private String gatewayResponse; // Response từ payment gateway
 
+    @Column(columnDefinition = "NVARCHAR(1000)")
+    private String adminNote; // Ghi chú của admin
+
     private ZonedDateTime paidAt;
 
     @CreationTimestamp

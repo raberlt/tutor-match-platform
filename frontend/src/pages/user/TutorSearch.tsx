@@ -153,7 +153,7 @@ const TutorSearch: React.FC = () => {
   };
 
   const renderStars = (rating?: number) => {
-    if (!rating) return <span className="text-gray-400">Chưa có đánh giá</span>;
+    if (!rating || rating === 0) return null;
 
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -162,26 +162,47 @@ const TutorSearch: React.FC = () => {
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
         stars.push(
-          <span key={i} className="text-yellow-400">
-            ★
-          </span>
+          <svg
+            key={i}
+            className="w-4 h-4 text-yellow-400 fill-current"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
         );
       } else if (i === fullStars && hasHalfStar) {
         stars.push(
-          <span key={i} className="text-yellow-400">
-            ☆
-          </span>
+          <svg
+            key={i}
+            className="w-4 h-4 text-yellow-400 fill-current"
+            viewBox="0 0 20 20"
+          >
+            <defs>
+              <linearGradient id="half-star">
+                <stop offset="50%" stopColor="currentColor" />
+                <stop offset="50%" stopColor="#d1d5db" />
+              </linearGradient>
+            </defs>
+            <path
+              fill="url(#half-star)"
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+            />
+          </svg>
         );
       } else {
         stars.push(
-          <span key={i} className="text-gray-300">
-            ☆
-          </span>
+          <svg
+            key={i}
+            className="w-4 h-4 text-gray-300 fill-current"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
         );
       }
     }
 
-    return <div className="flex items-center">{stars}</div>;
+    return <div className="flex items-center space-x-0.5">{stars}</div>;
   };
 
   return (
@@ -492,134 +513,155 @@ const TutorSearch: React.FC = () => {
           {/* Tutor List */}
           {!loading && !error && (
             <>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {tutors.map((tutor) => (
                   <div
                     key={tutor.id}
-                    className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                    className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
                   >
-                    <div className="flex items-start space-x-4">
+                    <div className="flex items-start space-x-6">
                       {/* Avatar */}
                       <div className="flex-shrink-0">
                         {tutor.imageAvatar ? (
                           <img
                             src={tutor.imageAvatar}
                             alt={`${tutor.firstName} ${tutor.lastName}`}
-                            className="w-16 h-16 rounded-lg object-cover"
+                            className="w-20 h-20 rounded-full object-cover border-2 border-gray-100"
                           />
                         ) : (
                           <div
-                            className="w-16 h-16 rounded-lg flex items-center justify-center"
+                            className="w-20 h-20 rounded-full flex items-center justify-center border-2 border-gray-100"
                             style={{ backgroundColor: "#f0f8ff" }}
                           >
                             <span
-                              className="text-xl font-medium"
+                              className="text-2xl font-bold"
                               style={{ color: "#94cce6" }}
                             >
-                              {tutor.firstName.charAt(0)}
-                              {tutor.lastName.charAt(0)}
+                              {tutor.firstName?.charAt(0) || "T"}
+                              {tutor.lastName?.charAt(0) || "U"}
                             </span>
                           </div>
                         )}
                       </div>
 
                       {/* Tutor Info */}
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                              {tutor.firstName} {tutor.lastName}
-                            </h3>
-
-                            {tutor.headline && (
-                              <p className="text-blue-600 text-sm font-medium mb-2">
-                                {tutor.headline}
-                              </p>
-                            )}
-
-                            <div className="flex items-center space-x-4 mb-2">
-                              <div className="flex items-center space-x-1">
-                                {renderStars(tutor.ratePointAverage)}
-                                <span className="text-sm text-gray-600 ml-1">
-                                  ({tutor.ratePointAverage?.toFixed(1) || "0.0"}
-                                  )
-                                </span>
+                            {/* Name with verification badge */}
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h3 className="text-xl font-bold text-gray-900">
+                                {tutor.firstName} {tutor.lastName}
+                              </h3>
+                              <div className="flex items-center">
+                                <svg
+                                  className="w-5 h-5 text-blue-500"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
                               </div>
-                              {tutor.city && (
-                                <span className="text-sm text-gray-500">
-                                  📍 {tutor.city}
-                                </span>
-                              )}
                             </div>
 
-                            {/* Subjects */}
+                            {/* Subjects with Prices */}
                             <div className="mb-3">
-                              <div className="flex flex-wrap gap-1">
+                              <div className="space-y-2">
                                 {"subjectNames" in tutor
                                   ? tutor.subjectNames.map((subject, index) => (
-                                      <span
+                                      <div
                                         key={index}
-                                        className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white"
-                                        style={{ backgroundColor: "#94cce6" }}
+                                        className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2"
                                       >
-                                        {subject}
-                                      </span>
+                                        <span className="text-sm font-medium text-gray-700">
+                                          {subject}
+                                        </span>
+                                        <span className="text-sm font-bold text-blue-600">
+                                          {formatPrice(tutor.fees)} VND/buổi
+                                        </span>
+                                      </div>
                                     ))
                                   : "subjects" in tutor &&
                                     tutor.subjects.map((subject) => (
-                                      <span
+                                      <div
                                         key={subject.id}
-                                        className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white"
-                                        style={{ backgroundColor: "#94cce6" }}
+                                        className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2"
                                       >
-                                        {subject.name}
-                                      </span>
+                                        <span className="text-sm font-medium text-gray-700">
+                                          {subject.name}
+                                        </span>
+                                        <span className="text-sm font-bold text-blue-600">
+                                          {formatPrice((subject as { fees?: number }).fees || tutor.fees)} VND/buổi
+                                        </span>
+                                      </div>
                                     ))}
                               </div>
                             </div>
 
+                            {/* Rating */}
+                            {tutor.ratePointAverage &&
+                              tutor.ratePointAverage > 0 && (
+                                <div className="flex items-center space-x-1 mb-3">
+                                  {renderStars(tutor.ratePointAverage)}
+                                  <span className="text-sm text-gray-600 ml-1">
+                                    ({tutor.ratePointAverage.toFixed(1)})
+                                  </span>
+                                </div>
+                              )}
+
                             {/* Bio/Experience (for authenticated users) */}
                             {"bio" in tutor && tutor.bio && (
-                              <p className="text-gray-600 text-sm line-clamp-2">
+                              <p className="text-gray-600 text-sm line-clamp-2 mb-2">
                                 {tutor.bio}
                               </p>
                             )}
+
+                            {/* See details link */}
+                            <button
+                              onClick={() => {
+                                if (isAuthenticated) {
+                                  navigate(`/tutor/${tutor.id}`);
+                                } else {
+                                  navigate('/login');
+                                }
+                              }}
+                              className="text-blue-600 text-sm font-medium hover:text-blue-800 transition-colors"
+                            >
+                              Xem chi tiết
+                            </button>
                           </div>
 
-                          {/* Price and Action */}
-                          <div className="flex flex-col items-end space-y-2">
-                            <div className="text-right">
-                              <div className="text-lg font-bold text-blue-600">
-                                {formatPrice(tutor.fees)}/buổi
-                              </div>
-                            </div>
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => navigate(`/tutor/${tutor.id}`)}
-                                className="text-sm font-medium px-3 py-2 border rounded-lg hover:opacity-80"
-                                style={{
-                                  color: "#94cce6",
-                                  borderColor: "#94cce6",
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    "#f0f8ff";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    "transparent";
-                                }}
-                              >
-                                Xem chi tiết
-                              </button>
-                              <button
-                                onClick={() => handleBooking(tutor)}
-                                className="text-white px-4 py-2 rounded-lg hover:opacity-80 transition-colors text-sm font-medium"
-                                style={{ backgroundColor: "#94cce6" }}
-                              >
-                                {isAuthenticated ? "Đặt lịch" : "Đăng nhập"}
-                              </button>
-                            </div>
+                          {/* Action Buttons */}
+                          <div className="flex-shrink-0 ml-4 space-y-2">
+                            <button
+                              onClick={() => {
+                                if (isAuthenticated) {
+                                  navigate(`/tutor/${tutor.id}`);
+                                } else {
+                                  navigate('/login');
+                                }
+                              }}
+                              className="w-full text-blue-600 px-4 py-2 rounded-lg border border-blue-600 hover:bg-blue-50 transition-all duration-200 text-sm font-medium"
+                            >
+                              Xem chi tiết
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (isAuthenticated) {
+                                  handleBooking(tutor);
+                                } else {
+                                  navigate('/login');
+                                }
+                              }}
+                              className="w-full text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
+                              style={{ backgroundColor: "#94cce6" }}
+                            >
+                              {isAuthenticated ? "Đặt lịch học" : "Đăng nhập"}
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -630,20 +672,44 @@ const TutorSearch: React.FC = () => {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex justify-center items-center space-x-2 mt-8">
+                <div className="flex justify-center items-center space-x-1 mt-12">
                   <button
                     onClick={() => handlePageChange(0)}
                     disabled={currentPage === 0}
-                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    ««
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                      />
+                    </svg>
                   </button>
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 0}
-                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    ‹
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
                   </button>
 
                   {/* Page numbers */}
@@ -663,7 +729,7 @@ const TutorSearch: React.FC = () => {
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
-                        className="px-3 py-2 rounded-lg border transition-colors"
+                        className="px-4 py-2 rounded-lg border transition-all duration-200 font-medium"
                         style={{
                           backgroundColor:
                             currentPage === pageNum ? "#94cce6" : "transparent",
@@ -674,12 +740,14 @@ const TutorSearch: React.FC = () => {
                         onMouseEnter={(e) => {
                           if (currentPage !== pageNum) {
                             e.currentTarget.style.backgroundColor = "#f0f8ff";
+                            e.currentTarget.style.borderColor = "#94cce6";
                           }
                         }}
                         onMouseLeave={(e) => {
                           if (currentPage !== pageNum) {
                             e.currentTarget.style.backgroundColor =
                               "transparent";
+                            e.currentTarget.style.borderColor = "#d1d5db";
                           }
                         }}
                       >
@@ -691,16 +759,40 @@ const TutorSearch: React.FC = () => {
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage >= totalPages - 1}
-                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    ›
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
                   </button>
                   <button
                     onClick={() => handlePageChange(totalPages - 1)}
                     disabled={currentPage >= totalPages - 1}
-                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    »»
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                      />
+                    </svg>
                   </button>
                 </div>
               )}

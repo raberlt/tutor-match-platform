@@ -260,7 +260,7 @@ export class TutorService {
   // Lấy danh sách môn học
   static async getSubjects(): Promise<Subject[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/subjects`, {
+      const response = await fetch(`${API_BASE_URL}/api/public/subjects`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -271,7 +271,8 @@ export class TutorService {
         throw new Error("Failed to fetch subjects");
       }
 
-      return await response.json();
+      const data = await response.json();
+      return data.subjects || [];
     } catch (error) {
       console.error("Error fetching subjects:", error);
       return [];
@@ -293,7 +294,7 @@ export class TutorService {
   }> {
     try {
       const params = new URLSearchParams();
-      params.append("page", page.toString());
+      params.append("page", Math.max(0, page - 1).toString()); // Convert to 0-based index, ensure >= 0
       params.append("size", size.toString());
       params.append("sortBy", sortBy);
       params.append("sortDirection", sortDirection);
@@ -317,16 +318,13 @@ export class TutorService {
         params.append("minRating", filters.minRating.toString());
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/tutors/search?${params}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/tutors?${params}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error("Failed to search tutors");
@@ -354,7 +352,7 @@ export class TutorService {
   }> {
     try {
       const params = new URLSearchParams();
-      params.append("page", page.toString());
+      params.append("page", Math.max(0, page - 1).toString()); // Convert to 0-based index, ensure >= 0
       params.append("size", size.toString());
       params.append("sortBy", sortBy);
       params.append("sortDirection", sortDirection);
@@ -379,7 +377,7 @@ export class TutorService {
       }
 
       const response = await fetch(
-        `${API_BASE_URL}/api/tutors/preview?${params}`,
+        `${API_BASE_URL}/api/public/tutors?${params}`,
         {
           method: "GET",
           headers: {

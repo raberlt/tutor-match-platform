@@ -12,6 +12,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.enums.Gender;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import java.time.LocalDate; 
 import java.time.ZonedDateTime;
@@ -82,6 +83,7 @@ public class User {
     private String phoneNumber;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private java.util.List<Profile> profiles;
 
     @NotNull(message = "Role is required")

@@ -196,7 +196,7 @@ export const RegisterPage: React.FC = () => {
             <form className="space-y-4" onSubmit={handleSubmit}>
               {/* Personal Information Section */}
               <div className="bg-gray-50 rounded-xl p-3">
-                <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                {/* <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
                   <svg
                     className="w-5 h-5 mr-2 text-blue-600"
                     fill="none"
@@ -211,7 +211,7 @@ export const RegisterPage: React.FC = () => {
                     />
                   </svg>
                   Thông tin cá nhân
-                </h4>
+                </h4> */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label
@@ -254,22 +254,7 @@ export const RegisterPage: React.FC = () => {
 
               {/* Account Information Section */}
               <div className="bg-gray-50 rounded-xl p-3">
-                <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                  <svg
-                    className="w-5 h-5 mr-2 text-green-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                    />
-                  </svg>
-                  Thông tin tài khoản
-                </h4>
+                
                 <div className="space-y-3">
                   <div className="space-y-2">
                     <label

@@ -1,37 +1,63 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { adminService } from "../../services/adminService";
+import type { DashboardStats } from "../../services/adminService";
 
 export const AdminDashboard: React.FC = () => {
-  const stats = [
-    {
-      label: "Tổng người dùng",
-      value: "2,345",
-      change: "+12%",
-      color: "blue",
-      icon: "👥",
-    },
-    {
-      label: "Gia sư hoạt động",
-      value: "567",
-      change: "+8%",
-      color: "green",
-      icon: "👨‍🏫",
-    },
-    {
-      label: "Buổi học hôm nay",
-      value: "89",
-      change: "+15%",
-      color: "yellow",
-      icon: "📚",
-    },
-    {
-      label: "Doanh thu tháng",
-      value: "125M",
-      change: "+23%",
-      color: "purple",
-      icon: "💰",
-    },
-  ];
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(
+    null
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const data = await adminService.getDashboardOverview();
+      setDashboardStats(data);
+    } catch (err: unknown) {
+      setError((err as Error).message || "Lỗi khi tải dữ liệu dashboard");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const stats = dashboardStats
+    ? [
+        {
+          label: "Tổng người dùng",
+          value: dashboardStats.users.totalUsers.toString(),
+          change: "+12%",
+          color: "blue",
+          icon: "👥",
+        },
+        {
+          label: "Gia sư hoạt động",
+          value: dashboardStats.users.totalTutors.toString(),
+          change: "+8%",
+          color: "green",
+          icon: "👨‍🏫",
+        },
+        {
+          label: "Buổi học hôm nay",
+          value: dashboardStats.bookings.todayBookings.toString(),
+          change: "+15%",
+          color: "yellow",
+          icon: "📚",
+        },
+        {
+          label: "Đặt lịch chờ duyệt",
+          value: dashboardStats.bookings.pendingBookings.toString(),
+          change: "+23%",
+          color: "purple",
+          icon: "💰",
+        },
+      ]
+    : [];
 
   const recentActivities = [
     {
@@ -83,6 +109,30 @@ export const AdminDashboard: React.FC = () => {
       submitted: "3 giờ trước",
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-xl mb-4">Lỗi: {error}</div>
+          <button
+            onClick={loadDashboardData}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -42,6 +42,11 @@ import { UserManagement } from "../pages/admin/UserManagement";
 import { TutorApproval } from "../pages/admin/TutorApproval";
 import { ReportManagement } from "../pages/admin/ReportManagement";
 import AdminBookings from "../pages/admin/AdminBookings";
+import CouponManagement from "../pages/admin/CouponManagement";
+import PaymentManagement from "../pages/admin/PaymentManagement";
+import ContractManagement from "../pages/admin/ContractManagement";
+import ReviewManagement from "../pages/admin/ReviewManagement";
+import SubjectManagement from "../pages/admin/SubjectManagement";
 
 const router = createBrowserRouter([
   // Public routes
@@ -84,7 +89,7 @@ const router = createBrowserRouter([
       },
       {
         path: "become-tutor",
-        element: <BecomeTutor/>,
+        element: <BecomeTutor />,
       },
       {
         path: "support",
@@ -232,6 +237,46 @@ const router = createBrowserRouter([
         element: (
           <BookingProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminBookings />
+          </BookingProtectedRoute>
+        ),
+      },
+      {
+        path: "coupons",
+        element: (
+          <BookingProtectedRoute allowedRoles={["ADMIN"]}>
+            <CouponManagement />
+          </BookingProtectedRoute>
+        ),
+      },
+      {
+        path: "payments",
+        element: (
+          <BookingProtectedRoute allowedRoles={["ADMIN"]}>
+            <PaymentManagement />
+          </BookingProtectedRoute>
+        ),
+      },
+      {
+        path: "contracts",
+        element: (
+          <BookingProtectedRoute allowedRoles={["ADMIN"]}>
+            <ContractManagement />
+          </BookingProtectedRoute>
+        ),
+      },
+      {
+        path: "ratings",
+        element: (
+          <BookingProtectedRoute allowedRoles={["ADMIN"]}>
+            <ReviewManagement />
+          </BookingProtectedRoute>
+        ),
+      },
+      {
+        path: "subjects",
+        element: (
+          <BookingProtectedRoute allowedRoles={["ADMIN"]}>
+            <SubjectManagement />
           </BookingProtectedRoute>
         ),
       },

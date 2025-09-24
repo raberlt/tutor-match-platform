@@ -42,15 +42,29 @@ public class ProfileApplicationService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        // Find latest application by user and type (DRAFT or SUBMITTED)
+        // Find latest application by user and type
         Optional<ProfileApplication> existingApp = applicationRepository
                 .findLatestByUserAndType(user, ApplicationType.BECOME_TUTOR);
         
-        ProfileApplication application = existingApp.orElse(new ProfileApplication());
-
-        if (application.getId() == null) {
+        ProfileApplication application;
+        
+        // Logic for draft: 
+        // - Nếu chưa có hồ sơ -> tạo mới
+        // - Nếu có hồ sơ DRAFT/SUBMITTED/APPROVED -> update hồ sơ cũ
+        // - Nếu có hồ sơ REJECTED -> tạo bản ghi mới (giữ bản ghi REJECTED để thống kê)
+        if (!existingApp.isPresent()) {
+            // Create new application
+            application = new ProfileApplication();
             application.setUser(user);
             application.setApplicationType(ApplicationType.BECOME_TUTOR);
+        } else if (existingApp.get().getStatus() == ApplicationStatus.REJECTED) {
+            // Nếu hồ sơ bị REJECTED, tạo bản ghi mới
+            application = new ProfileApplication();
+            application.setUser(user);
+            application.setApplicationType(ApplicationType.BECOME_TUTOR);
+        } else {
+            // Update existing application (DRAFT/SUBMITTED/APPROVED)
+            application = existingApp.get();
         }
         
         // Always set status to DRAFT when saving draft
@@ -88,15 +102,29 @@ public class ProfileApplicationService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        // Find latest application by user and type (DRAFT or SUBMITTED)
+        // Find latest application by user and type
         Optional<ProfileApplication> existingApp = applicationRepository
                 .findLatestByUserAndType(user, ApplicationType.BECOME_TUTOR);
         
-        ProfileApplication application = existingApp.orElse(new ProfileApplication());
-
-        if (application.getId() == null) {
+        ProfileApplication application;
+        
+        // Logic for submit:
+        // - Nếu chưa có hồ sơ -> tạo mới
+        // - Nếu có hồ sơ DRAFT/SUBMITTED/APPROVED -> update hồ sơ cũ
+        // - Nếu có hồ sơ REJECTED -> tạo bản ghi mới (giữ bản ghi REJECTED để thống kê)
+        if (!existingApp.isPresent()) {
+            // Create new application
+            application = new ProfileApplication();
             application.setUser(user);
             application.setApplicationType(ApplicationType.BECOME_TUTOR);
+        } else if (existingApp.get().getStatus() == ApplicationStatus.REJECTED) {
+            // Nếu hồ sơ bị REJECTED, tạo bản ghi mới
+            application = new ProfileApplication();
+            application.setUser(user);
+            application.setApplicationType(ApplicationType.BECOME_TUTOR);
+        } else {
+            // Update existing application (DRAFT/SUBMITTED/APPROVED)
+            application = existingApp.get();
         }
 
         // Update with latest data and submit
@@ -129,7 +157,7 @@ public class ProfileApplicationService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        // Find latest application by user and type (DRAFT or SUBMITTED)
+        // Find latest application by user and type (DRAFT, SUBMITTED, or REJECTED)
         Optional<ProfileApplication> applicationOpt = applicationRepository
                 .findLatestByUserAndType(user, applicationType);
 
@@ -185,25 +213,58 @@ public class ProfileApplicationService {
      */
     public List<Map<String, Object>> getApplicationsForAdminReview() {
         List<ProfileApplication> applications = applicationRepository.findAll().stream()
-                .filter(app -> app.getStatus() == ApplicationStatus.SUBMITTED)
+                .filter(app -> app.getStatus() == ApplicationStatus.SUBMITTED || 
+                              app.getStatus() == ApplicationStatus.APPROVED || 
+                              app.getStatus() == ApplicationStatus.REJECTED)
                 .collect(Collectors.toList());
         
         List<Map<String, Object>> result = new ArrayList<>();
         for (ProfileApplication app : applications) {
             Map<String, Object> appData = new HashMap<>();
+            
+            // Basic info
             appData.put("id", app.getId());
             appData.put("userId", app.getUser().getId());
             appData.put("firstName", app.getFirstName());
             appData.put("lastName", app.getLastName());
             appData.put("email", app.getUser().getUsername());
+            appData.put("phone", app.getPhoneNumber());
+            appData.put("address", app.getAddress());
+            appData.put("dateOfBirth", app.getDateOfBirth());
+            appData.put("gender", app.getGender());
+            appData.put("imageAvatar", app.getImageAvatar());
+            
+            // Application info
             appData.put("applicationType", app.getApplicationType().toString());
             appData.put("status", app.getStatus().toString());
             appData.put("bio", app.getBio());
             appData.put("headline", app.getHeadline());
             appData.put("experience", app.getExperience());
+            appData.put("educationLevel", app.getEducationLevel());
+            appData.put("teachingLevel", app.getTeachingLevel());
+            appData.put("teachingMethods", app.getTeachingMethods());
+            appData.put("cvUrl", app.getCvUrl());
+            appData.put("videoIntro", app.getVideoIntro());
+            appData.put("timezone", app.getTimezone());
+            
+            // Timestamps
             appData.put("submittedAt", app.getSubmittedAt());
             appData.put("createdAt", app.getCreatedAt());
             appData.put("updatedAt", app.getUpdatedAt());
+            
+            // Related entities
+            List<ApplicationEducation> educations = educationRepository.findByApplicationOrderByFromTimeDesc(app);
+            appData.put("educations", buildEducationDTOs(educations));
+            
+            List<ApplicationCertificate> certificates = certificateRepository.findByApplication(app);
+            appData.put("certificates", buildCertificateDTOs(certificates));
+            
+            List<ApplicationSchedule> schedules = scheduleRepository.findByApplication(app);
+            appData.put("schedules", buildScheduleDTOs(schedules));
+            
+            List<ApplicationSubjectFee> subjectFees = subjectFeeRepository.findByApplication(app);
+            appData.put("subjectFees", buildSubjectFeeDTOs(subjectFees));
+            
             result.add(appData);
         }
         

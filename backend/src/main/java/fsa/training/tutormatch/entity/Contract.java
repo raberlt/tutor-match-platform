@@ -1,76 +1,184 @@
 package fsa.training.tutormatch.entity;
 
-import jakarta.persistence.*;
-import lombok.Data;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import fsa.training.tutormatch.enums.ContractStatus;
-
-import java.time.ZonedDateTime;
+import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "contracts")
-@Data
 public class Contract {
-    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    
-    @OneToOne
-    @JoinColumn(name = "booking_id", nullable = false)
-    private Booking booking;
-    
+
     @Column(name = "contract_number", unique = true, nullable = false)
     private String contractNumber;
-    
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id", nullable = false)
+    private User student;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tutor_id", nullable = false)
+    private User tutor;
+
+    @Column(name = "subject", nullable = false)
+    private String subject;
+
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
-    
+
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
-    
-    @Column(name = "total_sessions", nullable = false)
-    private Integer totalSessions;
-    
-    @Column(name = "sessions_completed", nullable = false)
-    private Integer sessionsCompleted = 0;
-    
-    @Column(name = "monthly_fee", nullable = false)
-    private Double monthlyFee;
-    
+
+    @Column(name = "total_hours", nullable = false)
+    private Integer totalHours;
+
+    @Column(name = "hourly_rate", nullable = false)
+    private BigDecimal hourlyRate;
+
     @Column(name = "total_amount", nullable = false)
-    private Double totalAmount;
-    
-    @Column(name = "contract_status", nullable = false)
+    private BigDecimal totalAmount;
+
     @Enumerated(EnumType.STRING)
-    private ContractStatus contractStatus = ContractStatus.PENDING;
-    
-    @Column(name = "contract_file_path")
-    private String contractFilePath;
-    
-    @Column(name = "terms_and_conditions", columnDefinition = "TEXT")
-    private String termsAndConditions;
-    
-    @Column(name = "notes", columnDefinition = "TEXT")
-    private String notes;
-    
-    @CreationTimestamp
+    @Column(name = "status", nullable = false)
+    private ContractStatus status;
+
+    @Column(name = "signed_at")
+    private ZonedDateTime signedAt;
+
+    @Column(name = "completed_at")
+    private ZonedDateTime completedAt;
+
     @Column(name = "created_at", nullable = false)
     private ZonedDateTime createdAt;
-    
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+
+    @Column(name = "updated_at")
     private ZonedDateTime updatedAt;
-    
-    // Helper methods for timezone handling
-    public ZonedDateTime getCreatedAtInTimezone(String timezoneId) {
-        return createdAt != null ? createdAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
+
+    // Constructors
+    public Contract() {}
+
+    // Getters and Setters
+    public Integer getId() {
+        return id;
     }
-    
-    public ZonedDateTime getUpdatedAtInTimezone(String timezoneId) {
-        return updatedAt != null ? updatedAt.withZoneSameInstant(ZoneId.of(timezoneId)) : null;
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getContractNumber() {
+        return contractNumber;
+    }
+
+    public void setContractNumber(String contractNumber) {
+        this.contractNumber = contractNumber;
+    }
+
+    public User getStudent() {
+        return student;
+    }
+
+    public void setStudent(User student) {
+        this.student = student;
+    }
+
+    public User getTutor() {
+        return tutor;
+    }
+
+    public void setTutor(User tutor) {
+        this.tutor = tutor;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public Integer getTotalHours() {
+        return totalHours;
+    }
+
+    public void setTotalHours(Integer totalHours) {
+        this.totalHours = totalHours;
+    }
+
+    public BigDecimal getHourlyRate() {
+        return hourlyRate;
+    }
+
+    public void setHourlyRate(BigDecimal hourlyRate) {
+        this.hourlyRate = hourlyRate;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public ContractStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ContractStatus status) {
+        this.status = status;
+    }
+
+    public ZonedDateTime getSignedAt() {
+        return signedAt;
+    }
+
+    public void setSignedAt(ZonedDateTime signedAt) {
+        this.signedAt = signedAt;
+    }
+
+    public ZonedDateTime getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(ZonedDateTime completedAt) {
+        this.completedAt = completedAt;
+    }
+
+    public ZonedDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(ZonedDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public ZonedDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(ZonedDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

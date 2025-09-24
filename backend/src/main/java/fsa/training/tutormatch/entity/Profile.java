@@ -7,6 +7,7 @@ import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import fsa.training.tutormatch.enums.ProfileStatus;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
@@ -24,6 +25,7 @@ public abstract class Profile {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
     private User user;
 
     @Enumerated(EnumType.STRING)

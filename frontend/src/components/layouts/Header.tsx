@@ -108,30 +108,16 @@ export const Header: React.FC = () => {
                   to={item.href}
                   className={`transition-colors px-3 py-2 rounded-lg ${
                     isActive
-                      ? "hover:opacity-80"
-                      : "text-gray-600 hover:opacity-80 hover:bg-opacity-10"
+                      ? "font-semibold"
+                      : "text-gray-600 hover:opacity-80"
                   }`}
                   style={
                     isActive
                       ? {
-                          backgroundColor: "rgb(148, 204, 230)",
-                          color: "rgb(252, 243, 245)",
+                          color: "rgb(148, 204, 230)",
                         }
-                      : ({
-                          "--hover-bg": "#94cce6",
-                        } as React.CSSProperties)
+                      : {}
                   }
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor =
-                        "rgba(148, 204, 230, 0.1)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }
-                  }}
                 >
                   {item.label}
                 </Link>

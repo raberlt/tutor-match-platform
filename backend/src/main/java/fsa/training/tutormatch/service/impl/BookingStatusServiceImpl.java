@@ -1,19 +1,19 @@
-package fsa.training.tutormatch.service;
+package fsa.training.tutormatch.service.impl;
 
 import fsa.training.tutormatch.entity.Booking;
 import fsa.training.tutormatch.enums.BookingStatus;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.UserRepository;
-import fsa.training.tutormatch.service.interfaces.IBookingStatusService;
-import fsa.training.tutormatch.service.interfaces.IBookingValidationService;
+import fsa.training.tutormatch.service.BookingStatusService;
+import fsa.training.tutormatch.service.BookingValidationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class BookingStatusServiceImpl implements IBookingStatusService {
+public class BookingStatusServiceImpl implements BookingStatusService {
     
     @Autowired
     private BookingRepository bookingRepository;
@@ -22,7 +22,7 @@ public class BookingStatusServiceImpl implements IBookingStatusService {
     private UserRepository userRepository;
     
     @Autowired
-    private IBookingValidationService validationService;
+    private BookingValidationService validationService;
     
     @Override
     @PreAuthorize("hasRole('TUTOR')")

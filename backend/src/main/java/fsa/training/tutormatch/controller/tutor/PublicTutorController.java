@@ -1,19 +1,21 @@
 package fsa.training.tutormatch.controller.tutor;
 
-import fsa.training.tutormatch.dto.TutorPreviewDTO;
 import fsa.training.tutormatch.entity.Subject;
 import fsa.training.tutormatch.entity.TutorProfile;
 import fsa.training.tutormatch.entity.TutorProfileSubject;
 import fsa.training.tutormatch.entity.User;
-import fsa.training.tutormatch.enums.ProfileStatus;
+import fsa.training.tutormatch.entity.TeachingAudience;
 import fsa.training.tutormatch.repository.ProfileRepository;
 import fsa.training.tutormatch.repository.SubjectRepository;
 import fsa.training.tutormatch.repository.UserRepository;
-import fsa.training.tutormatch.service.interfaces.ITutorService;
-import fsa.training.tutormatch.service.interfaces.ITutorApplicationService;
+import fsa.training.tutormatch.repository.TeachingAudienceRepository;
+import fsa.training.tutormatch.service.TutorService;
+import fsa.training.tutormatch.service.ProfileApplicationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -25,13 +27,18 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/public")
+@CrossOrigin(origins = "*")
+@Slf4j
 public class PublicTutorController {
 
     @Autowired
-    private ITutorService tutorService;
+    private TutorService tutorService;
     
     @Autowired
-    private ITutorApplicationService tutorApplicationService;
+    private ProfileApplicationService profileApplicationService;
+    
+    @Autowired
+    private TeachingAudienceRepository teachingAudienceRepository;
     
     @Autowired
     private ProfileRepository profileRepository;
@@ -78,7 +85,7 @@ public class PublicTutorController {
     @GetMapping("/subjects")
     public ResponseEntity<?> getAllSubjects() {
         try {
-            List<Subject> subjects = tutorApplicationService.getAllAvailableSubjects();
+            List<Subject> subjects = profileApplicationService.getAllAvailableSubjects();
             List<Map<String, Object>> subjectList = new ArrayList<>();
             
             for (Subject subject : subjects) {
@@ -110,7 +117,7 @@ public class PublicTutorController {
     public ResponseEntity<?> testDatabase() {
         try {
             // Test if we can query profiles
-            List<Subject> subjects = tutorApplicationService.getAllAvailableSubjects();
+            List<Subject> subjects = profileApplicationService.getAllAvailableSubjects();
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "subjects_count", subjects.size(),
@@ -154,11 +161,10 @@ public class PublicTutorController {
             profile.setBio("Experienced tutor with 5 years of experience");
             profile.setHeadline("Professional Math Tutor");
             profile.setExperience("5 years of tutoring experience");
-            profile.setTeachingLevel("HIGH_SCHOOL");
-            profile.setCvUrl("https://example.com/cv.pdf");
+            // teachingLevel and draft fields removed
+            profile.setCvFileUrl("https://example.com/cv.pdf");
             profile.setVideoIntro("https://example.com/video.mp4");
-            profile.setProfileStatus(ProfileStatus.ACTIVE);
-            profile.setDraft(false);
+            profile.setEnable(true);
             profile.setCreatedAt(ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
             profile.setUpdatedAt(ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
 
@@ -214,6 +220,72 @@ public class PublicTutorController {
             )
         );
     }
+
+    /**
+     * Lấy danh sách đối tượng dạy từ database
+     */
+    @GetMapping("/teaching-audiences")
+    public ResponseEntity<?> getTeachingAudiences() {
+        try {
+            // Import TeachingAudienceRepository
+            List<TeachingAudience> audiences = teachingAudienceRepository.findAll();
+            List<Map<String, Object>> audienceList = new ArrayList<>();
+            
+            for (TeachingAudience audience : audiences) {
+                Map<String, Object> audienceData = new HashMap<>();
+                audienceData.put("id", audience.getId().intValue());
+                audienceData.put("name", audience.getName());
+                audienceList.add(audienceData);
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("teachingAudiences", audienceList);
+            response.put("total", audienceList.size());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Lỗi khi lấy danh sách đối tượng dạy: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    /**
+     * Tạo đối tượng dạy mới (test endpoint)
+     */
+    @PostMapping("/teaching-audiences")
+    public ResponseEntity<?> createTeachingAudience(@RequestBody Map<String, String> request) {
+        try {
+            String name = request.get("name");
+            if (name == null || name.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Name is required"
+                ));
+            }
+            
+            TeachingAudience audience = new TeachingAudience();
+            audience.setName(name.trim());
+            TeachingAudience saved = teachingAudienceRepository.save(audience);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Teaching audience created successfully",
+                "audience", saved
+            ));
+        } catch (Exception e) {
+            log.error("Error creating teaching audience: ", e);
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "error", "Failed to create teaching audience"
+            ));
+        }
+    }
+
+
 
     // Nested DTO for system info
     public record SystemInfo(String name, String description, String version) {}

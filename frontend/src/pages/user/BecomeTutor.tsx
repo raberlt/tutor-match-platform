@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  FileUploadService,
-  type UploadResponse,
-} from "../../services/fileUploadService";
-import { TutorService } from "../../services/tutorService";
+  TutorService,
+  type TutorApplicationData,
+  type TeachingAudience,
+} from "../../services/tutorService";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 export const BecomeTutor: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isInitialized, isLoading } = useAuth();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 7;
@@ -20,6 +20,9 @@ export const BecomeTutor: React.FC = () => {
   const [subjects, setSubjects] = useState<Array<{ id: number; name: string }>>(
     []
   );
+  const [teachingAudiences, setTeachingAudiences] = useState<
+    TeachingAudience[]
+  >([]);
   const [provinces, setProvinces] = useState<
     Array<{ id: number; name: string }>
   >([]);
@@ -47,11 +50,11 @@ export const BecomeTutor: React.FC = () => {
     acceptTerms: false,
 
     // Step 2: Ảnh đại diện và CV
-    profileImage: null as File | null,
+    imageAvatar: null as File | null,
     cvFile: null as File | null,
-    profileImageUrl: "",
+    imageAvatarUrl: "",
     cvFileUrl: "",
-
+    cvFileName: "",
     // Step 3: Chứng chỉ
     certificates: [
       {
@@ -60,6 +63,7 @@ export const BecomeTutor: React.FC = () => {
         issuedBy: "",
         file: null,
         imageUrl: "",
+        imageFileName: "",
       },
     ] as Array<{
       name: string;
@@ -67,46 +71,28 @@ export const BecomeTutor: React.FC = () => {
       issuedBy: string;
       file: File | null;
       imageUrl: string;
+      imageFileName: string;
     }>,
     noCertificates: false,
 
     // Step 4: Học vấn
-    education: "",
-    university: "",
-    major: "",
-    graduationYear: "",
-    endYear: "",
-    degrees: [
-      {
-        id: "1",
-        university: "",
-        education: "",
-        major: "",
-        startYear: "",
-        endYear: "",
-        file: null,
-        imageUrl: "",
-      },
-    ] as Array<{
-      id: string;
-      university: string;
-      education: string;
+    educations: [] as Array<{
+      schoolName: string;
+      degree: string;
       major: string;
-      startYear: string;
-      endYear: string;
-      file: File | null;
-      imageUrl: string;
+      fromTime: number;
+      toTime: number;
+      degreeFileName: string;
+      degreeFileUrl: string;
     }>,
-    noDegree: false,
 
     // Step 5: Giới thiệu
-    title: "",
-    introduction: "",
+    bio: "",
+    headline: "",
     experience: "",
-    teachingMethods: [] as string[],
+    teachingAudiences: [] as string[],
 
     // Step 6: Video
-    introductionVideo: null as File | null,
     videoUrl: "",
 
     // Step 7: Thời gian dạy
@@ -114,18 +100,19 @@ export const BecomeTutor: React.FC = () => {
     availableTimes: [] as string[],
     dayTimeSlots: {} as Record<string, Array<{ start: string; end: string }>>,
 
-    teachingLocations: [] as string[],
+    // Additional fields for backend compatibility
+    timezone: "Asia/Ho_Chi_Minh",
+    schedules: [] as Array<{
+      dayOfWeek: string;
+      fromTime: string;
+      toTime: string;
+      enable: boolean;
+    }>,
+    subjectFees: [] as Array<{
+      subjectId: number;
+      fees: number;
+    }>,
   });
-
-  // Kiểm tra đăng nhập
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login", {
-        state: { from: { pathname: "/become-tutor" } },
-        replace: true,
-      });
-    }
-  }, [isAuthenticated, navigate]);
 
   // Kiểm tra bước có hoàn thành không
   const isStepCompleted = useCallback(
@@ -150,8 +137,8 @@ export const BecomeTutor: React.FC = () => {
           );
         case 2:
           return (
-            (formData.profileImage !== null || formData.profileImageUrl) &&
-            (formData.cvFile !== null || formData.cvFileUrl)
+            formData.imageAvatar !== null || formData.imageAvatarUrl
+            // CV là optional, không bắt buộc
           );
         case 3:
           return (
@@ -161,27 +148,26 @@ export const BecomeTutor: React.FC = () => {
           );
         case 4:
           return (
-            formData.noDegree ||
-            (formData.degrees.length > 0 &&
-              formData.degrees.every(
-                (degree) =>
-                  degree.university &&
-                  degree.education &&
-                  degree.major &&
-                  degree.startYear &&
-                  degree.endYear
-              ))
+            formData.educations.length > 0 &&
+            formData.educations.every(
+              (edu) =>
+                edu.schoolName &&
+                edu.degree &&
+                edu.major &&
+                edu.fromTime &&
+                edu.toTime
+            )
           );
         case 5:
           return (
-            formData.title &&
-            formData.introduction &&
+            formData.bio &&
+            formData.headline &&
             formData.experience &&
-            formData.teachingMethods.length > 0
+            formData.teachingAudiences.length > 0
           );
         case 6: {
           // Video không bắt buộc nhưng cần kiểm tra có video hoặc link YouTube hợp lệ không
-          if (formData.introductionVideo !== null) return true;
+          if (formData.videoUrl !== "") return true;
           if (formData.videoUrl.trim() === "") return false;
           // Kiểm tra URL YouTube có hợp lệ không
           const videoId = extractYouTubeVideoId(formData.videoUrl);
@@ -228,30 +214,33 @@ export const BecomeTutor: React.FC = () => {
           console.log("✅ User is authenticated, loading draft data...");
           const draftData = await TutorService.getDraftData();
 
-          if (draftData.success && draftData.hasDraft) {
+          if ((draftData as any).success && (draftData as any).hasDraft) {
             console.log("✅ Loading saved draft data:", draftData);
             console.log("📝 Current formData before update:", formData);
             console.log(
               "🔍 Raw draftData from backend:",
               JSON.stringify(draftData, null, 2)
             );
+            const typedDraftData = draftData as any;
             console.log("🔍 Draft data fields:", {
-              firstName: draftData.firstName,
-              lastName: draftData.lastName,
-              phoneNumber: draftData.phoneNumber,
-              bio: draftData.bio,
-              headline: draftData.headline,
-              experience: draftData.experience,
+              firstName: typedDraftData.firstName,
+              lastName: typedDraftData.lastName,
+              phoneNumber: typedDraftData.phoneNumber,
+              bio: typedDraftData.bio,
+              headline: typedDraftData.headline,
+              experience: typedDraftData.experience,
+              cvFileName: typedDraftData.cvFileName,
+              cvFileUrl: typedDraftData.cvFileUrl,
             });
-            console.log("🔍 Draft certificates:", draftData.certificates);
-            console.log("🔍 Draft educations:", draftData.educations);
+            console.log("🔍 Draft certificates:", typedDraftData.certificates);
+            console.log("🔍 Draft educations:", typedDraftData.educations);
             console.log(
               "🔍 Draft certificates length:",
-              draftData.certificates?.length
+              typedDraftData.certificates?.length
             );
             console.log(
               "🔍 Draft educations length:",
-              draftData.educations?.length
+              typedDraftData.educations?.length
             );
 
             // Điền dữ liệu vào form
@@ -259,87 +248,85 @@ export const BecomeTutor: React.FC = () => {
               const updatedData = {
                 ...prev,
                 // Step 1: Thông tin cơ bản
-                firstName: draftData.firstName || prev.firstName,
-                lastName: draftData.lastName || prev.lastName,
-                phone: draftData.phoneNumber || prev.phone,
-                email: draftData.email || prev.email,
-                province: draftData.address || prev.province, // Map address to province
-                timezone: draftData.timezone || prev.timezone,
+                firstName: typedDraftData.firstName || prev.firstName,
+                lastName: typedDraftData.lastName || prev.lastName,
+                phone: typedDraftData.phoneNumber || prev.phone,
+                email: typedDraftData.email || prev.email,
+                province: typedDraftData.address || prev.province, // Map address to province
+                timezone: typedDraftData.timezone || prev.timezone,
 
                 // Step 2: Ảnh đại diện và CV
-                profileImageUrl: draftData.imageAvatar || prev.profileImageUrl,
-                cvFileUrl: draftData.cvUrl || prev.cvFileUrl,
+                imageAvatarUrl:
+                  typedDraftData.imageAvatar || prev.imageAvatarUrl,
+                cvFileUrl: typedDraftData.cvFileUrl || prev.cvFileUrl,
+                cvFileName: typedDraftData.cvFileName || prev.cvFileName,
 
                 // Step 5: Giới thiệu
-                title: draftData.headline || prev.title,
-                introduction: draftData.bio || prev.introduction,
-                experience: draftData.experience || prev.experience,
-                teachingLevel: draftData.teachingLevel || prev.teachingLevel,
-                videoUrl: draftData.videoIntro || prev.videoUrl, // Map videoIntro to videoUrl
+                bio: typedDraftData.bio || prev.bio,
+                headline: typedDraftData.headline || prev.headline,
+                experience: typedDraftData.experience || prev.experience,
+                videoUrl: typedDraftData.videoIntro || prev.videoUrl, // Map videoIntro to videoUrl
 
                 // Các mảng dữ liệu
                 educations:
-                  draftData.educations && draftData.educations.length > 0
-                    ? draftData.educations
+                  typedDraftData.educations &&
+                  typedDraftData.educations.length > 0
+                    ? typedDraftData.educations
                     : prev.educations,
-                // Map educations to degrees for display
-                degrees:
-                  draftData.educations && draftData.educations.length > 0
-                    ? draftData.educations.map((edu: any) => ({
-                        university: edu.schoolName || "",
-                        education: edu.degree || "",
-                        major: edu.major || "",
-                        startYear: edu.fromTime ? edu.fromTime.toString() : "",
-                        endYear: edu.toTime ? edu.toTime.toString() : "",
-                        file: null, // Reset file object
-                        imageUrl: edu.degreeImage || edu.url || "",
-                      }))
-                    : prev.degrees,
                 certificates:
-                  draftData.certificates && draftData.certificates.length > 0
-                    ? draftData.certificates.map((cert: any) => ({
+                  typedDraftData.certificates &&
+                  typedDraftData.certificates.length > 0
+                    ? typedDraftData.certificates.map((cert: any) => ({
                         name: cert.name || "",
                         description: cert.description || "",
                         issuedBy: cert.issuedBy || "",
                         file: null, // Reset file object
-                        imageUrl: cert.certImage || cert.url || "",
+                        imageUrl: cert.certFileUrl || cert.url || "",
+                        imageFileName: cert.certFileName || "",
                       }))
                     : prev.certificates,
                 schedules:
-                  draftData.schedules && draftData.schedules.length > 0
-                    ? draftData.schedules
+                  typedDraftData.schedules &&
+                  typedDraftData.schedules.length > 0
+                    ? typedDraftData.schedules
                     : prev.schedules,
                 // Map schedules to dayTimeSlots for display
                 dayTimeSlots:
-                  draftData.schedules && draftData.schedules.length > 0
-                    ? draftData.schedules.reduce((acc: any, sched: any) => {
-                        // Convert English enum to Vietnamese day names
-                        const englishToVietnamese: { [key: string]: string } = {
-                          MONDAY: "Thứ 2",
-                          TUESDAY: "Thứ 3",
-                          WEDNESDAY: "Thứ 4",
-                          THURSDAY: "Thứ 5",
-                          FRIDAY: "Thứ 6",
-                          SATURDAY: "Thứ 7",
-                          SUNDAY: "Chủ nhật",
-                        };
+                  typedDraftData.schedules &&
+                  typedDraftData.schedules.length > 0
+                    ? typedDraftData.schedules.reduce(
+                        (acc: any, sched: any) => {
+                          // Convert English enum to Vietnamese day names
+                          const englishToVietnamese: { [key: string]: string } =
+                            {
+                              MONDAY: "Thứ 2",
+                              TUESDAY: "Thứ 3",
+                              WEDNESDAY: "Thứ 4",
+                              THURSDAY: "Thứ 5",
+                              FRIDAY: "Thứ 6",
+                              SATURDAY: "Thứ 7",
+                              SUNDAY: "Chủ nhật",
+                            };
 
-                        const vietnameseDay =
-                          englishToVietnamese[sched.dayOfWeek];
-                        if (vietnameseDay) {
-                          if (!acc[vietnameseDay]) acc[vietnameseDay] = [];
-                          acc[vietnameseDay].push({
-                            start: sched.fromTime || "09:00",
-                            end: sched.toTime || "10:00",
-                          });
-                        }
-                        return acc;
-                      }, {})
+                          const vietnameseDay =
+                            englishToVietnamese[sched.dayOfWeek];
+                          if (vietnameseDay) {
+                            if (!acc[vietnameseDay]) acc[vietnameseDay] = [];
+                            acc[vietnameseDay].push({
+                              start: sched.fromTime || "09:00",
+                              end: sched.toTime || "10:00",
+                            });
+                          }
+                          return acc;
+                        },
+                        {}
+                      )
                     : prev.dayTimeSlots,
                 // Update availableDays based on dayTimeSlots
                 availableDays:
-                  draftData.schedules && draftData.schedules.length > 0
-                    ? draftData.schedules
+                  typedDraftData.schedules &&
+                  typedDraftData.schedules.length > 0
+                    ? typedDraftData.schedules
                         .map((sched: any) => {
                           const englishToVietnamese: { [key: string]: string } =
                             {
@@ -355,32 +342,25 @@ export const BecomeTutor: React.FC = () => {
                         })
                         .filter((day: string) => day) // Remove undefined values
                     : prev.availableDays,
-                // Map teachingMethods from JSON string (convert English to Vietnamese)
-                teachingMethods: draftData.teachingMethods
-                  ? JSON.parse(draftData.teachingMethods).map(
-                      (method: string) => {
-                        const englishToVietnamese: { [key: string]: string } = {
-                          MIDDLE_SCHOOL: "Trung học cơ sở",
-                          HIGH_SCHOOL: "Trung học phổ thông",
-                          ELEMENTARY_SCHOOL: "Tiểu học",
-                          UNIVERSITY: "Đại học",
-                          GRADUATE: "Sau đại học",
-                        };
-                        return englishToVietnamese[method] || method;
-                      }
+                // Map teachingAudiences from API data
+                teachingAudiences: typedDraftData.teachingAudiences
+                  ? typedDraftData.teachingAudiences.map(
+                      (audience: any) => audience.name
                     )
-                  : prev.teachingMethods,
+                  : prev.teachingAudiences,
                 // Auto-check confirmations if draft data exists
                 confirmAge: true,
                 acceptTerms: true,
                 subjectFees:
-                  draftData.subjectFees && draftData.subjectFees.length > 0
-                    ? draftData.subjectFees
+                  typedDraftData.subjectFees &&
+                  typedDraftData.subjectFees.length > 0
+                    ? typedDraftData.subjectFees
                     : prev.subjectFees,
                 // Map subjectFees to subjects for display
                 subjects:
-                  draftData.subjectFees && draftData.subjectFees.length > 0
-                    ? draftData.subjectFees.map((fee: any) => ({
+                  typedDraftData.subjectFees &&
+                  typedDraftData.subjectFees.length > 0
+                    ? typedDraftData.subjectFees.map((fee: any) => ({
                         name:
                           getSubjectName(fee.subjectId) || "Unknown Subject",
                         hourlyRate: fee.fees ? fee.fees.toString() : "0",
@@ -390,14 +370,14 @@ export const BecomeTutor: React.FC = () => {
 
               console.log("🔄 Updated formData:", updatedData);
               console.log("🔄 Updated certificates:", updatedData.certificates);
-              console.log("🔄 Updated degrees:", updatedData.degrees);
+              console.log("🔄 Updated educations:", updatedData.educations);
               return updatedData;
             });
 
             console.log("✅ Draft data loaded successfully");
             console.log("🎯 Final formData state:", formData);
           } else {
-            const message = draftData.message || "No hasDraft flag";
+            const message = (draftData as any).message || "No hasDraft flag";
             console.log("No draft data found:", message);
 
             // Kiểm tra nếu cần authentication
@@ -419,43 +399,36 @@ export const BecomeTutor: React.FC = () => {
         );
         try {
           const draftData = await TutorService.getDraftData();
-          if (draftData.success && draftData.hasDraft) {
+          if ((draftData as any).success && (draftData as any).hasDraft) {
             console.log("✅ Loading saved draft data (fallback):", draftData);
             // Same mapping logic as above
+            const typedDraftData = draftData as any;
             setFormData((prev) => {
               const updatedData = {
                 ...prev,
                 // Step 1: Thông tin cơ bản
-                firstName: draftData.firstName || prev.firstName,
-                lastName: draftData.lastName || prev.lastName,
-                phone: draftData.phoneNumber || prev.phone,
-                email: draftData.email || prev.email,
-                province: draftData.address || prev.province,
-                timezone: draftData.timezone || prev.timezone,
+                firstName: typedDraftData.firstName || prev.firstName,
+                lastName: typedDraftData.lastName || prev.lastName,
+                phone: typedDraftData.phoneNumber || prev.phone,
+                email: typedDraftData.email || prev.email,
+                province: typedDraftData.address || prev.province,
+                timezone: typedDraftData.timezone || prev.timezone,
                 // Step 2: Ảnh đại diện và CV
-                profileImageUrl: draftData.imageAvatar || prev.profileImageUrl,
-                cvFileUrl: draftData.cvUrl || prev.cvFileUrl,
+                imageAvatarUrl:
+                  typedDraftData.imageAvatar || prev.imageAvatarUrl,
+                cvFileUrl: typedDraftData.cvFileUrl || prev.cvFileUrl,
+                cvFileName: typedDraftData.cvFileName || prev.cvFileName,
                 // Step 5: Giới thiệu
-                title: draftData.headline || prev.title,
-                introduction: draftData.bio || prev.introduction,
-                experience: draftData.experience || prev.experience,
-                teachingLevel: draftData.teachingLevel || prev.teachingLevel,
-                videoUrl: draftData.videoIntro || prev.videoUrl,
-                // Map teachingMethods from JSON string (convert English to Vietnamese)
-                teachingMethods: draftData.teachingMethods
-                  ? JSON.parse(draftData.teachingMethods).map(
-                      (method: string) => {
-                        const englishToVietnamese: { [key: string]: string } = {
-                          MIDDLE_SCHOOL: "Trung học cơ sở",
-                          HIGH_SCHOOL: "Trung học phổ thông",
-                          ELEMENTARY_SCHOOL: "Tiểu học",
-                          UNIVERSITY: "Đại học",
-                          GRADUATE: "Sau đại học",
-                        };
-                        return englishToVietnamese[method] || method;
-                      }
+                bio: typedDraftData.bio || prev.bio,
+                headline: typedDraftData.headline || prev.headline,
+                experience: typedDraftData.experience || prev.experience,
+                videoUrl: typedDraftData.videoIntro || prev.videoUrl,
+                // Map teachingAudiences from API data
+                teachingAudiences: typedDraftData.teachingAudiences
+                  ? typedDraftData.teachingAudiences.map(
+                      (audience: any) => audience.name
                     )
-                  : prev.teachingMethods,
+                  : prev.teachingAudiences,
                 // Auto-check confirmations if draft data exists
                 confirmAge: true,
                 acceptTerms: true,
@@ -466,8 +439,8 @@ export const BecomeTutor: React.FC = () => {
                 updatedData.certificates
               );
               console.log(
-                "🔄 Updated degrees (fallback):",
-                updatedData.degrees
+                "🔄 Updated educations (fallback):",
+                updatedData.educations
               );
               return updatedData;
             });
@@ -529,6 +502,18 @@ export const BecomeTutor: React.FC = () => {
     };
 
     loadSubjects();
+
+    // Load teaching audiences from API
+    const loadTeachingAudiences = async () => {
+      try {
+        const audiencesData = await TutorService.getTeachingAudiences();
+        setTeachingAudiences(audiencesData);
+      } catch (error) {
+        console.error("Error loading teaching audiences:", error);
+      }
+    };
+
+    loadTeachingAudiences();
 
     // Danh sách tỉnh/thành phố Việt Nam
     const vietnamProvinces = [
@@ -601,16 +586,43 @@ export const BecomeTutor: React.FC = () => {
     setFilteredProvinces(vietnamProvinces);
   }, []);
 
-  // Danh sách đối tượng nhận dạy
-  const teachingLevels = [
-    "Trung học cơ sở",
-    "Trung học phổ thông",
-    "Trung cấp nghề",
-    "Cao đẳng / Đại học",
-    "Sau đại học",
-    "Người đi làm",
-    "Học tự do",
-  ];
+  // Mapping từ tiếng Anh sang tiếng Việt
+  const teachingAudienceMapping: { [key: string]: string } = {
+    INDEPENDENT_LEARNER: "Học tự do",
+    MIDDLE_SCHOOL: "Trung học cơ sở",
+    HIGH_SCHOOL: "Trung học phổ thông",
+    VOCATIONAL_SCHOOL: "Trung cấp nghề",
+    COLLEGE_UNIVERSITY: "Cao đẳng / Đại học",
+    POSTGRADUATE: "Sau đại học",
+    WORKING_PROFESSIONAL: "Người đi làm",
+  };
+
+  // Danh sách đối tượng nhận dạy (từ API với mapping tiếng Việt)
+  const teachingLevels =
+    teachingAudiences.length > 0
+      ? teachingAudiences.map((audience) => ({
+          englishName: audience.name,
+          vietnameseName:
+            teachingAudienceMapping[audience.name] || audience.name,
+        }))
+      : [
+          { englishName: "INDEPENDENT_LEARNER", vietnameseName: "Học tự do" },
+          { englishName: "MIDDLE_SCHOOL", vietnameseName: "Trung học cơ sở" },
+          { englishName: "HIGH_SCHOOL", vietnameseName: "Trung học phổ thông" },
+          {
+            englishName: "VOCATIONAL_SCHOOL",
+            vietnameseName: "Trung cấp nghề",
+          },
+          {
+            englishName: "COLLEGE_UNIVERSITY",
+            vietnameseName: "Cao đẳng / Đại học",
+          },
+          { englishName: "POSTGRADUATE", vietnameseName: "Sau đại học" },
+          {
+            englishName: "WORKING_PROFESSIONAL",
+            vietnameseName: "Người đi làm",
+          },
+        ];
 
   // Đóng dropdown khi click outside
   useEffect(() => {
@@ -627,13 +639,35 @@ export const BecomeTutor: React.FC = () => {
     };
   }, []);
 
-  // Hiển thị loading nếu chưa xác định trạng thái đăng nhập
-  if (!isAuthenticated) {
+  // Update formData khi user đã load
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        firstName: user.firstName || prev.firstName,
+        lastName: user.lastName || prev.lastName,
+        email: user.email || prev.email,
+      }));
+    }
+  }, [user]);
+
+  // Kiểm tra đăng nhập - chỉ redirect sau khi đã initialize
+  useEffect(() => {
+    if (isInitialized && !isAuthenticated) {
+      navigate("/login", {
+        state: { from: { pathname: "/become-tutor" } },
+        replace: true,
+      });
+    }
+  }, [isInitialized, isAuthenticated, navigate]);
+
+  // Hiển thị loading khi đang check authentication
+  if (!isInitialized || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Đang kiểm tra đăng nhập...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Đang tải...</p>
         </div>
       </div>
     );
@@ -712,7 +746,7 @@ export const BecomeTutor: React.FC = () => {
       setErrors((prev) => ({
         ...prev,
         [type === "avatar"
-          ? "profileImage"
+          ? "imageAvatar"
           : "cvFile"]: `File quá lớn! Kích thước tối đa là ${maxSizeMB}MB`,
       }));
       return;
@@ -722,7 +756,7 @@ export const BecomeTutor: React.FC = () => {
     if (type === "avatar" && !file.type.startsWith("image/")) {
       setErrors((prev) => ({
         ...prev,
-        profileImage: "Vui lòng chọn file ảnh hợp lệ",
+        imageAvatar: "Vui lòng chọn file ảnh hợp lệ",
       }));
       return;
     }
@@ -745,7 +779,7 @@ export const BecomeTutor: React.FC = () => {
     // Clear errors and set file
     setErrors((prev) => ({
       ...prev,
-      [type === "avatar" ? "profileImage" : "cvFile"]: "",
+      [type === "avatar" ? "imageAvatar" : "cvFile"]: "",
     }));
 
     setPreviewFile(file);
@@ -766,7 +800,7 @@ export const BecomeTutor: React.FC = () => {
 
     try {
       if (uploadType === "avatar") {
-        handleFileChange("profileImage", previewFile);
+        handleFileChange("imageAvatar", previewFile);
 
         // Upload via backend
         const formData = new FormData();
@@ -791,7 +825,7 @@ export const BecomeTutor: React.FC = () => {
         const data = await response.json();
         setFormData((prev) => ({
           ...prev,
-          profileImageUrl: data.url,
+          imageAvatarUrl: data.url,
         }));
       } else {
         handleFileChange("cvFile", previewFile);
@@ -820,13 +854,14 @@ export const BecomeTutor: React.FC = () => {
         setFormData((prev) => ({
           ...prev,
           cvFileUrl: data.url,
+          cvFileName: previewFile.name,
         }));
       }
     } catch (error) {
       console.error("Upload failed:", error);
       setErrors((prev) => ({
         ...prev,
-        [uploadType === "avatar" ? "profileImage" : "cvFile"]:
+        [uploadType === "avatar" ? "imageAvatar" : "cvFile"]:
           "Upload thất bại. Vui lòng thử lại.",
       }));
     } finally {
@@ -879,48 +914,39 @@ export const BecomeTutor: React.FC = () => {
   };
 
   // Hàm xử lý bằng cấp
-  const addDegree = () => {
-    const newDegree = {
-      id: Date.now().toString(),
-      university: "",
-      education: "",
+  const addEducation = () => {
+    const newEducation = {
+      schoolName: "",
+      degree: "",
       major: "",
-      startYear: "",
-      endYear: "",
-      file: null,
-      imageUrl: "",
+      fromTime: new Date().getFullYear(),
+      toTime: new Date().getFullYear(),
+      degreeFileName: "",
+      degreeFileUrl: "",
     };
     setFormData((prev) => ({
       ...prev,
-      degrees: [...prev.degrees, newDegree],
+      educations: [...prev.educations, newEducation],
     }));
   };
 
-  const removeDegree = (degreeId: string) => {
+  const removeEducation = (index: number) => {
     setFormData((prev) => ({
       ...prev,
-      degrees: prev.degrees.filter((degree) => degree.id !== degreeId),
+      educations: prev.educations.filter((_, i) => i !== index),
     }));
   };
 
-  const updateDegree = (
-    degreeId: string,
+  const updateEducation = (
+    index: number,
     field: string,
-    value: string | File | null
+    value: string | File | null | number
   ) => {
     setFormData((prev) => ({
       ...prev,
-      degrees: prev.degrees.map((degree) =>
-        degree.id === degreeId ? { ...degree, [field]: value } : degree
+      educations: prev.educations.map((education, i) =>
+        i === index ? { ...education, [field]: value } : education
       ),
-    }));
-  };
-
-  const handleNoDegreeChange = (checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      noDegree: checked,
-      // Không xóa dữ liệu degrees, chỉ thay đổi trạng thái hiển thị
     }));
   };
 
@@ -1183,7 +1209,7 @@ export const BecomeTutor: React.FC = () => {
     return dayMap[day] || "MONDAY";
   };
 
-  const convertFormDataToTutorData = () => {
+  const convertFormDataToTutorData = (): TutorApplicationData => {
     // Convert Vietnamese teaching methods to English
     const vietnameseToEnglish: { [key: string]: string } = {
       "Trung học cơ sở": "MIDDLE_SCHOOL",
@@ -1193,17 +1219,16 @@ export const BecomeTutor: React.FC = () => {
       "Sau đại học": "GRADUATE",
     };
 
-    const englishTeachingMethods = (formData.teachingMethods || []).map(
-      (method) => vietnameseToEnglish[method] || method
+    const englishTeachingAudiences = (formData.teachingAudiences || []).map(
+      (audience) => vietnameseToEnglish[audience] || audience
     );
 
     return {
       // Thông tin cơ bản
-      bio: formData.introduction || "",
-      headline: formData.title || "",
+      bio: formData.bio || "",
+      headline: formData.headline || "",
       experience: formData.experience || "",
-      teachingLevel: "MIDDLE_SCHOOL", // TODO: Map từ formData.teachingMethods
-      teachingMethods: JSON.stringify(englishTeachingMethods),
+      teachingAudiences: englishTeachingAudiences,
 
       // Thông tin cá nhân
       firstName: formData.firstName || "",
@@ -1215,8 +1240,9 @@ export const BecomeTutor: React.FC = () => {
       timezone: "Asia/Ho_Chi_Minh",
 
       // Avatar và CV
-      avatar: formData.profileImageUrl || "",
-      cvUrl: formData.cvFileUrl || "",
+      avatar: formData.imageAvatarUrl || "",
+      cvFileUrl: formData.cvFileUrl || "",
+      cvFileName: formData.cvFileName || "",
 
       // Video giới thiệu
       videoIntro: formData.videoUrl || "",
@@ -1246,23 +1272,7 @@ export const BecomeTutor: React.FC = () => {
         : [],
 
       // Học vấn - Chuyển đổi thành Array
-      educations:
-        formData.noDegree || !formData.degrees
-          ? []
-          : formData.degrees.map((degree) => ({
-              schoolName: degree.university || "",
-              degree: degree.education || "",
-              major: degree.major || "",
-              fromTime:
-                degree.startYear && !isNaN(parseInt(degree.startYear))
-                  ? parseInt(degree.startYear)
-                  : 2020,
-              toTime:
-                degree.endYear && !isNaN(parseInt(degree.endYear))
-                  ? parseInt(degree.endYear)
-                  : 2024,
-              degreeImage: degree.imageUrl || "",
-            })),
+      educations: formData.educations || [],
 
       // Chứng chỉ - Chuyển đổi thành Array
       certificates:
@@ -1272,7 +1282,8 @@ export const BecomeTutor: React.FC = () => {
               name: cert.name || "",
               issuedBy: cert.issuedBy || "",
               description: cert.description || "",
-              certImage: cert.imageUrl || "",
+              certFileName: cert.imageFileName || "",
+              certFileUrl: cert.imageUrl || "",
             })),
     };
   };
@@ -1287,9 +1298,8 @@ export const BecomeTutor: React.FC = () => {
       );
       console.log("🔍 Educations structure:", tutorData.educations);
       console.log("🔍 Certificates structure:", tutorData.certificates);
-      console.log("🔍 FormData noDegree:", formData.noDegree);
       console.log("🔍 FormData noCertificates:", formData.noCertificates);
-      console.log("🔍 FormData degrees:", formData.degrees);
+      console.log("🔍 FormData educations:", formData.educations);
       console.log("🔍 FormData certificates:", formData.certificates);
       const response = await TutorService.saveDraft(tutorData);
       if (response.success) {
@@ -1660,15 +1670,15 @@ export const BecomeTutor: React.FC = () => {
                 <div className="flex flex-col items-center space-y-6">
                   {/* Avatar Display */}
                   <div className="w-40 h-40 border border-gray-300 rounded-lg flex items-center justify-center bg-white">
-                    {formData.profileImage ? (
+                    {formData.imageAvatar ? (
                       <img
-                        src={URL.createObjectURL(formData.profileImage)}
+                        src={URL.createObjectURL(formData.imageAvatar)}
                         alt="Profile preview"
                         className="w-full h-full object-cover rounded-lg"
                       />
-                    ) : formData.profileImageUrl ? (
+                    ) : formData.imageAvatarUrl ? (
                       <img
-                        src={formData.profileImageUrl}
+                        src={formData.imageAvatarUrl}
                         alt="Profile preview"
                         className="w-full h-full object-cover rounded-lg"
                       />
@@ -1773,7 +1783,7 @@ export const BecomeTutor: React.FC = () => {
                       <div className="text-center">
                         <div className="text-4xl mb-2">📄</div>
                         <p className="text-sm font-medium text-gray-900 mb-1">
-                          CV đã tải lên
+                          {formData.cvFileName || "CV đã tải lên"}
                         </p>
                         <a
                           href={formData.cvFileUrl}
@@ -1838,7 +1848,7 @@ export const BecomeTutor: React.FC = () => {
                     style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
                   >
                     <h4 className="font-medium text-gray-900 mb-3">
-                      Yêu cầu file CV
+                      Yêu cầu file CV (Tùy chọn)
                     </h4>
                     <ul className="space-y-2 text-sm text-gray-600">
                       <li className="flex items-center">
@@ -1877,10 +1887,10 @@ export const BecomeTutor: React.FC = () => {
             )}
 
             {/* Error Messages */}
-            {!isUploading && (errors.profileImage || errors.cvFile) && (
+            {!isUploading && (errors.imageAvatar || errors.cvFile) && (
               <div className="text-center space-y-2">
-                {errors.profileImage && (
-                  <p className="text-red-500 text-sm">{errors.profileImage}</p>
+                {errors.imageAvatar && (
+                  <p className="text-red-500 text-sm">{errors.imageAvatar}</p>
                 )}
                 {errors.cvFile && (
                   <p className="text-red-500 text-sm">{errors.cvFile}</p>
@@ -2102,8 +2112,8 @@ export const BecomeTutor: React.FC = () => {
                                   console.log("🔍 Certificate URL:", data.url);
                                   const newCerts = [...formData.certificates];
                                   newCerts[index].file = file;
-                                  newCerts[index].url = data.url; // Store the uploaded URL
                                   newCerts[index].imageUrl = data.url; // Also store in imageUrl
+                                  newCerts[index].imageFileName = file.name;
                                   handleInputChange("certificates", newCerts);
                                 } else {
                                   const errorData = await response.text();
@@ -2166,7 +2176,7 @@ export const BecomeTutor: React.FC = () => {
                             {cert.file
                               ? cert.file.name
                               : cert.imageUrl
-                              ? "File đã tải lên từ trước"
+                              ? cert.imageFileName || "File đã tải lên từ trước"
                               : "Chọn file hoặc kéo thả vào đây"}
                           </span>
                         </label>
@@ -2186,7 +2196,7 @@ export const BecomeTutor: React.FC = () => {
                               </svg>
                               {cert.file
                                 ? cert.file.name
-                                : "Chứng chỉ đã tải lên"}
+                                : cert.imageFileName || "Chứng chỉ đã tải lên"}
                             </p>
                             {cert.imageUrl && (
                               <a
@@ -2215,6 +2225,8 @@ export const BecomeTutor: React.FC = () => {
                         description: "",
                         issuedBy: "",
                         file: null,
+                        imageUrl: "",
+                        imageFileName: "",
                       },
                     ];
                     handleInputChange("certificates", newCerts);
@@ -2287,25 +2299,18 @@ export const BecomeTutor: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="no-degree"
-                checked={formData.noDegree}
-                onChange={(e) => handleNoDegreeChange(e.target.checked)}
-                className="h-4 w-4 focus:ring-[#94cce6] border-gray-300 rounded"
-              />
-              <label
-                htmlFor="no-degree"
-                className="ml-2 block text-sm text-gray-900"
-              >
-                Tôi không có Bằng Đại học/Cao đẳng
-              </label>
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Thông tin học vấn
+              </h3>
+              <p className="text-sm text-gray-600">
+                Thêm thông tin về bằng cấp và học vấn của bạn
+              </p>
             </div>
 
-            {!formData.noDegree && (
+            {formData.educations.length > 0 && (
               <div className="space-y-6">
-                {errors.degrees && (
+                {errors.educations && (
                   <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                     <p className="text-red-600 text-sm flex items-center">
                       <svg
@@ -2319,27 +2324,27 @@ export const BecomeTutor: React.FC = () => {
                           clipRule="evenodd"
                         />
                       </svg>
-                      {errors.degrees}
+                      {errors.educations}
                     </p>
                   </div>
                 )}
 
                 {/* Không hiển thị thông báo "chưa có bằng cấp" vì đã có 1 bằng cấp mặc định */}
 
-                {formData.degrees.map((degree, index) => (
+                {formData.educations.map((education, index) => (
                   <div
-                    key={degree.id}
+                    key={index}
                     className="rounded-xl p-6 relative"
                     style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
                   >
                     {/* Chỉ hiển thị nút xóa khi có nhiều hơn 1 bằng cấp hoặc đã có thông tin */}
-                    {(formData.degrees.length > 1 ||
-                      degree.university.trim() !== "" ||
-                      degree.education.trim() !== "" ||
-                      degree.major.trim() !== "") && (
+                    {(formData.educations.length > 1 ||
+                      education.schoolName.trim() !== "" ||
+                      education.degree.trim() !== "" ||
+                      education.major.trim() !== "") && (
                       <button
                         type="button"
-                        onClick={() => removeDegree(degree.id)}
+                        onClick={() => removeEducation(index)}
                         className="absolute top-4 right-4 text-red-500 hover:text-red-700 p-1"
                       >
                         <svg
@@ -2367,22 +2372,18 @@ export const BecomeTutor: React.FC = () => {
                         </label>
                         <input
                           type="text"
-                          value={degree.university}
+                          value={education.schoolName}
                           onChange={(e) =>
-                            updateDegree(
-                              degree.id,
-                              "university",
-                              e.target.value
-                            )
+                            updateEducation(index, "schoolName", e.target.value)
                           }
                           className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 ${
-                            errors[`degree_${index}_university`]
+                            errors[`education_${index}_schoolName`]
                               ? "border-red-400 bg-red-50"
                               : "border-gray-300"
                           }`}
                           placeholder="Nhập tên trường đại học/cao đẳng"
                         />
-                        {errors[`degree_${index}_university`] && (
+                        {errors[`education_${index}_schoolName`] && (
                           <p className="text-red-500 text-sm mt-1 flex items-center">
                             <svg
                               className="w-4 h-4 mr-1"
@@ -2395,7 +2396,7 @@ export const BecomeTutor: React.FC = () => {
                                 clipRule="evenodd"
                               />
                             </svg>
-                            {errors[`degree_${index}_university`]}
+                            {errors[`education_${index}_schoolName`]}
                           </p>
                         )}
                       </div>
@@ -2405,12 +2406,12 @@ export const BecomeTutor: React.FC = () => {
                           Bằng cấp *
                         </label>
                         <select
-                          value={degree.education}
+                          value={education.degree}
                           onChange={(e) =>
-                            updateDegree(degree.id, "education", e.target.value)
+                            updateEducation(index, "degree", e.target.value)
                           }
                           className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 ${
-                            errors[`degree_${index}_education`]
+                            errors[`education_${index}_degree`]
                               ? "border-red-400 bg-red-50"
                               : "border-gray-300"
                           }`}
@@ -2422,7 +2423,7 @@ export const BecomeTutor: React.FC = () => {
                           <option value="Cao đẳng">Cao đẳng</option>
                           <option value="Trung cấp">Trung cấp</option>
                         </select>
-                        {errors[`degree_${index}_education`] && (
+                        {errors[`education_${index}_degree`] && (
                           <p className="text-red-500 text-sm mt-1 flex items-center">
                             <svg
                               className="w-4 h-4 mr-1"
@@ -2435,7 +2436,7 @@ export const BecomeTutor: React.FC = () => {
                                 clipRule="evenodd"
                               />
                             </svg>
-                            {errors[`degree_${index}_education`]}
+                            {errors[`education_${index}_degree`]}
                           </p>
                         )}
                       </div>
@@ -2446,18 +2447,18 @@ export const BecomeTutor: React.FC = () => {
                         </label>
                         <input
                           type="text"
-                          value={degree.major}
+                          value={education.major}
                           onChange={(e) =>
-                            updateDegree(degree.id, "major", e.target.value)
+                            updateEducation(index, "major", e.target.value)
                           }
                           className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 ${
-                            errors[`degree_${index}_major`]
+                            errors[`education_${index}_major`]
                               ? "border-red-400 bg-red-50"
                               : "border-gray-300"
                           }`}
                           placeholder="Nhập chuyên ngành học"
                         />
-                        {errors[`degree_${index}_major`] && (
+                        {errors[`education_${index}_major`] && (
                           <p className="text-red-500 text-sm mt-1 flex items-center">
                             <svg
                               className="w-4 h-4 mr-1"
@@ -2470,7 +2471,7 @@ export const BecomeTutor: React.FC = () => {
                                 clipRule="evenodd"
                               />
                             </svg>
-                            {errors[`degree_${index}_major`]}
+                            {errors[`education_${index}_major`]}
                           </p>
                         )}
                       </div>
@@ -2481,12 +2482,13 @@ export const BecomeTutor: React.FC = () => {
                         </label>
                         <div className="flex space-x-3">
                           <select
-                            value={degree.startYear}
+                            value={education.fromTime}
                             onChange={(e) =>
-                              updateDegree(
-                                degree.id,
-                                "startYear",
-                                e.target.value
+                              updateEducation(
+                                index,
+                                "fromTime",
+                                parseInt(e.target.value) ||
+                                  new Date().getFullYear()
                               )
                             }
                             className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200"
@@ -2505,9 +2507,14 @@ export const BecomeTutor: React.FC = () => {
                             -
                           </span>
                           <select
-                            value={degree.endYear}
+                            value={education.toTime}
                             onChange={(e) =>
-                              updateDegree(degree.id, "endYear", e.target.value)
+                              updateEducation(
+                                index,
+                                "toTime",
+                                parseInt(e.target.value) ||
+                                  new Date().getFullYear()
+                              )
                             }
                             className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200"
                           >
@@ -2552,7 +2559,7 @@ export const BecomeTutor: React.FC = () => {
                         type="file"
                         accept="image/*,.pdf"
                         className="hidden"
-                        id={`degree-file-${degree.id}`}
+                        id={`education-file-${index}`}
                         onChange={async (e) => {
                           const file = e.target.files?.[0] || null;
                           console.log("Degree file selected:", file);
@@ -2587,9 +2594,16 @@ export const BecomeTutor: React.FC = () => {
                                 const data = await response.json();
                                 console.log("Degree upload success:", data);
                                 console.log("🔍 Degree URL:", data.url);
-                                updateDegree(degree.id, "file", file);
-                                updateDegree(degree.id, "url", data.url); // Store the uploaded URL
-                                updateDegree(degree.id, "imageUrl", data.url); // Also store in imageUrl
+                                updateEducation(
+                                  index,
+                                  "degreeFileUrl",
+                                  data.url
+                                );
+                                updateEducation(
+                                  index,
+                                  "degreeFileName",
+                                  file.name
+                                );
                               } else {
                                 const errorData = await response.text();
                                 console.error(
@@ -2611,7 +2625,7 @@ export const BecomeTutor: React.FC = () => {
                         }}
                       />
                       <label
-                        htmlFor={`degree-file-${degree.id}`}
+                        htmlFor={`education-file-${index}`}
                         className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors duration-200"
                       >
                         <svg
@@ -2628,14 +2642,13 @@ export const BecomeTutor: React.FC = () => {
                           />
                         </svg>
                         <span className="text-sm font-medium text-gray-600">
-                          {degree.file
-                            ? degree.file.name
-                            : degree.imageUrl
-                            ? "File đã tải lên từ trước"
+                          {education.degreeFileUrl
+                            ? education.degreeFileName ||
+                              "File đã tải lên từ trước"
                             : "Chọn file hoặc kéo thả vào đây"}
                         </span>
                       </label>
-                      {(degree.file || degree.imageUrl) && (
+                      {education.degreeFileUrl && (
                         <div className="mt-2">
                           <p className="text-xs text-green-600 flex items-center mb-1">
                             <svg
@@ -2649,20 +2662,16 @@ export const BecomeTutor: React.FC = () => {
                                 clipRule="evenodd"
                               />
                             </svg>
-                            {degree.file
-                              ? degree.file.name
-                              : "Bằng cấp đã tải lên"}
+                            {education.degreeFileName || "Bằng cấp đã tải lên"}
                           </p>
-                          {degree.imageUrl && (
-                            <a
-                              href={degree.imageUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:text-blue-800 underline"
-                            >
-                              Xem bằng cấp
-                            </a>
-                          )}
+                          <a
+                            href={education.degreeFileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:text-blue-800 underline"
+                          >
+                            Xem bằng cấp
+                          </a>
                         </div>
                       )}
                     </div>
@@ -2671,7 +2680,7 @@ export const BecomeTutor: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={addDegree}
+                  onClick={addEducation}
                   className="flex items-center justify-center w-full px-6 py-3 border-2 border-dashed rounded-xl transition-colors duration-200 font-medium"
                   style={{
                     borderColor: "#94cce6",
@@ -2736,16 +2745,18 @@ export const BecomeTutor: React.FC = () => {
                   học viên.
                 </p>
                 <textarea
-                  value={formData.title}
-                  onChange={(e) => handleInputChange("title", e.target.value)}
+                  value={formData.headline}
+                  onChange={(e) =>
+                    handleInputChange("headline", e.target.value)
+                  }
                   rows={2}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 ${
-                    errors.title ? "border-red-500" : "border-gray-300"
+                    errors.headline ? "border-red-500" : "border-gray-300"
                   }`}
                   placeholder="Gia sư tiếng Hàn chuyên ngành Công nghệ Thông tin, đồng hành học tập cùng bạn từ con số 0"
                 />
-                {errors.title && (
-                  <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+                {errors.headline && (
+                  <p className="text-red-500 text-sm mt-1">{errors.headline}</p>
                 )}
               </div>
 
@@ -2766,15 +2777,11 @@ export const BecomeTutor: React.FC = () => {
                   rows={6}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                   placeholder="Mình là Nguyễn Đại Phát, hiện là sinh viên ngành Công nghệ Thông tin tại Đại học Phenikaa..."
-                  value={formData.introduction}
-                  onChange={(e) =>
-                    handleInputChange("introduction", e.target.value)
-                  }
+                  value={formData.bio}
+                  onChange={(e) => handleInputChange("bio", e.target.value)}
                 />
-                {errors.introduction && (
-                  <p className="text-red-500 text-sm mt-2">
-                    {errors.introduction}
-                  </p>
+                {errors.bio && (
+                  <p className="text-red-500 text-sm mt-2">{errors.bio}</p>
                 )}
               </div>
 
@@ -2828,10 +2835,10 @@ export const BecomeTutor: React.FC = () => {
                       const selectedLevel = e.target.value;
                       if (
                         selectedLevel &&
-                        !formData.teachingMethods.includes(selectedLevel)
+                        !formData.teachingAudiences.includes(selectedLevel)
                       ) {
-                        handleInputChange("teachingMethods", [
-                          ...formData.teachingMethods,
+                        handleInputChange("teachingAudiences", [
+                          ...formData.teachingAudiences,
                           selectedLevel,
                         ]);
                       }
@@ -2840,30 +2847,30 @@ export const BecomeTutor: React.FC = () => {
                   >
                     <option value="">Chọn đối tượng nhận dạy</option>
                     {teachingLevels.map((level) => (
-                      <option key={level} value={level}>
-                        {level}
+                      <option key={level.englishName} value={level.englishName}>
+                        {level.vietnameseName}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 {/* Tags hiển thị đối tượng đã chọn */}
-                {formData.teachingMethods.length > 0 && (
+                {formData.teachingAudiences.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {formData.teachingMethods.map((level, index) => (
+                    {formData.teachingAudiences.map((level, index) => (
                       <span
                         key={index}
                         className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
                         style={{ backgroundColor: "#94cce6" }}
                       >
-                        {level}
+                        {teachingAudienceMapping[level] || level}
                         <button
                           type="button"
                           onClick={() => {
-                            const newLevels = formData.teachingMethods.filter(
+                            const newLevels = formData.teachingAudiences.filter(
                               (_, i) => i !== index
                             );
-                            handleInputChange("teachingMethods", newLevels);
+                            handleInputChange("teachingAudiences", newLevels);
                           }}
                           className="ml-2 hover:bg-white hover:bg-opacity-20 rounded-full p-0.5"
                         >
@@ -2884,9 +2891,9 @@ export const BecomeTutor: React.FC = () => {
                   </div>
                 )}
 
-                {errors.teachingMethods && (
+                {errors.teachingAudiences && (
                   <p className="text-red-500 text-sm mt-1">
-                    {errors.teachingMethods}
+                    {errors.teachingAudiences}
                   </p>
                 )}
               </div>
@@ -3641,9 +3648,9 @@ export const BecomeTutor: React.FC = () => {
               )}
 
               {/* Error message */}
-              {(errors.profileImage || errors.cvFile) && (
+              {(errors.imageAvatar || errors.cvFile) && (
                 <div className="mt-2 text-sm text-red-600">
-                  {errors.profileImage || errors.cvFile}
+                  {errors.imageAvatar || errors.cvFile}
                 </div>
               )}
             </div>

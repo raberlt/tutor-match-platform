@@ -1,9 +1,9 @@
-package fsa.training.tutormatch.service;
+package fsa.training.tutormatch.service.impl;
 
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.repository.UserRepository;
-import fsa.training.tutormatch.service.interfaces.IUserService;
+import fsa.training.tutormatch.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class UserServiceImpl implements IUserService {
+public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
     @Autowired

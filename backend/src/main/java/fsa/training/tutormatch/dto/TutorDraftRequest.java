@@ -1,6 +1,5 @@
 package fsa.training.tutormatch.dto;
 
-import fsa.training.tutormatch.enums.TeachingLevel;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -13,7 +12,6 @@ public class TutorDraftRequest {
     private String bio;
     private String headline;
     private String experience;
-    private TeachingLevel teachingLevel;
     
     // Thông tin cá nhân
     private String firstName;
@@ -26,7 +24,7 @@ public class TutorDraftRequest {
     
     // Avatar và CV
     private String avatar;
-    private String cvUrl;
+    private String cvFileUrl;
     
     // Video giới thiệu
     private String videoIntro;
@@ -43,6 +41,9 @@ public class TutorDraftRequest {
     // Danh sách chứng chỉ - không bắt buộc cho draft
     private List<CertificateRequest> certificates;
     
+    // Đối tượng dạy - không bắt buộc cho draft
+    private List<String> teachingAudiences;
+    
     @Data
     public static class ScheduleRequest {
         private String dayOfWeek;
@@ -58,16 +59,16 @@ public class TutorDraftRequest {
         private String major;
         private Integer fromTime;
         private Integer toTime;
-        private String degreeImage;
-    }
+        private String degreeFileName;
+        private String degreeFileUrl;    }
     
     @Data
     public static class CertificateRequest {
         private String name;
         private String issuedBy;
         private String description;
-        private String certImage;
-    }
+        private String certFileName;
+        private String certFileUrl;    }
     
     @Data
     public static class SubjectFeeRequest {

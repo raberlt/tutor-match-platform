@@ -18,55 +18,52 @@ public interface TutorProfileRepository extends JpaRepository<TutorProfile, Inte
     // Find by user ID
     Optional<TutorProfile> findByUserId(Integer userId);
     Optional<TutorProfile> findByUser_Username(String username);
-    
-    // Query to find approved tutors
-    @Query("SELECT p FROM TutorProfile p WHERE p.profileStatus = 'ACTIVE'")
+    Optional<TutorProfile> findByUser(User user);    
+    // Query to find enabled tutors
+    @Query("SELECT p FROM TutorProfile p WHERE p.enable = true")
     List<TutorProfile> findApprovedTutors();
     
     // Find tutors by subject
-    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.subject.name = :subjectName AND p.profileStatus = 'ACTIVE'")
+    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.subject.name = :subjectName AND p.enable = true")
     List<TutorProfile> findBySubjectName(@Param("subjectName") String subjectName);
     
     // Search tutors by keyword
-    @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'ACTIVE'")
+    @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.enable = true")
     List<TutorProfile> findByKeyword(@Param("keyword") String keyword);
     
     // REMOVED: findByCity - city field no longer exists
     
     // Methods for TutorSearchService
-    @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'ACTIVE'")
+    @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.enable = true")
     List<TutorProfile> findTutorsByKeyword(@Param("keyword") String keyword);
     
-    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.subject.name = :subject AND p.profileStatus = 'ACTIVE'")
+    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.subject.name = :subject AND p.enable = true")
     List<TutorProfile> findTutorsBySubject(@Param("subject") String subject);
     
     // REMOVED: findTutorsByLocation - city field no longer exists
     
-    @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.profileStatus = 'ACTIVE'")
+    @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.enable = true")
     Page<TutorProfile> findTutorsByKeywordPaged(@Param("keyword") String keyword, Pageable pageable);
     
-    @Query("SELECT p FROM TutorProfile p WHERE p.profileStatus = 'ACTIVE'")
+    @Query("SELECT p FROM TutorProfile p WHERE p.enable = true")
     Page<TutorProfile> findAllTutorsPaged(Pageable pageable);
     
-    @Query("SELECT p FROM TutorProfile p WHERE p.profileStatus = 'ACTIVE' ORDER BY p.ratePointAverage DESC")
+    @Query("SELECT p FROM TutorProfile p WHERE p.enable = true ORDER BY p.ratePointAverage DESC")
     List<TutorProfile> findTopRatedTutors(@Param("limit") int limit);
     
-    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.fees BETWEEN :minPrice AND :maxPrice AND p.profileStatus = 'ACTIVE'")
+    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.fees BETWEEN :minPrice AND :maxPrice AND p.enable = true")
     List<TutorProfile> findTutorsByPriceRange(@Param("minPrice") Double minPrice, @Param("maxPrice") Double maxPrice);
     
     // Count methods for dashboard
-    @Query("SELECT COUNT(p) FROM TutorProfile p WHERE p.profileStatus = 'ACTIVE'")
+    @Query("SELECT COUNT(p) FROM TutorProfile p WHERE p.enable = true")
     long countApprovedTutors();
     
-    // Draft management methods
-    Optional<TutorProfile> findByUserAndIsDraft(User user, boolean isDraft);
-    
-    // Find all pending drafts for admin review
-    @Query("SELECT p FROM TutorProfile p WHERE p.isDraft = true AND p.profileStatus = 'PENDING_VERIFICATION'")
-    List<TutorProfile> findAllPendingDrafts();
+    // Find all pending applications for admin review
+    @Query("SELECT p FROM TutorProfile p WHERE p.enable = false")
+    List<TutorProfile> findAllPendingApplications();
     
     // Find public profiles only (for student search)
-    @Query("SELECT p FROM TutorProfile p WHERE p.isDraft = false AND p.profileStatus = 'ACTIVE'")
+    @Query("SELECT p FROM TutorProfile p WHERE p.enable = true")
     List<TutorProfile> findAllPublicProfiles();
     
     // Check if user has both draft and public profiles

@@ -3,7 +3,6 @@ package fsa.training.tutormatch.repository;
 import fsa.training.tutormatch.entity.Booking;
 import fsa.training.tutormatch.enums.BookingStatus;
 import fsa.training.tutormatch.enums.BookingType;
-import fsa.training.tutormatch.entity.StudentProfile;
 import fsa.training.tutormatch.entity.TutorProfile;
 import fsa.training.tutormatch.entity.User;
 import org.springframework.data.domain.Page;
@@ -22,19 +21,19 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     
     // ✅ Update để match với entity field types
     
-    // Methods với StudentProfile và TutorProfile
-    Page<Booking> findByStudent(StudentProfile student, Pageable pageable);
-    Page<Booking> findByStudentAndStatus(StudentProfile student, BookingStatus status, Pageable pageable);
+    // Methods với User và TutorProfile
+    Page<Booking> findByStudent(User student, Pageable pageable);
+    Page<Booking> findByStudentAndStatus(User student, BookingStatus status, Pageable pageable);
     Page<Booking> findByTutor(TutorProfile tutor, Pageable pageable);
     Page<Booking> findByTutorAndStatus(TutorProfile tutor, BookingStatus status, Pageable pageable);
     List<Booking> findByTutorAndStatus(TutorProfile tutor, BookingStatus status);
     List<Booking> findByTutorAndDateBetween(TutorProfile tutor, LocalDate startDate, LocalDate endDate);
     
     // Methods với User để backward compatibility
-    @Query("SELECT b FROM Booking b WHERE b.student.user = :user")
+    @Query("SELECT b FROM Booking b WHERE b.student = :user")
     Page<Booking> findByStudentUser(@Param("user") User user, Pageable pageable);
     
-    @Query("SELECT b FROM Booking b WHERE b.student.user = :user AND b.status = :status")
+    @Query("SELECT b FROM Booking b WHERE b.student = :user AND b.status = :status")
     Page<Booking> findByStudentUserAndStatus(@Param("user") User user, @Param("status") BookingStatus status, Pageable pageable);
     
     @Query("SELECT b FROM Booking b WHERE b.tutor.user = :user")
@@ -66,9 +65,9 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     long countByCreatedAtAfter(ZonedDateTime date);
     long countByTutor(TutorProfile tutor);
     long countByTutorAndStatus(TutorProfile tutor, BookingStatus status);
-    long countByStudent(StudentProfile student);
-    long countByStudentAndStatus(StudentProfile student, BookingStatus status);
+    long countByStudent(User student);
+    long countByStudentAndStatus(User student, BookingStatus status);
     
     // Additional methods for student controller
-    List<Booking> findByStudentAndStatus(StudentProfile student, BookingStatus status);
+    List<Booking> findByStudentAndStatus(User student, BookingStatus status);
 } 

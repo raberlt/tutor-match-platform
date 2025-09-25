@@ -1,4 +1,4 @@
-package fsa.training.tutormatch.service;
+package fsa.training.tutormatch.service.impl;
 
 import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.entity.*;
@@ -7,8 +7,8 @@ import fsa.training.tutormatch.enums.BookingType;
 import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.SubjectRepository;
 import fsa.training.tutormatch.repository.UserRepository;
-import fsa.training.tutormatch.service.interfaces.IBookingCreationService;
-import fsa.training.tutormatch.service.interfaces.IBookingValidationService;
+import fsa.training.tutormatch.service.BookingCreationService;
+import fsa.training.tutormatch.service.BookingValidationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Service
-public class BookingCreationServiceImpl implements IBookingCreationService {
+public class BookingCreationServiceImpl implements BookingCreationService {
     
     @Autowired
     private BookingRepository bookingRepository;
@@ -30,7 +30,7 @@ public class BookingCreationServiceImpl implements IBookingCreationService {
     private SubjectRepository subjectRepository;
     
     @Autowired
-    private IBookingValidationService validationService;
+    private BookingValidationService validationService;
     
     @Override
     @PreAuthorize("hasRole('STUDENT')")
@@ -106,9 +106,7 @@ public class BookingCreationServiceImpl implements IBookingCreationService {
         User tutorUser = findUserById(request.getTutorId());
         Subject subject = findSubjectById(request.getSubjectId());
 
-        // Lấy profile theo mô hình multi-profiles
-        StudentProfile studentProfile = studentUser.getStudentProfile()
-                .orElseThrow(() -> new IllegalArgumentException("User không phải là student hợp lệ"));
+        // StudentProfile removed - use User directly
         TutorProfile tutorProfile = tutorUser.getTutorProfile()
                 .orElseThrow(() -> new IllegalArgumentException("User không phải là tutor hợp lệ"));
 
@@ -120,7 +118,7 @@ public class BookingCreationServiceImpl implements IBookingCreationService {
 
         // Create booking
         Booking booking = new Booking();
-        booking.setStudent(studentProfile);
+        booking.setStudent(studentUser);
         booking.setTutor(tutorProfile);
         booking.setSubject(subject);
         booking.setDate(bookingDate);

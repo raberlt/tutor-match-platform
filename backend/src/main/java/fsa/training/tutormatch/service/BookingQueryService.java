@@ -1,4 +1,4 @@
-package fsa.training.tutormatch.service.interfaces;
+package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.entity.Booking;
 
@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-public interface IBookingQueryService {
+public interface BookingQueryService {
     
     // Find operations
     Optional<Booking> findById(Integer bookingId);

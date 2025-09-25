@@ -1,9 +1,9 @@
-package fsa.training.tutormatch.service.interfaces;
+package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.entity.Booking;
 
-public interface IBookingCreationService {
+public interface BookingCreationService {
     Booking createTrialBooking(String studentUsername, BookingRequestCreateDTO request);
     Booking createMonthlyBooking(String studentUsername, BookingRequestCreateDTO request);
     Booking createContractBooking(String studentUsername, BookingRequestCreateDTO request);

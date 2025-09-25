@@ -7,12 +7,7 @@ import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import fsa.training.tutormatch.enums.ApplicationStatus;
-import fsa.training.tutormatch.enums.ApplicationType;
-import fsa.training.tutormatch.enums.EducationLevel;
-import fsa.training.tutormatch.enums.Gender;
-import fsa.training.tutormatch.enums.TeachingLevel;
 
-import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -30,10 +25,6 @@ public class ProfileApplication {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ApplicationType applicationType;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -55,9 +46,6 @@ public class ProfileApplication {
     @Column(columnDefinition = "NVARCHAR(255)")
     private String address;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
-    private String timezone;
-
     // Tutor-specific fields
     @Column(columnDefinition = "NVARCHAR(2000)")
     private String bio;
@@ -68,26 +56,14 @@ public class ProfileApplication {
     @Column(columnDefinition = "NVARCHAR(2000)")
     private String experience;
 
-    @Enumerated(EnumType.STRING)
-    private TeachingLevel teachingLevel;
-
-    @Column(columnDefinition = "NVARCHAR(1000)")
-    private String teachingMethods; // JSON string to store multiple teaching methods
-
     @Column(columnDefinition = "NVARCHAR(500)")
-    private String cvUrl;
+    private String cvFileUrl; 
+    
+    @Column(columnDefinition = "NVARCHAR(255)")
+    private String cvFileName;
 
     @Column(columnDefinition = "NVARCHAR(500)")
     private String videoIntro;
-
-    // Student-specific fields
-    @Enumerated(EnumType.STRING)
-    private EducationLevel educationLevel;
-
-    private LocalDate dateOfBirth;
-
-    @Enumerated(EnumType.STRING)
-    private Gender gender;
 
     // Application workflow fields
     private ZonedDateTime submittedAt;
@@ -98,11 +74,8 @@ public class ProfileApplication {
     @JoinColumn(name = "reviewed_by")
     private User reviewedBy;
 
-    @Column(columnDefinition = "NVARCHAR(500)")
-    private String adminNote;
-
     @Column(columnDefinition = "NVARCHAR(1000)")
-    private String rejectionReason;
+    private String adminNote;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -123,6 +96,14 @@ public class ProfileApplication {
 
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ApplicationSubjectFee> subjectFees;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "application_teaching_audiences",
+        joinColumns = @JoinColumn(name = "application_id"),
+        inverseJoinColumns = @JoinColumn(name = "teaching_audience_id")
+    )
+    private List<TeachingAudience> teachingAudiences;
 
     // Helper methods
     public boolean isDraft() {
@@ -166,6 +147,6 @@ public class ProfileApplication {
         this.status = ApplicationStatus.REJECTED;
         this.reviewedBy = admin;
         this.reviewedAt = ZonedDateTime.now();
-        this.rejectionReason = reason;
+        this.adminNote = reason;
     }
 }

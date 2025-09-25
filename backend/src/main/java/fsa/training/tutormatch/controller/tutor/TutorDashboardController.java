@@ -6,7 +6,7 @@ import fsa.training.tutormatch.entity.TutorProfile;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.UserRepository;
-import fsa.training.tutormatch.service.interfaces.IBookingService;
+import fsa.training.tutormatch.service.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,7 +36,7 @@ public class TutorDashboardController {
     private UserRepository userRepository;
 
     @Autowired
-    private IBookingService bookingService;
+    private BookingService bookingService;
 
     /**
      * Lấy thống kê dashboard cho tutor
@@ -231,8 +231,8 @@ public class TutorDashboardController {
 
         // Student info (minimal)
         Map<String, Object> studentInfo = new HashMap<>();
-        if (booking.getStudent() != null && booking.getStudent().getUser() != null) {
-            User studentUser = booking.getStudent().getUser();
+        if (booking.getStudent() != null) {
+            User studentUser = booking.getStudent();
             studentInfo.put("id", studentUser.getId());
             studentInfo.put("firstName", studentUser.getFirstName());
             studentInfo.put("lastName", studentUser.getLastName());

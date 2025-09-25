@@ -1,11 +1,11 @@
-package fsa.training.tutormatch.service.interfaces;
+package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.enums.UserRole;
 import java.util.List;
 import java.util.Optional;
 
-public interface IUserService {
+public interface UserService {
     User save(User user);
     Optional<User> findById(Integer id);
     Optional<User> findByUsername(String username);

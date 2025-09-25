@@ -12,6 +12,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.enums.Gender;
+import fsa.training.tutormatch.enums.EducationLevel;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import java.time.LocalDate; 
@@ -82,6 +83,11 @@ public class User {
     @Pattern(regexp = "^[0-9]{9,15}$", message = "Phone number must be 9 to 15 digits")
     private String phoneNumber;
 
+    @Enumerated(EnumType.STRING)
+    private EducationLevel educationLevel;
+    @Column(nullable = false)
+    private boolean enable = true;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
     private java.util.List<Profile> profiles;
@@ -97,16 +103,6 @@ public class User {
     @UpdateTimestamp
     private ZonedDateTime updatedAt;
 
-    // Helper methods
-    public java.util.Optional<StudentProfile> getStudentProfile() {
-        if (profiles == null) return java.util.Optional.empty();
-        for (Profile profile : profiles) {
-            if (profile instanceof StudentProfile) {
-                return java.util.Optional.of((StudentProfile) profile);
-            }
-        }
-        return java.util.Optional.empty();
-    }
 
     public java.util.Optional<TutorProfile> getTutorProfile() {
         if (profiles == null) return java.util.Optional.empty();

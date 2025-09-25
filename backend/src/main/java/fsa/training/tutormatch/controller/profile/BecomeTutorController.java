@@ -2,7 +2,8 @@ package fsa.training.tutormatch.controller.profile;
 
 import fsa.training.tutormatch.dto.BecomeTutorRequest;
 import fsa.training.tutormatch.entity.*;
-import fsa.training.tutormatch.service.interfaces.ITutorApplicationService;
+import fsa.training.tutormatch.service.ProfileApplicationService;
+import fsa.training.tutormatch.repository.TeachingAudienceRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +24,53 @@ import java.util.Map;
 public class BecomeTutorController {
 
     @Autowired
-    private ITutorApplicationService tutorApplicationService;
+    private ProfileApplicationService profileApplicationService;
+    
+    @Autowired
+    private TeachingAudienceRepository teachingAudienceRepository;
+
+    /**
+     * Lấy danh sách tất cả đối tượng dạy có sẵn
+     */
+    @GetMapping("/teaching-audiences")
+    @CrossOrigin(origins = "*")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<?> getAllTeachingAudiences() {
+        try {
+            // Trả về dữ liệu hardcode trước để test
+            List<Map<String, Object>> audienceList = new ArrayList<>();
+            
+            String[] audiences = {
+                "Học tự do",
+                "Trung học cơ sở", 
+                "Trung học phổ thông",
+                "Trung cấp nghề",
+                "Cao đẳng / Đại học",
+                "Sau đại học",
+                "Người đi làm"
+            };
+            
+            for (int i = 0; i < audiences.length; i++) {
+                Map<String, Object> audienceData = new HashMap<>();
+                audienceData.put("id", i + 1);
+                audienceData.put("name", audiences[i]);
+                audienceList.add(audienceData);
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("teachingAudiences", audienceList);
+            response.put("total", audienceList.size());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Lỗi khi lấy danh sách đối tượng dạy: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 
     /**
      * Lấy danh sách tất cả môn học có sẵn
@@ -30,7 +78,7 @@ public class BecomeTutorController {
     @GetMapping("/subjects")
     public ResponseEntity<?> getAllSubjects() {
         try {
-            List<Subject> subjects = tutorApplicationService.getAllAvailableSubjects();
+            List<Subject> subjects = profileApplicationService.getAllAvailableSubjects();
             List<Map<String, Object>> subjectList = new ArrayList<>();
             
             for (Subject subject : subjects) {
@@ -62,7 +110,7 @@ public class BecomeTutorController {
     public ResponseEntity<?> getApplicationStatus(Authentication authentication) {
         try {
             String username = authentication.getName();
-            Map<String, Object> response = tutorApplicationService.getApplicationStatus(username);
+            Map<String, Object> response = profileApplicationService.getApplicationStatus(username);
             response.put("success", true);
             
             return ResponseEntity.ok(response);
@@ -82,7 +130,7 @@ public class BecomeTutorController {
     public ResponseEntity<?> getApplicationDetails(Authentication authentication) {
         try {
             String username = authentication.getName();
-            Map<String, Object> response = tutorApplicationService.getApplicationDetails(username);
+            Map<String, Object> response = profileApplicationService.getApplicationDetails(username);
             response.put("success", true);
             
             return ResponseEntity.ok(response);
@@ -103,13 +151,13 @@ public class BecomeTutorController {
                                                     Authentication authentication) {
         try {
             String username = authentication.getName();
-            Profile profile = tutorApplicationService.submitTutorApplication(username, request);
+            Map<String, Object> result = profileApplicationService.submitTutorApplication(username, request);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Đăng ký làm tutor đã được gửi thành công!");
-            response.put("profileId", profile.getId());
-            response.put("status", profile.getProfileStatus().toString());
+            response.put("applicationId", result.get("applicationId"));
+            response.put("status", result.get("status"));
 
             return ResponseEntity.ok(response);
 
@@ -129,18 +177,12 @@ public class BecomeTutorController {
     public ResponseEntity<?> cancelTutorApplication(Authentication authentication) {
         try {
             String username = authentication.getName();
-            boolean cancelled = tutorApplicationService.cancelTutorApplication(username);
+            Map<String, Object> result = profileApplicationService.cancelTutorApplication(username);
             
-            if (cancelled) {
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", true);
-                response.put("message", "Đã hủy đăng ký làm tutor thành công!");
-                return ResponseEntity.ok(response);
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
             } else {
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", false);
-                response.put("message", "Không tìm thấy đăng ký để hủy");
-                return ResponseEntity.badRequest().body(response);
+                return ResponseEntity.badRequest().body(result);
             }
             
         } catch (Exception e) {

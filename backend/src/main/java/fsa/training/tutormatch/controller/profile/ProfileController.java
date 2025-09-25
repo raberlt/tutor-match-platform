@@ -3,15 +3,11 @@ package fsa.training.tutormatch.controller.profile;
 import fsa.training.tutormatch.dto.ProfileUpdateRequest;
 import fsa.training.tutormatch.entity.Profile;
 import fsa.training.tutormatch.enums.*;
-import fsa.training.tutormatch.entity.StudentProfile;
-import fsa.training.tutormatch.enums.*;
 import fsa.training.tutormatch.entity.TutorProfile;
-import fsa.training.tutormatch.enums.*;
 import fsa.training.tutormatch.entity.User;
-import fsa.training.tutormatch.enums.*;
 import fsa.training.tutormatch.repository.ProfileRepository;
 import fsa.training.tutormatch.repository.UserRepository;
-import fsa.training.tutormatch.service.interfaces.IUserService;
+import fsa.training.tutormatch.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +30,7 @@ public class ProfileController {
     private ProfileRepository profileRepository;
 
     @Autowired
-    private IUserService userService;
+    private UserService userService;
 
     /**
      * Lấy thông tin profile hiện tại
@@ -68,11 +64,7 @@ public class ProfileController {
                 profileData.put("id", baseProfile.getId());
                 profileData.put("phoneNumber", user.getPhoneNumber() != null ? user.getPhoneNumber() : "");
                 profileData.put("addressLine1", user.getAddress() != null ? user.getAddress() : "");
-                // Removed fields: educationLevel (moved to StudentProfile), university, major, city
-                if (baseProfile instanceof StudentProfile) {
-                    StudentProfile sp = (StudentProfile) baseProfile;
-                    profileData.put("educationLevel", sp.getEducationLevel() != null ? sp.getEducationLevel() : "");
-                }
+                // Removed fields: educationLevel (moved to User), university, major, city
                 profileData.put("dateOfBirth", user.getDateOfBirth() != null ? user.getDateOfBirth().toString() : "");
                 profileData.put("gender", user.getGender() != null ? user.getGender().toString() : "");
                 // isVerified moved to TutorProfile only
@@ -82,13 +74,12 @@ public class ProfileController {
                 } else {
                     profileData.put("isVerified", false);
                 }
-                profileData.put("profileStatus", baseProfile.getProfileStatus().toString());
+                profileData.put("profileStatus", baseProfile.getEnable() ? "ENABLED" : "DISABLED");
 
                 // Nếu là TutorProfile thì thêm các field đặc thù
                 if (baseProfile instanceof TutorProfile tutorProfile) {
                     profileData.put("bio", tutorProfile.getBio() != null ? tutorProfile.getBio() : "");
                     profileData.put("headline", tutorProfile.getHeadline() != null ? tutorProfile.getHeadline() : "");
-                    profileData.put("teachingLevel", tutorProfile.getTeachingLevel() != null ? tutorProfile.getTeachingLevel() : "");
                     profileData.put("fees", tutorProfile.getFees() != null ? tutorProfile.getFees() : 0);
                     profileData.put("experience", tutorProfile.getExperience() != null ? tutorProfile.getExperience() : "");
                 }
@@ -149,14 +140,11 @@ public class ProfileController {
                         if (user.getRole() == UserRole.TUTOR) {
                             TutorProfile tutorProfile = new TutorProfile();
                             tutorProfile.setUser(user);
-                            tutorProfile.setProfileStatus(ProfileStatus.PENDING_VERIFICATION);
+                            tutorProfile.setEnable(false);
                             return tutorProfile;
                         } else {
-                            StudentProfile studentProfile = new StudentProfile();
-                            studentProfile.setUser(user);
-                            studentProfile.setProfileStatus(ProfileStatus.ACTIVE);
-                            studentProfile.setEducationLevel(EducationLevel.INDEPENDENT_LEARNER); // Mặc định là học tự do
-                            return studentProfile;
+                            // Student không cần profile riêng, thông tin lưu trong User
+                            return null;
                         }
                     });
 
@@ -164,10 +152,7 @@ public class ProfileController {
             User profileUser = profile.getUser();
             if (request.getPhoneNumber() != null) profileUser.setPhoneNumber(request.getPhoneNumber().trim());
             // if (request.getAddress() != null) profileUser.setAddress(request.getAddress().trim()); // address field removed from DTO
-            // Removed fields: educationLevel (StudentProfile only), university, major, city
-            if (profile instanceof StudentProfile && request.getEducationLevel() != null) {
-                ((StudentProfile) profile).setEducationLevel(EducationLevel.valueOf(request.getEducationLevel().trim()));
-            }
+            // Removed fields: educationLevel (moved to User), university, major, city
 
             if (request.getDateOfBirth() != null && !request.getDateOfBirth().trim().isEmpty()) {
                 try {
@@ -193,7 +178,6 @@ public class ProfileController {
             if (profile instanceof TutorProfile tutorProfile) {
                 if (request.getBio() != null) tutorProfile.setBio(request.getBio().trim());
                 if (request.getHeadline() != null) tutorProfile.setHeadline(request.getHeadline().trim());
-                if (request.getTeachingLevel() != null) tutorProfile.setTeachingLevel(request.getTeachingLevel().trim());
                 if (request.getFees() != null && request.getFees() >= 0) tutorProfile.setFees(request.getFees());
                 if (request.getExperience() != null) tutorProfile.setExperience(request.getExperience().trim());
             }

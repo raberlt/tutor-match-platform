@@ -1,13 +1,12 @@
-package fsa.training.tutormatch.service;
+package fsa.training.tutormatch.service.impl;
 
 import fsa.training.tutormatch.entity.Booking;
 import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.enums.BookingStatus;
 import fsa.training.tutormatch.entity.User;
-import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.UserRepository;
-import fsa.training.tutormatch.service.interfaces.IBookingQueryService;
+import fsa.training.tutormatch.service.BookingQueryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class BookingQueryServiceImpl implements IBookingQueryService {
+public class BookingQueryServiceImpl implements BookingQueryService {
     
     @Autowired
     private BookingRepository bookingRepository;

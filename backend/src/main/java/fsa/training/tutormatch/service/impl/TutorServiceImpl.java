@@ -1,13 +1,14 @@
-package fsa.training.tutormatch.service;
+package fsa.training.tutormatch.service.impl;
 
 import fsa.training.tutormatch.dto.TutorDTO;
 import fsa.training.tutormatch.dto.TutorPreviewDTO;
 import fsa.training.tutormatch.entity.TutorProfile;
-import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.ProfileRepository;
 import fsa.training.tutormatch.repository.UserRepository;
-import fsa.training.tutormatch.service.interfaces.ITutorService;
+import fsa.training.tutormatch.service.DtoConverterService;
+import fsa.training.tutormatch.service.TutorSearchService;
+import fsa.training.tutormatch.service.TutorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
-public class TutorServiceImpl implements ITutorService {
+public class TutorServiceImpl implements TutorService {
 
     @Autowired
     private ProfileRepository profileRepository;
@@ -78,7 +79,7 @@ public class TutorServiceImpl implements ITutorService {
 
     @Override
     public List<TutorDTO> findAllTutorDTOs() {
-        List<TutorProfile> tutors = profileRepository.findApprovedTutors();
+        List<TutorProfile> tutors = profileRepository.findEnabledTutors();
         return tutors.stream()
                 .map(this::convertToDTO)
                 .toList();
@@ -89,7 +90,7 @@ public class TutorServiceImpl implements ITutorService {
      */
     @Override
     public List<TutorPreviewDTO> findAllTutorPreviews() {
-        List<TutorProfile> tutors = profileRepository.findApprovedTutors();
+        List<TutorProfile> tutors = profileRepository.findEnabledTutors();
         return convertToPreviewDTOs(tutors);
     }
 
@@ -106,12 +107,12 @@ public class TutorServiceImpl implements ITutorService {
     // Missing methods from interface
     @Override
     public List<TutorProfile> findAll() {
-        return profileRepository.findApprovedTutors();
+        return profileRepository.findEnabledTutors();
     }
     
     @Override
     public List<TutorProfile> findAllApprovedTutors() {
-        return profileRepository.findApprovedTutors();
+        return profileRepository.findEnabledTutors();
     }
     
     @Override
@@ -133,7 +134,7 @@ public class TutorServiceImpl implements ITutorService {
         dto.setBio(tutorProfile.getBio());
         dto.setHeadline(tutorProfile.getHeadline());
         dto.setExperience(tutorProfile.getExperience());
-        dto.setTeachingLevel(tutorProfile.getTeachingLevel());
+        // teachingLevel field removed from TutorProfile
         dto.setFees(tutorProfile.getFees());
         // dto.setCity(tutorProfile.getCity()); // city field removed
         dto.setRatePointAverage(tutorProfile.getRatePointAverage());

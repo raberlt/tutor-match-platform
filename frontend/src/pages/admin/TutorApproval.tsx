@@ -3,75 +3,70 @@ import { adminService } from "../../services/adminService";
 
 interface TutorApplication {
   id: string;
-  userId?: number;
-  firstName?: string;
-  lastName?: string;
-  tutorName?: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  phone?: string;
-  address?: string;
-  dateOfBirth?: string;
-  gender?: string;
-  imageAvatar?: string;
-
-  // Application info
-  applicationType?: string;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "SUBMITTED";
-  bio?: string;
-  headline?: string;
-  experience?: string;
-  educationLevel?: string;
-  teachingLevel?: string;
-  teachingMethods?: string[];
-  cvUrl?: string;
+  bio: string;
+  headline: string;
+  experience: string;
+  cvFileUrl?: string;
+  cvFileName?: string;
   videoIntro?: string;
-  timezone?: string;
-
-  // Timestamps
+  status: "DRAFT" | "SUBMITTED" | "UNDER_REVIEW" | "APPROVED" | "REJECTED";
   submittedAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
   reviewedAt?: string;
-  reviewedBy?: string;
-  notes?: string;
+  adminNote?: string;
+  educations: Education[];
+  certificates: Certificate[];
+  subjectFees: SubjectFee[];
+  schedules: Schedule[];
+  teachingAudiences: string[];
+}
 
-  // Related data
-  educations?: Array<{
-    school: string;
-    degree: string;
-    fromYear: string;
-    toYear: string;
-  }>;
-  certificates?: Array<{
-    name: string;
-    issuer: string;
-    issuedDate: string;
-    url?: string;
-  }>;
-  schedules?: Array<{
-    dayOfWeek: string;
-    startTime: string;
-    endTime: string;
-    note?: string;
-  }>;
-  subjectFees?: Array<{
-    subjectName: string;
-    fee: number;
-    note?: string;
-  }>;
+interface Education {
+  id: string;
+  schoolName: string;
+  degree: string;
+  major: string;
+  fromTime: number;
+  toTime: number;
+  degreeFileName?: string;
+  degreeFileUrl?: string;
+}
+
+interface Certificate {
+  id: string;
+  name: string;
+  issuedBy: string;
+  description: string;
+  certFileName?: string;
+  certFileUrl?: string;
+  valid: boolean;
+}
+
+interface SubjectFee {
+  subjectId: number;
+  subjectName: string;
+  fees: number;
+}
+
+interface Schedule {
+  id: string;
+  dayOfWeek: string;
+  fromTime: string;
+  toTime: string;
+  enable: boolean;
 }
 
 export const TutorApproval: React.FC = () => {
   const [applications, setApplications] = useState<TutorApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Debug log applications state
-  console.log("Current applications state:", applications);
-
   const [selectedApplication, setSelectedApplication] =
     useState<TutorApplication | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [adminNote, setAdminNote] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
   useEffect(() => {
@@ -83,37 +78,16 @@ export const TutorApproval: React.FC = () => {
       setLoading(true);
       const data = await adminService.getApplicationsForReview();
       console.log("API Response:", data);
-      console.log("Applications array:", data.applications);
-      console.log("First application:", data.applications?.[0]);
 
-      // Xử lý response có thể là array hoặc paginated object
       if (Array.isArray(data)) {
         setApplications(data);
+      } else if (data && Array.isArray(data.applications)) {
+        // Response với applications array
+        setApplications(data.applications);
       } else if (data && Array.isArray(data.content)) {
-        // Paginated response
         setApplications(data.content);
       } else if (data && Array.isArray(data.data)) {
-        // Wrapped response
         setApplications(data.data);
-      } else if (data && data.success) {
-        // Success response - check for any array field
-        if (Array.isArray(data.applications)) {
-          console.log(
-            "Setting applications from data.applications:",
-            data.applications
-          );
-          setApplications(data.applications);
-        } else if (Array.isArray(data.content)) {
-          console.log("Setting applications from data.content:", data.content);
-          setApplications(data.content);
-        } else if (Array.isArray(data.data)) {
-          console.log("Setting applications from data.data:", data.data);
-          setApplications(data.data);
-        } else {
-          console.error("Success response but no array found:", data);
-          setApplications([]);
-          setError("Không tìm thấy dữ liệu trong response");
-        }
       } else {
         console.error("Unexpected API response format:", data);
         setApplications([]);
@@ -121,58 +95,89 @@ export const TutorApproval: React.FC = () => {
       }
     } catch (err: unknown) {
       console.error("Error loading applications:", err);
-      setError((err as Error).message || "Lỗi khi tải danh sách đơn đăng ký");
+      setError(
+        err instanceof Error ? err.message : "Lỗi khi tải danh sách hồ sơ"
+      );
       setApplications([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredApplications = Array.isArray(applications)
-    ? applications.filter((app) => {
-        if (filterStatus === "all") return true;
-        if (filterStatus === "PENDING") {
-          // "Chờ duyệt" bao gồm cả PENDING và SUBMITTED
-          return app.status === "PENDING" || app.status === "SUBMITTED";
-        }
-        return app.status === filterStatus;
-      })
-    : [];
+  const filteredApplications = applications.filter(
+    (app) => filterStatus === "all" || app.status === filterStatus
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "PENDING":
       case "SUBMITTED":
         return "bg-yellow-100 text-yellow-800";
+      case "UNDER_REVIEW":
+        return "bg-blue-100 text-blue-800";
       case "APPROVED":
         return "bg-green-100 text-green-800";
       case "REJECTED":
         return "bg-red-100 text-red-800";
+      case "DRAFT":
+        return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
 
-  const handleViewDetails = (application: TutorApplication) => {
-    setSelectedApplication(application);
-    setShowModal(true);
-  };
-
-  const handleApprove = async (id: string) => {
-    try {
-      await adminService.approveApplication(parseInt(id));
-      await loadApplications(); // Reload data
-    } catch (err: unknown) {
-      setError((err as Error).message || "Lỗi khi phê duyệt đơn");
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "SUBMITTED":
+        return "Đã gửi";
+      case "UNDER_REVIEW":
+        return "Đang xem xét";
+      case "APPROVED":
+        return "Đã duyệt";
+      case "REJECTED":
+        return "Đã từ chối";
+      case "DRAFT":
+        return "Bản nháp";
+      default:
+        return status;
     }
   };
 
-  const handleReject = async (id: string) => {
+  const handleReview = (application: TutorApplication) => {
+    setSelectedApplication(application);
+    setAdminNote(application.adminNote || "");
+    setShowModal(true);
+  };
+
+  const handleApprove = async () => {
+    if (!selectedApplication) return;
+
     try {
-      await adminService.rejectApplication(parseInt(id), "Từ chối bởi admin");
-      await loadApplications(); // Reload data
+      await adminService.approveApplication(parseInt(selectedApplication.id));
+      await loadApplications();
+      setShowModal(false);
+      setSelectedApplication(null);
+      setAdminNote("");
     } catch (err: unknown) {
-      setError((err as Error).message || "Lỗi khi từ chối đơn");
+      console.error("Error approving application:", err);
+      setError(err instanceof Error ? err.message : "Lỗi khi duyệt hồ sơ");
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selectedApplication) return;
+
+    try {
+      await adminService.rejectApplication(
+        parseInt(selectedApplication.id),
+        adminNote
+      );
+      await loadApplications();
+      setShowModal(false);
+      setSelectedApplication(null);
+      setAdminNote("");
+    } catch (err: unknown) {
+      console.error("Error rejecting application:", err);
+      setError(err instanceof Error ? err.message : "Lỗi khi từ chối hồ sơ");
     }
   };
 
@@ -203,25 +208,45 @@ export const TutorApproval: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Duyệt đăng ký gia sư
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900">Duyệt hồ sơ gia sư</h1>
+        <button
+          onClick={loadApplications}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+        >
+          Làm mới
+        </button>
       </div>
 
-      {/* Statistics */}
+      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
             <div className="p-2 bg-yellow-100 rounded-lg">
-              <span className="text-2xl">⏳</span>
+              <span className="text-2xl">📝</span>
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Chờ duyệt</p>
               <p className="text-2xl font-bold text-gray-900">
                 {
-                  applications.filter(
-                    (a) => a.status === "PENDING" || a.status === "SUBMITTED"
-                  ).length
+                  applications.filter((app) => app.status === "SUBMITTED")
+                    .length
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="flex items-center">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <span className="text-2xl">👀</span>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Đang xem xét</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {
+                  applications.filter((app) => app.status === "UNDER_REVIEW")
+                    .length
                 }
               </p>
             </div>
@@ -236,7 +261,7 @@ export const TutorApproval: React.FC = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Đã duyệt</p>
               <p className="text-2xl font-bold text-gray-900">
-                {applications.filter((a) => a.status === "APPROVED").length}
+                {applications.filter((app) => app.status === "APPROVED").length}
               </p>
             </div>
           </div>
@@ -248,367 +273,223 @@ export const TutorApproval: React.FC = () => {
               <span className="text-2xl">❌</span>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Từ chối</p>
+              <p className="text-sm font-medium text-gray-600">Đã từ chối</p>
               <p className="text-2xl font-bold text-gray-900">
-                {applications.filter((a) => a.status === "REJECTED").length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <span className="text-2xl">📊</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tổng đơn</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {applications.length}
+                {applications.filter((app) => app.status === "REJECTED").length}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filter */}
+      {/* Filters */}
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <div className="flex items-center space-x-4">
-          <label className="text-sm font-medium text-gray-700">
-            Lọc theo trạng thái:
-          </label>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-          >
-            <option value="all">Tất cả</option>
-            <option value="PENDING">Chờ duyệt</option>
-            <option value="APPROVED">Đã duyệt</option>
-            <option value="REJECTED">Từ chối</option>
-          </select>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Trạng thái
+            </label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="SUBMITTED">Chờ duyệt</option>
+              <option value="UNDER_REVIEW">Đang xem xét</option>
+              <option value="APPROVED">Đã duyệt</option>
+              <option value="REJECTED">Đã từ chối</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Applications List */}
+      {/* Applications Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
-            Đơn đăng ký ({filteredApplications.length})
+            Danh sách hồ sơ ({filteredApplications.length})
           </h2>
         </div>
 
-        <div className="divide-y divide-gray-200">
-          {filteredApplications.map((application) => (
-            <div key={application.id} className="p-6 hover:bg-gray-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                      <span className="text-blue-600 font-medium">
-                        {application.tutorName?.charAt(0) ||
-                          application.firstName?.charAt(0) ||
-                          "?"}
-                      </span>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ứng viên
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Thông tin cơ bản
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Trạng thái
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ngày gửi
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Thao tác
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredApplications.map((application) => (
+                <tr key={application.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10">
+                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-blue-600 font-medium text-sm">
+                            {application.firstName.charAt(0)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {application.firstName} {application.lastName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {application.email}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      {application.tutorName ||
-                        `${application.firstName || "N/A"} ${
-                          application.lastName || "N/A"
-                        }`}
-                    </h3>
-                    <p className="text-sm text-gray-500">{application.email}</p>
-                    <div className="flex items-center space-x-4 mt-2">
-                      <span className="text-sm text-gray-600">
-                        📚{" "}
-                        {application.subjectFees
-                          ?.map((s) => s.subjectName)
-                          .join(", ") || "Chưa có môn học"}
-                      </span>
-                      <span className="text-sm text-gray-600">
-                        🎓{" "}
-                        {application.educationLevel ||
-                          "Chưa có thông tin học vấn"}
-                      </span>
-                      <span className="text-sm text-gray-600">
-                        ⏱️ {application.experience || "Chưa có kinh nghiệm"}
-                      </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">
+                      <div className="font-medium">{application.headline}</div>
+                      <div className="text-gray-500 mt-1 line-clamp-2">
+                        {application.bio}
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                      application.status
-                    )}`}
-                  >
-                    {application.status === "PENDING" ||
-                    application.status === "SUBMITTED"
-                      ? "Chờ duyệt"
-                      : application.status === "APPROVED"
-                      ? "Đã duyệt"
-                      : "Từ chối"}
-                  </span>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleViewDetails(application)}
-                      className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                        application.status
+                      )}`}
                     >
-                      Xem chi tiết
-                    </button>
-                    {application.status === "PENDING" && (
-                      <>
-                        <button
-                          onClick={() => handleApprove(application.id)}
-                          className="text-green-600 hover:text-green-900 text-sm font-medium"
-                        >
-                          Phê duyệt
-                        </button>
-                        <button
-                          onClick={() => handleReject(application.id)}
-                          className="text-red-600 hover:text-red-900 text-sm font-medium"
-                        >
-                          Từ chối
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 text-sm text-gray-500">
-                Nộp đơn: {application.submittedAt}
-                {application.reviewedAt && (
-                  <span className="ml-4">
-                    Duyệt: {application.reviewedAt} bởi {application.reviewedBy}
-                  </span>
-                )}
-              </div>
-              {application.notes && (
-                <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <strong>Ghi chú:</strong> {application.notes}
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
+                      {getStatusText(application.status)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {application.submittedAt
+                      ? new Date(application.submittedAt).toLocaleDateString(
+                          "vi-VN"
+                        )
+                      : "Chưa gửi"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleReview(application)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Xem chi tiết
+                      </button>
+                      {application.status === "SUBMITTED" && (
+                        <>
+                          <button
+                            onClick={() => handleReview(application)}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            Duyệt
+                          </button>
+                          <button
+                            onClick={() => handleReview(application)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Từ chối
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Modal for application details */}
+      {/* Review Modal */}
       {showModal && selectedApplication && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  Chi tiết đơn đăng ký - {selectedApplication.firstName}{" "}
+                  Xem xét hồ sơ: {selectedApplication.firstName}{" "}
                   {selectedApplication.lastName}
                 </h3>
                 <button
                   onClick={() => setShowModal(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
-                  ✕
+                  <span className="sr-only">Đóng</span>
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
                 </button>
               </div>
 
-              <div className="space-y-6">
-                {/* Basic Information */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {/* Basic Info */}
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">
                     Thông tin cơ bản
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Họ tên
-                      </label>
-                      <p className="mt-1 text-sm text-gray-900">
-                        {selectedApplication.firstName}{" "}
-                        {selectedApplication.lastName}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Email
-                      </label>
-                      <p className="mt-1 text-sm text-gray-900">
-                        {selectedApplication.email}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Số điện thoại
-                      </label>
-                      <p className="mt-1 text-sm text-gray-900">
-                        {selectedApplication.phone || "Chưa cung cấp"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Địa chỉ
-                      </label>
-                      <p className="mt-1 text-sm text-gray-900">
-                        {selectedApplication.address || "Chưa cung cấp"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Ngày sinh
-                      </label>
-                      <p className="mt-1 text-sm text-gray-900">
-                        {selectedApplication.dateOfBirth || "Chưa cung cấp"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Giới tính
-                      </label>
-                      <p className="mt-1 text-sm text-gray-900">
-                        {selectedApplication.gender || "Chưa cung cấp"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Teaching Information */}
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">
-                    Thông tin giảng dạy
-                  </h4>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Tiêu đề
-                      </label>
-                      <p className="mt-1 text-sm text-gray-900">
-                        {selectedApplication.headline || "Chưa cung cấp"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Giới thiệu bản thân
-                      </label>
-                      <p className="mt-1 text-sm text-gray-900">
-                        {selectedApplication.bio || "Chưa cung cấp"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Kinh nghiệm
-                      </label>
-                      <p className="mt-1 text-sm text-gray-900">
-                        {selectedApplication.experience || "Chưa cung cấp"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Trình độ học vấn
-                      </label>
-                      <p className="mt-1 text-sm text-gray-900">
-                        {selectedApplication.educationLevel || "Chưa cung cấp"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Cấp độ giảng dạy
-                      </label>
-                      <p className="mt-1 text-sm text-gray-900">
-                        {selectedApplication.teachingLevel || "Chưa cung cấp"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Phương pháp giảng dạy
-                      </label>
-                      <p className="mt-1 text-sm text-gray-900">
-                        {Array.isArray(selectedApplication.teachingMethods)
-                          ? selectedApplication.teachingMethods.join(", ")
-                          : selectedApplication.teachingMethods ||
-                            "Chưa cung cấp"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Files and Media */}
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">
-                    Tài liệu và Media
-                  </h4>
-                  <div className="space-y-4">
-                    {selectedApplication.cvUrl && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          CV
-                        </label>
-                        <a
-                          href={selectedApplication.cvUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-1 text-sm text-blue-600 hover:text-blue-800 underline"
-                        >
-                          Xem CV
-                        </a>
-                      </div>
-                    )}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p>
+                      <strong>Email:</strong> {selectedApplication.email}
+                    </p>
+                    <p>
+                      <strong>Tiêu đề:</strong> {selectedApplication.headline}
+                    </p>
+                    <p>
+                      <strong>Giới thiệu:</strong> {selectedApplication.bio}
+                    </p>
+                    <p>
+                      <strong>Kinh nghiệm:</strong>{" "}
+                      {selectedApplication.experience}
+                    </p>
                     {selectedApplication.videoIntro && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Video giới thiệu
-                        </label>
-                        <a
-                          href={selectedApplication.videoIntro}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-1 text-sm text-blue-600 hover:text-blue-800 underline"
-                        >
-                          Xem video
-                        </a>
-                      </div>
-                    )}
-                    {selectedApplication.imageAvatar && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Ảnh đại diện
-                        </label>
-                        <img
-                          src={selectedApplication.imageAvatar}
-                          alt="Avatar"
-                          className="mt-1 w-20 h-20 rounded-full object-cover"
-                        />
-                      </div>
+                      <p>
+                        <strong>Video giới thiệu:</strong>{" "}
+                        {selectedApplication.videoIntro}
+                      </p>
                     )}
                   </div>
                 </div>
 
-                {/* Education History */}
+                {/* Education */}
                 {selectedApplication.educations &&
                   selectedApplication.educations.length > 0 && (
-                    <div className="bg-yellow-50 p-4 rounded-lg">
-                      <h4 className="text-lg font-medium text-gray-900 mb-4">
-                        Quá trình học tập
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Học vấn
                       </h4>
-                      <div className="space-y-3">
-                        {selectedApplication.educations.map(
-                          (edu, index: number) => (
-                            <div
-                              key={index}
-                              className="border-l-4 border-yellow-400 pl-4"
-                            >
-                              <p className="font-medium">{edu.school}</p>
-                              <p className="text-sm text-gray-600">
-                                {edu.degree}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {edu.fromYear} - {edu.toYear}
-                              </p>
-                            </div>
-                          )
-                        )}
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        {selectedApplication.educations.map((edu, index) => (
+                          <div key={index} className="mb-2">
+                            <p>
+                              <strong>{edu.schoolName}</strong> - {edu.degree}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {edu.major} ({edu.fromTime} - {edu.toTime})
+                            </p>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -616,37 +497,21 @@ export const TutorApproval: React.FC = () => {
                 {/* Certificates */}
                 {selectedApplication.certificates &&
                   selectedApplication.certificates.length > 0 && (
-                    <div className="bg-purple-50 p-4 rounded-lg">
-                      <h4 className="text-lg font-medium text-gray-900 mb-4">
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">
                         Chứng chỉ
                       </h4>
-                      <div className="space-y-3">
-                        {selectedApplication.certificates.map(
-                          (cert, index: number) => (
-                            <div
-                              key={index}
-                              className="border-l-4 border-purple-400 pl-4"
-                            >
-                              <p className="font-medium">{cert.name}</p>
-                              <p className="text-sm text-gray-600">
-                                {cert.issuer}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {cert.issuedDate}
-                              </p>
-                              {cert.url && (
-                                <a
-                                  href={cert.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-sm text-blue-600 hover:text-blue-800 underline"
-                                >
-                                  Xem chứng chỉ
-                                </a>
-                              )}
-                            </div>
-                          )
-                        )}
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        {selectedApplication.certificates.map((cert, index) => (
+                          <div key={index} className="mb-2">
+                            <p>
+                              <strong>{cert.name}</strong> - {cert.issuedBy}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {cert.description}
+                            </p>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -654,25 +519,17 @@ export const TutorApproval: React.FC = () => {
                 {/* Subject Fees */}
                 {selectedApplication.subjectFees &&
                   selectedApplication.subjectFees.length > 0 && (
-                    <div className="bg-indigo-50 p-4 rounded-lg">
-                      <h4 className="text-lg font-medium text-gray-900 mb-4">
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">
                         Môn học và học phí
                       </h4>
-                      <div className="space-y-3">
+                      <div className="bg-gray-50 p-4 rounded-lg">
                         {selectedApplication.subjectFees.map(
-                          (subject, index: number) => (
-                            <div
-                              key={index}
-                              className="border-l-4 border-indigo-400 pl-4"
-                            >
-                              <p className="font-medium">
-                                {subject.subjectName}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                Học phí: {subject.fee} VNĐ/buổi
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {subject.note}
+                          (subject, index) => (
+                            <div key={index} className="mb-2">
+                              <p>
+                                <strong>{subject.subjectName}</strong>:{" "}
+                                {subject.fees.toLocaleString("vi-VN")} VNĐ/buổi
                               </p>
                             </div>
                           )
@@ -681,112 +538,66 @@ export const TutorApproval: React.FC = () => {
                     </div>
                   )}
 
-                {/* Schedules */}
-                {selectedApplication.schedules &&
-                  selectedApplication.schedules.length > 0 && (
-                    <div className="bg-pink-50 p-4 rounded-lg">
-                      <h4 className="text-lg font-medium text-gray-900 mb-4">
-                        Lịch dạy
+                {/* Teaching Audiences */}
+                {selectedApplication.teachingAudiences &&
+                  selectedApplication.teachingAudiences.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Đối tượng dạy
                       </h4>
-                      <div className="space-y-3">
-                        {selectedApplication.schedules.map(
-                          (schedule, index: number) => (
-                            <div
-                              key={index}
-                              className="border-l-4 border-pink-400 pl-4"
-                            >
-                              <p className="font-medium">
-                                {schedule.dayOfWeek}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {schedule.startTime} - {schedule.endTime}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {schedule.note}
-                              </p>
-                            </div>
-                          )
-                        )}
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex flex-wrap gap-2">
+                          {selectedApplication.teachingAudiences.map(
+                            (audience, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                              >
+                                {audience}
+                              </span>
+                            )
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Tài liệu đính kèm
-                  </label>
-                  <div className="mt-2 space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">📄 CV:</span>
-                      <a
-                        href={selectedApplication.cvUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 text-sm"
-                      >
-                        Xem CV
-                      </a>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">
-                        🖼️ Ảnh đại diện:
-                      </span>
-                      <a
-                        href={selectedApplication.imageAvatar}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 text-sm"
-                      >
-                        Xem ảnh
-                      </a>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">
-                        🏆 Chứng chỉ:
-                      </span>
-                      {selectedApplication.certificates?.map((cert, index) => (
-                        <a
-                          key={index}
-                          href={cert.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 text-sm mr-2"
-                        >
-                          {cert.name}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                </div>
               </div>
 
+              {/* Admin Note */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ghi chú của admin
+                </label>
+                <textarea
+                  value={adminNote}
+                  onChange={(e) => setAdminNote(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  placeholder="Nhập ghi chú..."
+                />
+              </div>
+
+              {/* Action Buttons */}
               <div className="flex justify-end space-x-3 mt-6">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
                 >
                   Đóng
                 </button>
-                {(selectedApplication.status === "PENDING" ||
-                  selectedApplication.status === "SUBMITTED") && (
+                {selectedApplication.status === "SUBMITTED" && (
                   <>
                     <button
-                      onClick={() => {
-                        handleReject(selectedApplication.id);
-                        setShowModal(false);
-                      }}
-                      className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+                      onClick={handleReject}
+                      className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700"
                     >
                       Từ chối
                     </button>
                     <button
-                      onClick={() => {
-                        handleApprove(selectedApplication.id);
-                        setShowModal(false);
-                      }}
-                      className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+                      onClick={handleApprove}
+                      className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700"
                     >
-                      Phê duyệt
+                      Duyệt
                     </button>
                   </>
                 )}

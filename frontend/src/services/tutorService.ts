@@ -6,6 +6,11 @@ export interface Subject {
   name: string;
 }
 
+export interface TeachingAudience {
+  id: number;
+  name: string;
+}
+
 export interface TutorSearchFilters {
   keyword?: string;
   subjectId?: number;
@@ -58,6 +63,65 @@ export interface TutorRegistrationData {
 
   // Step 7: Thời gian dạy
   dayTimeSlots: Record<string, Array<{ start: string; end: string }>>;
+}
+
+export interface TutorApplicationData {
+  // Thông tin cơ bản
+  bio: string;
+  headline: string;
+  experience: string;
+  teachingAudiences: string[];
+
+  // Thông tin cá nhân
+  firstName: string;
+  lastName: string;
+  dateOfBirth: null;
+  gender: null;
+  phoneNumber: string;
+  address: string;
+  timezone: string;
+
+  // Avatar và CV
+  avatar: string;
+  cvFileUrl: string;
+  cvFileName: string;
+
+  // Video giới thiệu
+  videoIntro: string;
+
+  // Môn học với học phí
+  subjectFees: Array<{
+    subjectId: number;
+    fees: number;
+  }>;
+
+  // Lịch dạy
+  schedules: Array<{
+    dayOfWeek: string;
+    fromTime: string;
+    toTime: string;
+    enable: boolean;
+  }>;
+
+  // Học vấn
+  educations: Array<{
+    schoolName: string;
+    degree: string;
+    major: string;
+    fromTime: number;
+    toTime: number;
+    degreeFileName: string;
+    degreeFileUrl: string;
+  }>;
+
+  // Chứng chỉ
+  certificates: Array<{
+    name: string;
+    issuedBy: string;
+    description: string;
+    certFileName: string;
+    certFileUrl: string;
+  }>;
 }
 
 export interface TutorRegistrationResponse {
@@ -188,7 +252,7 @@ export class TutorService {
 
   // Lưu nháp hồ sơ gia sư
   static async saveDraft(
-    data: Partial<TutorRegistrationData>
+    data: TutorApplicationData
   ): Promise<TutorRegistrationResponse> {
     // Filter out empty/invalid fields for draft
     const cleanData = Object.fromEntries(
@@ -207,7 +271,7 @@ export class TutorService {
 
   // Gửi hồ sơ gia sư để duyệt
   static async submitApplication(
-    data: TutorRegistrationData
+    data: TutorApplicationData
   ): Promise<TutorRegistrationResponse> {
     // Use real endpoint with authentication
     return this.makeRequest("tutor/submit", "POST", data);
@@ -400,6 +464,25 @@ export class TutorService {
     } catch (error) {
       console.error("Error searching tutor previews:", error);
       return { content: [], totalPages: 0, currentPage: 0, totalElements: 0 };
+    }
+  }
+
+  // Lấy danh sách đối tượng dạy
+  static async getTeachingAudiences(): Promise<TeachingAudience[]> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/public/teaching-audiences`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch teaching audiences");
+      }
+
+      const data = await response.json();
+      return data.teachingAudiences || [];
+    } catch (error) {
+      console.error("Error fetching teaching audiences:", error);
+      return [];
     }
   }
 }

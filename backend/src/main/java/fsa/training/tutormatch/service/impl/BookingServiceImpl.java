@@ -1,11 +1,11 @@
-package fsa.training.tutormatch.service;
+package fsa.training.tutormatch.service.impl;
 
 import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.entity.Booking;
-import fsa.training.tutormatch.service.interfaces.IBookingService;
-import fsa.training.tutormatch.service.interfaces.IBookingCreationService;
-import fsa.training.tutormatch.service.interfaces.IBookingStatusService;
-import fsa.training.tutormatch.service.interfaces.IBookingQueryService;
+import fsa.training.tutormatch.service.BookingCreationService;
+import fsa.training.tutormatch.service.BookingQueryService;
+import fsa.training.tutormatch.service.BookingService;
+import fsa.training.tutormatch.service.BookingStatusService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,16 +13,16 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Service
-public class BookingServiceImpl implements IBookingService {
+public class BookingServiceImpl implements BookingService {
 
     @Autowired
-    private IBookingCreationService creationService;
+    private BookingCreationService creationService;
 
     @Autowired
-    private IBookingStatusService statusService;
+    private BookingStatusService statusService;
 
     @Autowired
-    private IBookingQueryService queryService;
+    private BookingQueryService queryService;
 
     /**
      * Tạo booking mới (simple version - backward compatibility)

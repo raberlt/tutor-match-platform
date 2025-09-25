@@ -38,7 +38,7 @@ class UserServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @InjectMocks
-    private fsa.training.tutormatch.service.interfaces.IUserService userService;
+    private UserService userService;
 
     private User testUser;
     private User testTutor;

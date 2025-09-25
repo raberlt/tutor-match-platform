@@ -34,5 +34,7 @@ public class ApplicationEducation {
     private Integer toTime;
 
     @Column(columnDefinition = "NVARCHAR(255)")
-    private String degreeImage;
+    private String degreeFileName;
+    @Column(columnDefinition = "NVARCHAR(500)")
+    private String degreeFileUrl;
 }

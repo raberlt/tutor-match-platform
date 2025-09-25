@@ -1,7 +1,6 @@
 package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.entity.Profile;
-import fsa.training.tutormatch.entity.StudentProfile;
 import fsa.training.tutormatch.entity.TutorProfile;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +14,7 @@ public class ProfileValidationService {
      * Validate profile
      */
     public ValidationResult validateProfile(Profile profile) {
-        if (profile instanceof StudentProfile) {
-            return validateStudentProfile((StudentProfile) profile);
-        } else if (profile instanceof TutorProfile) {
+        if (profile instanceof TutorProfile) {
             return validateTutorProfile((TutorProfile) profile);
         } else {
             return new ValidationResult(false, "Unknown profile type");
@@ -38,15 +35,6 @@ public class ProfileValidationService {
         return validateProfile(profile).getMessage();
     }
     
-    private ValidationResult validateStudentProfile(StudentProfile profile) {
-        if (profile.getUser() == null) {
-            return new ValidationResult(false, "User is required");
-        }
-        if (profile.getUser().getUsername() == null || profile.getUser().getUsername().trim().isEmpty()) {
-            return new ValidationResult(false, "Username is required");
-        }
-        return new ValidationResult(true, "Student profile is valid");
-    }
     
     private ValidationResult validateTutorProfile(TutorProfile profile) {
         if (profile.getUser() == null) {

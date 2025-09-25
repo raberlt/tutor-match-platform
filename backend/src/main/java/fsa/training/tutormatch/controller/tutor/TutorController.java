@@ -1,7 +1,7 @@
 package fsa.training.tutormatch.controller.tutor;
 
 import fsa.training.tutormatch.dto.TutorDTO;
-import fsa.training.tutormatch.service.interfaces.ITutorService;
+import fsa.training.tutormatch.service.TutorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,7 +17,7 @@ import java.util.Optional;
 public class TutorController {
 
     @Autowired
-    private ITutorService tutorService;
+    private TutorService tutorService;
 
     /**
      * API cho Student - Tìm kiếm gia sư với pagination và filters (full info)

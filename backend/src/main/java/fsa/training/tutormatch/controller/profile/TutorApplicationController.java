@@ -3,6 +3,7 @@ package fsa.training.tutormatch.controller.profile;
 import fsa.training.tutormatch.entity.*;
 import fsa.training.tutormatch.enums.*;
 import fsa.training.tutormatch.repository.*;
+import fsa.training.tutormatch.service.TutorProfileDraftService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -48,6 +49,12 @@ public class TutorApplicationController {
     
     @Autowired
     private EducationRepository educationRepository;
+    
+    @Autowired
+    private ProfileApplicationRepository profileApplicationRepository;
+    
+    @Autowired
+    private TutorProfileDraftService tutorProfileDraftService;
 
     /**
      * Lấy danh sách tất cả hồ sơ đăng ký tutor với phân trang và lọc
@@ -90,7 +97,7 @@ public class TutorApplicationController {
             List<Map<String, Object>> applications = pageProfiles.stream().map(profile -> {
                 Map<String, Object> appData = new HashMap<>();
                 appData.put("id", profile.getId());
-                appData.put("status", profile.getProfileStatus());
+                appData.put("status", profile.getEnable() ? "ENABLED" : "DISABLED");
                 appData.put("isVerified", profile.getUser().isVerified());
                 appData.put("createdAt", profile.getCreatedAt());
                 appData.put("updatedAt", profile.getUpdatedAt());
@@ -134,8 +141,8 @@ public class TutorApplicationController {
 
     private boolean filterByStatus(Profile profile, String statusLower) {
         if (statusLower == null || statusLower.isEmpty()) return true;
-        return profile.getProfileStatus() != null &&
-                profile.getProfileStatus().toString().toLowerCase().equals(statusLower);
+        return profile.getEnable() != null &&
+                (profile.getEnable() ? "enabled" : "disabled").equals(statusLower);
     }
 
     private boolean filterBySearch(TutorProfile profile, String searchLower) {
@@ -203,7 +210,7 @@ public class TutorApplicationController {
     private Map<String, Object> buildDetailedProfileResponse(TutorProfile profile) {
         Map<String, Object> data = new HashMap<>();
         data.put("id", profile.getId());
-        data.put("status", profile.getProfileStatus());
+        data.put("status", profile.getEnable() ? "ENABLED" : "DISABLED");
         data.put("isVerified", profile.getUser().isVerified());
         data.put("createdAt", profile.getCreatedAt());
         data.put("updatedAt", profile.getUpdatedAt());
@@ -221,7 +228,6 @@ public class TutorApplicationController {
         data.put("headline", profile.getHeadline());
         data.put("bio", profile.getBio());
         data.put("experience", profile.getExperience());
-        data.put("teachingLevel", profile.getTeachingLevel());
         data.put("fees", profile.getFees());
         // data.put("university", profile.getUniversity());
         // data.put("major", profile.getMajor());
@@ -261,8 +267,8 @@ public class TutorApplicationController {
                 ));
             }
 
-            // Chỉ cho phép duyệt hồ sơ đang PENDING_VERIFICATION
-            if (tutorProfile.getProfileStatus() != ProfileStatus.PENDING_VERIFICATION) {
+            // Chỉ cho phép duyệt hồ sơ đang DISABLED
+            if (Boolean.TRUE.equals(tutorProfile.getEnable())) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,
                         "error", "Chỉ có thể duyệt hồ sơ đang chờ xét duyệt!"
@@ -275,21 +281,31 @@ public class TutorApplicationController {
                     .orElseThrow(() -> new RuntimeException("Admin not found"));
 
             // Cập nhật trạng thái profile
-            tutorProfile.setProfileStatus(ProfileStatus.ACTIVE);
-            // isVerified giờ ở User entity
-            tutorProfile.getUser().setVerified(true);
-            tutorProfile.setApprovedBy(admin);
-            tutorProfile.setApprovedAt(java.time.ZonedDateTime.now());
-
-            // Ghi chú của admin (nếu có)
-            if (requestBody != null && requestBody.containsKey("adminNote")) {
-                tutorProfile.setAdminNote(requestBody.get("adminNote"));
-            }
-
-            // Chuyển role của user từ STUDENT thành TUTOR
+            tutorProfile.setEnable(true);
+            
+            // Chuyển role của user từ STUDENT thành TUTOR và đồng bộ thông tin
             User tutorUser = tutorProfile.getUser();
             if (tutorUser != null && tutorUser.getRole() == UserRole.STUDENT) {
                 tutorUser.setRole(UserRole.TUTOR);
+                tutorUser.setVerified(true);
+                
+                // Tìm ProfileApplication tương ứng để đồng bộ dữ liệu
+                Optional<ProfileApplication> applicationOpt = profileApplicationRepository
+                        .findLatestByUser(tutorUser);
+                
+                if (applicationOpt.isPresent()) {
+                    ProfileApplication application = applicationOpt.get();
+                    
+                    // Đồng bộ dữ liệu từ ProfileApplication sang User và TutorProfile
+                    tutorProfileDraftService.syncDataFromProfileApplication(application, tutorUser, tutorProfile);
+                    
+                    // Cập nhật trạng thái application thành APPROVED
+                    application.setStatus(ApplicationStatus.APPROVED);
+                    application.setReviewedAt(java.time.ZonedDateTime.now());
+                    application.setReviewedBy(admin);
+                    profileApplicationRepository.save(application);
+                }
+                
                 userRepository.save(tutorUser);
             }
 
@@ -299,7 +315,7 @@ public class TutorApplicationController {
                     "success", true,
                     "message", "Đã duyệt hồ sơ thành công! User đã được chuyển thành TUTOR.",
                     "profileId", profileId,
-                    "newStatus", "ACTIVE",
+                    "newStatus", "ENABLED",
                     "userRole", tutorUser != null ? tutorUser.getRole().toString() : null
             ));
 
@@ -338,8 +354,8 @@ public class TutorApplicationController {
                 ));
             }
 
-            // Chỉ cho phép từ chối hồ sơ đang PENDING_VERIFICATION
-            if (tutorProfile.getProfileStatus() != ProfileStatus.PENDING_VERIFICATION) {
+            // Chỉ cho phép từ chối hồ sơ đang INACTIVE
+            if (Boolean.TRUE.equals(tutorProfile.getEnable())) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,
                         "error", "Chỉ có thể từ chối hồ sơ đang chờ xét duyệt!"
@@ -361,12 +377,9 @@ public class TutorApplicationController {
             }
 
             // Cập nhật trạng thái
-            tutorProfile.setProfileStatus(ProfileStatus.INACTIVE);
+            tutorProfile.setEnable(false);
             // isVerified giờ ở User entity
             tutorProfile.getUser().setVerified(false);
-            tutorProfile.setApprovedBy(admin);
-            tutorProfile.setApprovedAt(java.time.ZonedDateTime.now());
-            tutorProfile.setAdminNote(rejectReason);
 
             // Đảm bảo user vẫn là STUDENT khi bị từ chối
             User tutorUser = tutorProfile.getUser();
@@ -421,7 +434,7 @@ public class TutorApplicationController {
             }
 
             // Chỉ có thể suspend hồ sơ ACTIVE
-            if (tutorProfile.getProfileStatus() != ProfileStatus.ACTIVE) {
+            if (!Boolean.TRUE.equals(tutorProfile.getEnable())) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,
                         "error", "Chỉ có thể tạm khóa hồ sơ đang hoạt động!"
@@ -443,12 +456,9 @@ public class TutorApplicationController {
             }
 
             // Cập nhật trạng thái hồ sơ
-            tutorProfile.setProfileStatus(ProfileStatus.INACTIVE);
+            tutorProfile.setEnable(false);
             // isVerified giờ ở User entity
             tutorProfile.getUser().setVerified(false);
-            tutorProfile.setApprovedBy(admin);
-            tutorProfile.setApprovedAt(java.time.ZonedDateTime.now());
-            tutorProfile.setAdminNote(suspendReason);
 
             // Chuyển role user về STUDENT khi bị suspend
             User tutorUser = tutorProfile.getUser();
@@ -503,7 +513,7 @@ public class TutorApplicationController {
             }
 
             // Chỉ có thể kích hoạt hồ sơ đang bị inactive
-            if (tutorProfile.getProfileStatus() != ProfileStatus.INACTIVE) {
+            if (Boolean.TRUE.equals(tutorProfile.getEnable())) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,
                         "error", "Chỉ có thể kích hoạt hồ sơ đang bị tạm khóa!"
@@ -516,15 +526,12 @@ public class TutorApplicationController {
                     .orElseThrow(() -> new RuntimeException("Admin not found"));
 
             // Cập nhật trạng thái hồ sơ
-            tutorProfile.setProfileStatus(ProfileStatus.ACTIVE);
+            tutorProfile.setEnable(true);
             // isVerified giờ ở User entity
             tutorProfile.getUser().setVerified(true);
-            tutorProfile.setApprovedBy(admin);
-            tutorProfile.setApprovedAt(java.time.ZonedDateTime.now());
 
             // Ghi chú admin (nếu có)
             if (requestBody != null && requestBody.containsKey("adminNote")) {
-                tutorProfile.setAdminNote(requestBody.get("adminNote"));
             }
 
             // Chuyển role user về TUTOR khi được re-activate
@@ -637,10 +644,8 @@ public class TutorApplicationController {
             User admin = userRepository.findByUsername(adminUsername)
                     .orElseThrow(() -> new RuntimeException("Admin not found"));
 
-            // Cập nhật ghi chú
-            ((TutorProfile) profile).setAdminNote(adminNote);
-            ((TutorProfile) profile).setApprovedBy(admin);
-            ((TutorProfile) profile).setApprovedAt(java.time.ZonedDateTime.now());
+            // Cập nhật ghi chú - adminNote đã bị xóa khỏi TutorProfile
+            // Không cần setApprovedBy và setApprovedAt nữa
 
             profileRepository.save(profile);
 
@@ -742,16 +747,10 @@ public class TutorApplicationController {
                 if (profile instanceof TutorProfile) {
                     totalApplications++;
 
-                    switch (profile.getProfileStatus()) {
-                        case PENDING_VERIFICATION:
-                            pendingCount++;
-                            break;
-                        case ACTIVE:
-                            approvedCount++;
-                            break;
-                        case INACTIVE:
-                            rejectedCount++; // Đếm INACTIVE như REJECTED cho thống kê
-                            break;
+                    if (Boolean.TRUE.equals(profile.getEnable())) {
+                        approvedCount++;
+                    } else {
+                        rejectedCount++; // Đếm DISABLED như REJECTED cho thống kê
                     }
                 }
             }
@@ -790,12 +789,10 @@ public class TutorApplicationController {
         // profileData.put("educationLevel", profile.getEducationLevel()); // removed from Profile
         // profileData.put("university", profile.getUniversity()); // removed from Profile
         // profileData.put("major", profile.getMajor()); // removed from Profile
-        profileData.put("status", profile.getProfileStatus());
+        profileData.put("status", profile.getEnable() ? "ENABLED" : "DISABLED");
         profileData.put("isVerified", profile.getUser().isVerified()); // moved to User
-        profileData.put("adminNote", ((TutorProfile) profile).getAdminNote());
         profileData.put("createdAt", profile.getCreatedAt());
         profileData.put("updatedAt", profile.getUpdatedAt());
-        profileData.put("approvedAt", ((TutorProfile) profile).getApprovedAt());
 
         // Người dùng
         User user = profile.getUser();
@@ -812,14 +809,8 @@ public class TutorApplicationController {
             profileData.put("user", userData);
         }
 
-        // Admin đã duyệt
-        if (((TutorProfile) profile).getApprovedBy() != null) {
-            Map<String, Object> approverData = new HashMap<>();
-            approverData.put("id", ((TutorProfile) profile).getApprovedBy().getId());
-            approverData.put("name", ((TutorProfile) profile).getApprovedBy().getFirstName() + " " + ((TutorProfile) profile).getApprovedBy().getLastName());
-            approverData.put("username", ((TutorProfile) profile).getApprovedBy().getUsername());
-            profileData.put("approvedBy", approverData);
-        }
+        // Admin đã duyệt - không còn thông tin này nữa
+        // profileData.put("approvedBy", null);
 
         // Nếu là TutorProfile → lấy thêm thông tin chi tiết
         if (profile instanceof TutorProfile) {
@@ -827,7 +818,6 @@ public class TutorApplicationController {
             profileData.put("bio", tutor.getBio());
             profileData.put("headline", tutor.getHeadline());
             profileData.put("experience", tutor.getExperience());
-            profileData.put("teachingLevel", tutor.getTeachingLevel());
             profileData.put("fees", tutor.getFees());
             profileData.put("videoIntro", tutor.getVideoIntro());
 
@@ -869,7 +859,7 @@ public class TutorApplicationController {
                     educationData.put("major", education.getMajor());
                     educationData.put("fromTime", education.getFromTime());
                     educationData.put("toTime", education.getToTime());
-                    educationData.put("degreeImage", education.getDegreeImage());
+                    educationData.put("degreeFileName", education.getDegreeFileName());
                     educationData.put("valid", education.getValid());
                     educationsData.add(educationData);
                 }
@@ -885,7 +875,7 @@ public class TutorApplicationController {
                     certificateData.put("name", certificate.getName());
                     certificateData.put("issuedBy", certificate.getIssuedBy());
                     certificateData.put("description", certificate.getDescription());
-                    certificateData.put("certImage", certificate.getCertImage());
+                    certificateData.put("certFileName", certificate.getCertFileName());
                     certificateData.put("valid", certificate.getValid());
                     certificatesData.add(certificateData);
                 }
@@ -908,14 +898,13 @@ public class TutorApplicationController {
         
         try {
             // Sử dụng repository mới để lấy pending drafts
-            List<TutorProfile> pendingDrafts = tutorProfileRepository.findAllPendingDrafts();
+            List<TutorProfile> pendingDrafts = tutorProfileRepository.findAllPendingApplications();
             
             // Chuẩn bị dữ liệu trả về
             List<Map<String, Object>> applications = pendingDrafts.stream().map(profile -> {
                 Map<String, Object> appData = new HashMap<>();
                 appData.put("id", profile.getId());
-                appData.put("isDraft", profile.isDraft());
-                appData.put("status", profile.getProfileStatus());
+                appData.put("status", profile.getEnable() ? "ENABLED" : "DISABLED");
                 appData.put("isVerified", profile.getUser().isVerified());
                 appData.put("createdAt", profile.getCreatedAt());
                 appData.put("updatedAt", profile.getUpdatedAt());
@@ -933,8 +922,7 @@ public class TutorApplicationController {
                 appData.put("bio", profile.getBio());
                 appData.put("headline", profile.getHeadline());
                 appData.put("experience", profile.getExperience());
-                appData.put("teachingLevel", profile.getTeachingLevel());
-                appData.put("cvUrl", profile.getCvUrl());
+                appData.put("cvFileUrl", profile.getCvFileUrl());
                 
                 return appData;
             }).collect(Collectors.toList());

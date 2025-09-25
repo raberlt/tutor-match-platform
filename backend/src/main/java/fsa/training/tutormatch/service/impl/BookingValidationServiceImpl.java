@@ -1,16 +1,17 @@
-package fsa.training.tutormatch.service;
+package fsa.training.tutormatch.service.impl;
 
 import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.entity.Booking;
 import fsa.training.tutormatch.enums.BookingStatus;import fsa.training.tutormatch.entity.User;
-import fsa.training.tutormatch.enums.BookingType;import fsa.training.tutormatch.service.interfaces.IBookingValidationService;
+import fsa.training.tutormatch.enums.BookingType;
+import fsa.training.tutormatch.service.BookingValidationService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
 import java.util.Objects;
 
 @Service
-public class BookingValidationServiceImpl implements IBookingValidationService {
+public class BookingValidationServiceImpl implements BookingValidationService {
     
     @Override
     public void validateBookingRequest(BookingRequestCreateDTO request) {

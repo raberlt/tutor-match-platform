@@ -4,7 +4,6 @@ import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.entity.TutorProfile;
 import fsa.training.tutormatch.enums.UserRole;
-import fsa.training.tutormatch.entity.StudentProfile;
 import fsa.training.tutormatch.enums.UserRole;
 import org.springframework.stereotype.Service;
 import java.util.HashMap;
@@ -34,19 +33,13 @@ public class DtoConverterService {
         dto.put("headline", profile.getHeadline());
         dto.put("experience", profile.getExperience());
         dto.put("fees", profile.getFees());
-        dto.put("teachingLevel", profile.getTeachingLevel());
+        // teachingLevel field removed
         dto.put("ratePointAverage", profile.getRatePointAverage());
         dto.put("totalPoint", profile.getTotalPoint());
         dto.put("videoIntro", profile.getVideoIntro());
         return dto;
     }
     
-    public Map<String, Object> convertToStudentProfileMap(StudentProfile profile) {
-        Map<String, Object> dto = new HashMap<>();
-        dto.put("id", profile.getId());
-        dto.put("educationLevel", profile.getEducationLevel());
-        return dto;
-    }
     
     public User convertMapToUser(Map<String, Object> dto) {
         User user = new User();

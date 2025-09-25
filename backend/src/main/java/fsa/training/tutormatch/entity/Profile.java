@@ -6,7 +6,6 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import fsa.training.tutormatch.enums.ProfileStatus;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import java.time.ZonedDateTime;
@@ -28,9 +27,8 @@ public abstract class Profile {
     @JsonBackReference
     private User user;
 
-    @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "NVARCHAR(50)")
-    private ProfileStatus profileStatus;
+    @Column(columnDefinition = "BIT DEFAULT 1")
+    private Boolean enable = true;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -39,12 +37,6 @@ public abstract class Profile {
     @UpdateTimestamp
     private ZonedDateTime updatedAt;
     
-    // Approval fields for admin approval process
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "approved_by")
-    private User approvedBy;
-    
-    private ZonedDateTime approvedAt;
     
     // Abstract methods that subclasses must implement
     public abstract String getDisplayName();

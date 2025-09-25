@@ -1,6 +1,5 @@
 package fsa.training.tutormatch.dto;
 
-import fsa.training.tutormatch.enums.TeachingLevel;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -21,10 +20,9 @@ public class BecomeTutorDraftRequest {
     @Size(max = 2000, message = "Kinh nghiệm không được quá 2000 ký tự")
     private String experience;
     
-    private TeachingLevel teachingLevel;
     
     @Size(max = 1000, message = "Đối tượng dạy không được quá 1000 ký tự")
-    private String teachingMethods; // JSON string for multiple teaching methods
+    private List<String> teachingAudiences;
     
     // Thông tin cá nhân bổ sung
     @Size(max = 50, message = "Họ không được quá 50 ký tự")
@@ -53,7 +51,10 @@ public class BecomeTutorDraftRequest {
     
     // CV URL
     @Size(max = 500, message = "Link CV không được quá 500 ký tự")
-    private String cvUrl;
+    private String cvFileUrl;
+    
+    @Size(max = 255, message = "Tên file CV không được quá 255 ký tự")
+    private String cvFileName;
     
     // Video giới thiệu
     private String videoIntro;
@@ -108,8 +109,8 @@ public class BecomeTutorDraftRequest {
         @Max(value = 2030, message = "Năm kết thúc không được quá 2030")
         private Integer toTime;
         
-        private String degreeImage;
-    }
+        private String degreeFileName;
+        private String degreeFileUrl;    }
     
     @Data
     public static class CertificateRequest {
@@ -122,8 +123,8 @@ public class BecomeTutorDraftRequest {
         @Size(max = 255, message = "Mô tả không được quá 255 ký tự")
         private String description;
         
-        private String certImage;
-    }
+        private String certFileName;
+        private String certFileUrl;    }
     
     @Data
     public static class SubjectFeeRequest {

@@ -1,4 +1,4 @@
-package fsa.training.tutormatch.service.interfaces;
+package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.dto.TutorDTO;
 import fsa.training.tutormatch.dto.TutorPreviewDTO;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public interface ITutorService {
+public interface TutorService {
     List<TutorProfile> findAll();
     List<TutorProfile> findAllApprovedTutors();
     Optional<TutorProfile> findById(Integer id);

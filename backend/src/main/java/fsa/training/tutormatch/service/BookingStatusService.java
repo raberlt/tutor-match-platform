@@ -1,9 +1,9 @@
-package fsa.training.tutormatch.service.interfaces;
+package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.entity.Booking;
 import fsa.training.tutormatch.enums.BookingStatus;
 
-public interface IBookingStatusService {
+public interface BookingStatusService {
     
     // Status transitions
     Booking acceptBooking(Integer bookingId, String tutorUsername);

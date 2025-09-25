@@ -1,7 +1,5 @@
 package fsa.training.tutormatch.entity;
 
-import fsa.training.tutormatch.enums.SubjectCategory;
-import fsa.training.tutormatch.enums.SubjectLevel;
 import jakarta.persistence.*;
 import java.time.ZonedDateTime;
 

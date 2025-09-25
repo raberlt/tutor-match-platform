@@ -3,7 +3,6 @@ package fsa.training.tutormatch.service;
 import fsa.training.tutormatch.dto.BecomeTutorRequest;
 import fsa.training.tutormatch.dto.TutorDraftRequest;
 import fsa.training.tutormatch.entity.*;
-import fsa.training.tutormatch.enums.ProfileStatus;
 import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +26,7 @@ public class TutorProfileDraftService {
     private final ScheduleRepository scheduleRepository;
     private final ProfileSubjectRepository profileSubjectRepository;
     private final SubjectRepository subjectRepository;
+    private final TeachingAudienceRepository teachingAudienceRepository;
 
     /**
      * Lưu nháp cho Student (chưa là tutor)
@@ -48,8 +48,8 @@ public class TutorProfileDraftService {
         
         // Cập nhật thông tin từ request
         updateProfileFromRequest(draftProfile, request);
-        draftProfile.setProfileStatus(ProfileStatus.INACTIVE);
-        draftProfile.setDraft(true);
+        draftProfile.setEnable(false);
+        // draft field removed from TutorProfile
         
         TutorProfile saved = tutorProfileRepository.save(draftProfile);
         
@@ -57,8 +57,8 @@ public class TutorProfileDraftService {
             "success", true,
             "message", "Đã lưu nháp thành công!",
             "profileId", saved.getId(),
-            "isDraft", saved.isDraft(),
-            "status", saved.getProfileStatus()
+            // isDraft field removed
+            "status", saved.getEnable() ? "ENABLED" : "DISABLED"
         );
     }
 
@@ -81,8 +81,8 @@ public class TutorProfileDraftService {
         
         // Cập nhật thông tin từ request
         updateProfileFromRequest(draftProfile, request);
-        draftProfile.setProfileStatus(ProfileStatus.PENDING_VERIFICATION);
-        draftProfile.setDraft(true);
+        draftProfile.setEnable(false);
+        // draft field removed from TutorProfile
         
         TutorProfile saved = tutorProfileRepository.save(draftProfile);
         
@@ -90,8 +90,8 @@ public class TutorProfileDraftService {
             "success", true,
             "message", "Đã gửi hồ sơ thành công! Vui lòng chờ admin duyệt.",
             "profileId", saved.getId(),
-            "isDraft", saved.isDraft(),
-            "status", saved.getProfileStatus()
+            // isDraft field removed
+            "status", saved.getEnable() ? "ENABLED" : "DISABLED"
         );
     }
 
@@ -116,7 +116,7 @@ public class TutorProfileDraftService {
         
         // Cập nhật bản draft
         updateProfileFromRequest(draftProfile, request);
-        draftProfile.setProfileStatus(ProfileStatus.ACTIVE); // Tutor vẫn giữ status ACTIVE
+        draftProfile.setEnable(true); // Tutor vẫn giữ status ACTIVE
         
         // Auto-update một số field sang public profile (không cần admin duyệt)
         autoUpdatePublicProfile(publicProfile, request);
@@ -152,7 +152,7 @@ public class TutorProfileDraftService {
         
         // Cập nhật bản draft và chuyển sang pending
         updateProfileFromRequest(draftProfile, request);
-        draftProfile.setProfileStatus(ProfileStatus.PENDING_VERIFICATION);
+        draftProfile.setEnable(false);
         
         // Auto-update một số field sang public profile
         autoUpdatePublicProfile(publicProfile, request);
@@ -165,7 +165,7 @@ public class TutorProfileDraftService {
             "message", "Đã gửi cập nhật thành công! Vui lòng chờ admin duyệt.",
             "draftProfileId", draftProfile.getId(),
             "publicProfileId", publicProfile.getId(),
-            "status", draftProfile.getProfileStatus()
+            "status", draftProfile.getEnable() ? "ENABLED" : "DISABLED"
         );
     }
 
@@ -182,7 +182,7 @@ public class TutorProfileDraftService {
         TutorProfile draftProfile = tutorProfileRepository.findById(profileId)
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
         
-        if (!draftProfile.isDraft() || draftProfile.getProfileStatus() != ProfileStatus.PENDING_VERIFICATION) {
+        if (Boolean.TRUE.equals(draftProfile.getEnable())) {
             throw new RuntimeException("Invalid profile state for approval");
         }
         
@@ -190,20 +190,17 @@ public class TutorProfileDraftService {
         
         // Tạo bản ghi public (isDraft=false)
         TutorProfile publicProfile = createPublicProfileFromDraft(draftProfile);
-        publicProfile.setApprovedBy(admin);
-        publicProfile.setApprovedAt(java.time.ZonedDateTime.now());
         
         // Cập nhật draft profile
-        draftProfile.setProfileStatus(ProfileStatus.ACTIVE);
-        draftProfile.setApprovedBy(admin);
-        draftProfile.setApprovedAt(java.time.ZonedDateTime.now());
+        draftProfile.setEnable(true);
         
-        // Personal info is already in User entity, no need to copy
-        // since draftProfile shares the same User as student
-        
-        // Chuyển user thành TUTOR
+        // Chuyển user thành TUTOR và đồng bộ thông tin
         student.setRole(UserRole.TUTOR);
         student.setVerified(true);
+        
+        // Đồng bộ thông tin từ User sang TutorProfile
+        syncUserInfoToTutorProfile(student, draftProfile);
+        syncUserInfoToTutorProfile(student, publicProfile);
         
         tutorProfileRepository.save(draftProfile);
         tutorProfileRepository.save(publicProfile);
@@ -231,7 +228,7 @@ public class TutorProfileDraftService {
         TutorProfile draftProfile = tutorProfileRepository.findById(profileId)
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
         
-        if (!draftProfile.isDraft() || draftProfile.getProfileStatus() != ProfileStatus.PENDING_VERIFICATION) {
+        if (Boolean.TRUE.equals(draftProfile.getEnable())) {
             throw new RuntimeException("Invalid profile state for approval");
         }
         
@@ -240,13 +237,13 @@ public class TutorProfileDraftService {
         
         // Copy thông tin từ draft sang public
         copyDraftToPublic(draftProfile, publicProfile);
-        publicProfile.setApprovedBy(admin);
-        publicProfile.setApprovedAt(java.time.ZonedDateTime.now());
         
-        // Reset draft về ACTIVE
-        draftProfile.setProfileStatus(ProfileStatus.ACTIVE);
-        draftProfile.setApprovedBy(admin);
-        draftProfile.setApprovedAt(java.time.ZonedDateTime.now());
+        // Reset draft về ENABLED
+        draftProfile.setEnable(true);
+        
+        // Đồng bộ thông tin từ User sang TutorProfile
+        syncUserInfoToTutorProfile(tutor, draftProfile);
+        syncUserInfoToTutorProfile(tutor, publicProfile);
         
         tutorProfileRepository.save(draftProfile);
         tutorProfileRepository.save(publicProfile);
@@ -260,24 +257,34 @@ public class TutorProfileDraftService {
     }
 
     // Helper methods
+    private void syncUserInfoToTutorProfile(User user, TutorProfile tutorProfile) {
+        // Đồng bộ thông tin cơ bản từ User sang TutorProfile
+        // Các thông tin này sẽ được hiển thị trong hồ sơ công khai
+        tutorProfile.setUser(user);
+        
+        // Các thông tin khác như bio, headline, experience đã được set từ form
+        // Chỉ cần đảm bảo enable = true cho hồ sơ công khai
+        tutorProfile.setEnable(true);
+    }
+    
     private TutorProfile findOrCreateDraftProfile(User user) {
-        return tutorProfileRepository.findByUserAndIsDraft(user, true)
+        return tutorProfileRepository.findByUser(user)
                 .orElseGet(() -> {
                     TutorProfile newProfile = new TutorProfile();
                     newProfile.setUser(user);
-                    newProfile.setDraft(true);
-                    newProfile.setProfileStatus(ProfileStatus.INACTIVE);
+                    // draft field removed
+                    newProfile.setEnable(false);
                     return newProfile;
                 });
     }
     
     private TutorProfile getDraftProfile(User user) {
-        return tutorProfileRepository.findByUserAndIsDraft(user, true)
+        return tutorProfileRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Draft profile not found"));
     }
     
     private TutorProfile getPublicProfile(User user) {
-        return tutorProfileRepository.findByUserAndIsDraft(user, false)
+        return tutorProfileRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Public profile not found"));
     }
     
@@ -286,8 +293,8 @@ public class TutorProfileDraftService {
         if (request.getBio() != null) profile.setBio(request.getBio().trim());
         if (request.getHeadline() != null) profile.setHeadline(request.getHeadline().trim());
         if (request.getExperience() != null) profile.setExperience(request.getExperience().trim());
-        if (request.getTeachingLevel() != null) profile.setTeachingLevel(request.getTeachingLevel().getDisplayName());
-        if (request.getCvUrl() != null) profile.setCvUrl(request.getCvUrl().trim());
+        // teachingLevel field removed
+        if (request.getCvFileUrl() != null) profile.setCvFileUrl(request.getCvFileUrl().trim());
         
         // User fields
         if (request.getFirstName() != null) profile.getUser().setFirstName(request.getFirstName().trim());
@@ -295,6 +302,22 @@ public class TutorProfileDraftService {
         if (request.getAddress() != null) profile.getUser().setAddress(request.getAddress().trim());
         if (request.getTimezone() != null) profile.getUser().setTimezone(request.getTimezone().trim());
         if (request.getAvatar() != null) profile.getUser().setImageAvatar(request.getAvatar().trim());
+        
+        // Handle teaching audiences
+        if (request.getTeachingAudiences() != null && !request.getTeachingAudiences().isEmpty()) {
+            // Convert string names to TeachingAudience entities
+            Set<TeachingAudience> teachingAudienceSet = new HashSet<>();
+            for (String audienceName : request.getTeachingAudiences()) {
+                // Find TeachingAudience by name
+                TeachingAudience audience = teachingAudienceRepository.findByName(audienceName).orElse(null);
+                if (audience != null) {
+                    teachingAudienceSet.add(audience);
+                } else {
+                    log.warn("TeachingAudience not found with name: {}", audienceName);
+                }
+            }
+            profile.setTeachingAudiences(teachingAudienceSet);
+        }
         
         // TODO: Handle schedules, subjects, certificates, educations
     }
@@ -309,10 +332,7 @@ public class TutorProfileDraftService {
             publicProfile.getUser().setAddress(request.getAddress().trim());
         }
         
-        // Cập nhật teaching level
-        if (request.getTeachingLevel() != null) {
-            publicProfile.setTeachingLevel(request.getTeachingLevel().getDisplayName());
-        }
+        // teachingLevel field removed
         
         // TODO: Cập nhật schedules và fees (cần implement riêng)
         // updateSchedules(publicProfile, request.getSchedules());
@@ -322,8 +342,8 @@ public class TutorProfileDraftService {
     private TutorProfile createPublicProfileFromDraft(TutorProfile draftProfile) {
         TutorProfile publicProfile = new TutorProfile();
         copyDraftToPublic(draftProfile, publicProfile);
-        publicProfile.setDraft(false);
-        publicProfile.setProfileStatus(ProfileStatus.ACTIVE);
+        // draft field removed
+        publicProfile.setEnable(true);
         return publicProfile;
     }
     
@@ -337,8 +357,8 @@ public class TutorProfileDraftService {
         target.setBio(source.getBio());
         target.setHeadline(source.getHeadline());
         target.setExperience(source.getExperience());
-        target.setTeachingLevel(source.getTeachingLevel());
-        target.setCvUrl(source.getCvUrl());
+        // teachingLevel field removed
+        target.setCvFileUrl(source.getCvFileUrl());
         target.setVideoIntro(source.getVideoIntro());
         
         // Copy related entities
@@ -381,15 +401,15 @@ public class TutorProfileDraftService {
 
         // Find existing draft tutor profile or create new one
         TutorProfile draftProfile = tutorProfileRepository
-                .findByUserAndIsDraft(user, true)
+                .findByUser(user)
                 .orElse(null);
         
         if (draftProfile == null) {
             // Create new draft tutor profile for student
             draftProfile = new TutorProfile();
             draftProfile.setUser(user);
-            draftProfile.setDraft(true);
-            draftProfile.setProfileStatus(ProfileStatus.INACTIVE);
+            // draft field removed from TutorProfile
+            draftProfile.setEnable(false);
             log.info("Created new tutor profile draft for student: {}", username);
         } else {
             log.info("Updating existing tutor profile draft for student: {}", username);
@@ -411,8 +431,8 @@ public class TutorProfileDraftService {
         result.put("success", true);
         result.put("message", "Tutor profile draft saved successfully for student");
         result.put("profileId", draftProfile.getId());
-        result.put("isDraft", draftProfile.isDraft());
-        result.put("status", draftProfile.getProfileStatus());
+        // isDraft field removed
+        result.put("status", draftProfile.getEnable() ? "ENABLED" : "DISABLED");
         result.put("userRole", user.getRole());
         
         return result;
@@ -434,7 +454,7 @@ public class TutorProfileDraftService {
 
         // Find existing draft profile (must exist for tutors)
         TutorProfile draftProfile = tutorProfileRepository
-                .findByUserAndIsDraft(user, true)
+                .findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Draft profile not found for tutor"));
 
         // Update basic profile fields first (excluding related entities)
@@ -451,7 +471,7 @@ public class TutorProfileDraftService {
         
         // Auto-update public profile for certain fields (address, schedule, fees, teaching level)
         TutorProfile publicProfile = tutorProfileRepository
-                .findByUserAndIsDraft(user, false)
+                .findByUser(user)
                 .orElse(null);
         
         if (publicProfile != null) {
@@ -463,8 +483,8 @@ public class TutorProfileDraftService {
         result.put("success", true);
         result.put("message", "Tutor draft saved successfully");
         result.put("profileId", draftProfile.getId());
-        result.put("isDraft", draftProfile.isDraft());
-        result.put("status", draftProfile.getProfileStatus());
+        // isDraft field removed
+        result.put("status", draftProfile.getEnable() ? "ENABLED" : "DISABLED");
         result.put("autoUpdatedPublic", publicProfile != null);
         
         return result;
@@ -478,8 +498,8 @@ public class TutorProfileDraftService {
         if (request.getBio() != null) profile.setBio(request.getBio());
         if (request.getHeadline() != null) profile.setHeadline(request.getHeadline());
         if (request.getExperience() != null) profile.setExperience(request.getExperience());
-        if (request.getTeachingLevel() != null) profile.setTeachingLevel(request.getTeachingLevel().toString());
-        if (request.getCvUrl() != null) profile.setCvUrl(request.getCvUrl());
+        // teachingLevel field removed
+        if (request.getCvFileUrl() != null) profile.setCvFileUrl(request.getCvFileUrl());
         if (request.getVideoIntro() != null) profile.setVideoIntro(request.getVideoIntro());
         
         // Update user info - firstName, lastName, imageAvatar now go to User entity
@@ -493,6 +513,22 @@ public class TutorProfileDraftService {
         }
         if (request.getAddress() != null) user.setAddress(request.getAddress());
         if (request.getTimezone() != null) user.setTimezone(request.getTimezone());
+        
+        // Handle teaching audiences
+        if (request.getTeachingAudiences() != null && !request.getTeachingAudiences().isEmpty()) {
+            // Convert string names to TeachingAudience entities
+            Set<TeachingAudience> teachingAudienceSet = new HashSet<>();
+            for (String audienceName : request.getTeachingAudiences()) {
+                // Find TeachingAudience by name
+                TeachingAudience audience = teachingAudienceRepository.findByName(audienceName).orElse(null);
+                if (audience != null) {
+                    teachingAudienceSet.add(audience);
+                } else {
+                    log.warn("TeachingAudience not found with name: {}", audienceName);
+                }
+            }
+            profile.setTeachingAudiences(teachingAudienceSet);
+        }
     }
 
     /**
@@ -552,18 +588,18 @@ public class TutorProfileDraftService {
         // Get the saved profile 
         User user = userRepository.findByUsername(username).orElseThrow();
         TutorProfile draftProfile = tutorProfileRepository
-                .findByUserAndIsDraft(user, true)
+                .findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Draft profile not found"));
         
         // Change status to PENDING_VERIFICATION for admin approval
-        draftProfile.setProfileStatus(ProfileStatus.PENDING_VERIFICATION);
+        draftProfile.setEnable(false);
         tutorProfileRepository.save(draftProfile);
         
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
         result.put("message", "Application submitted for admin review");
         result.put("profileId", draftProfile.getId());
-        result.put("status", draftProfile.getProfileStatus());
+        result.put("status", draftProfile.getEnable() ? "ENABLED" : "DISABLED");
         result.put("nextStep", "Admin review required");
         
         log.info("Student application submitted - Status: PENDING_VERIFICATION");
@@ -583,18 +619,18 @@ public class TutorProfileDraftService {
         // Get the saved profile
         User user = userRepository.findByUsername(username).orElseThrow();
         TutorProfile draftProfile = tutorProfileRepository
-                .findByUserAndIsDraft(user, true)
+                .findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Draft profile not found"));
         
         // Change status to PENDING_VERIFICATION for admin approval
-        draftProfile.setProfileStatus(ProfileStatus.PENDING_VERIFICATION);
+        draftProfile.setEnable(false);
         tutorProfileRepository.save(draftProfile);
         
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
         result.put("message", "Tutor profile changes submitted for admin review");
         result.put("profileId", draftProfile.getId());
-        result.put("status", draftProfile.getProfileStatus());
+        result.put("status", draftProfile.getEnable() ? "ENABLED" : "DISABLED");
         result.put("nextStep", "Admin review required");
         
         log.info("Tutor profile changes submitted - Status: PENDING");
@@ -620,14 +656,14 @@ public class TutorProfileDraftService {
         if (user.getRole() == UserRole.STUDENT) {
             // For students becoming tutors - get draft tutor profile
             TutorProfile draftProfile = tutorProfileRepository
-                    .findByUserAndIsDraft(user, true)
+                    .findByUser(user)
                     .orElse(null);
             
             if (draftProfile != null) {
                 result.put("hasDraft", true);
                 result.put("draftId", draftProfile.getId());
-                result.put("status", draftProfile.getProfileStatus());
-                result.put("isDraft", draftProfile.isDraft());
+                result.put("status", draftProfile.getEnable() ? "ENABLED" : "DISABLED");
+                // isDraft field removed
                 
                 // Personal info from profile (subject to admin approval)
                 result.put("firstName", draftProfile.getFirstName());
@@ -638,8 +674,8 @@ public class TutorProfileDraftService {
                 result.put("bio", draftProfile.getBio());
                 result.put("headline", draftProfile.getHeadline());
                 result.put("experience", draftProfile.getExperience());
-                result.put("teachingLevel", draftProfile.getTeachingLevel());
-                result.put("cvUrl", draftProfile.getCvUrl());
+                // teachingLevel field removed
+                result.put("cvFileUrl", draftProfile.getCvFileUrl());
                 result.put("videoIntro", draftProfile.getVideoIntro());
                 
                 // User info (can be updated directly)
@@ -657,6 +693,7 @@ public class TutorProfileDraftService {
                 result.put("certificates", getCertificatesForProfile(draftProfile.getId()));
                 result.put("schedules", getSchedulesForProfile(draftProfile.getId()));
                 result.put("subjectFees", getSubjectFeesForProfile(draftProfile.getId()));
+                result.put("teachingAudiences", getTeachingAudiencesForProfile(draftProfile.getId()));
             } else {
                 result.put("hasDraft", false);
                 
@@ -674,17 +711,17 @@ public class TutorProfileDraftService {
         } else if (user.getRole() == UserRole.TUTOR) {
             // For existing tutors - get draft tutor profile
             TutorProfile draftProfile = tutorProfileRepository
-                    .findByUserAndIsDraft(user, true)
+                    .findByUser(user)
                     .orElse(null);
             
             TutorProfile publicProfile = tutorProfileRepository
-                    .findByUserAndIsDraft(user, false)
+                    .findByUser(user)
                     .orElse(null);
             
             if (draftProfile != null) {
                 result.put("hasDraft", true);
                 result.put("draftId", draftProfile.getId());
-                result.put("status", draftProfile.getProfileStatus());
+                result.put("status", draftProfile.getEnable() ? "ENABLED" : "DISABLED");
                 
                 // Use draft data if available, fallback to public profile
                 result.put("firstName", draftProfile.getFirstName() != null ? draftProfile.getFirstName() : 
@@ -697,8 +734,8 @@ public class TutorProfileDraftService {
                 result.put("bio", draftProfile.getBio());
                 result.put("headline", draftProfile.getHeadline());
                 result.put("experience", draftProfile.getExperience());
-                result.put("teachingLevel", draftProfile.getTeachingLevel());
-                result.put("cvUrl", draftProfile.getCvUrl());
+                // teachingLevel field removed
+                result.put("cvFileUrl", draftProfile.getCvFileUrl());
                 result.put("videoIntro", draftProfile.getVideoIntro());
                 
                 // Load related data
@@ -706,6 +743,7 @@ public class TutorProfileDraftService {
                 result.put("certificates", getCertificatesForProfile(draftProfile.getId()));
                 result.put("schedules", getSchedulesForProfile(draftProfile.getId()));
                 result.put("subjectFees", getSubjectFeesForProfile(draftProfile.getId()));
+                result.put("teachingAudiences", getTeachingAudiencesForProfile(draftProfile.getId()));
                 
             } else if (publicProfile != null) {
                 result.put("hasDraft", false);
@@ -720,8 +758,8 @@ public class TutorProfileDraftService {
                 result.put("bio", publicProfile.getBio());
                 result.put("headline", publicProfile.getHeadline());
                 result.put("experience", publicProfile.getExperience());
-                result.put("teachingLevel", publicProfile.getTeachingLevel());
-                result.put("cvUrl", publicProfile.getCvUrl());
+                // teachingLevel field removed
+                result.put("cvFileUrl", publicProfile.getCvFileUrl());
                 result.put("videoIntro", publicProfile.getVideoIntro());
             } else {
                 result.put("hasDraft", false);
@@ -771,7 +809,8 @@ public class TutorProfileDraftService {
             education.setMajor(eduRequest.getMajor());
             education.setFromTime(eduRequest.getFromTime());
             education.setToTime(eduRequest.getToTime());
-            education.setDegreeImage(eduRequest.getDegreeImage());
+            education.setDegreeFileName(eduRequest.getDegreeFileName());
+            education.setDegreeFileUrl(eduRequest.getDegreeFileUrl());
             education.setValid(false); // Will be validated by admin
             
             educationRepository.save(education);
@@ -804,8 +843,8 @@ public class TutorProfileDraftService {
             certificate.setName(certRequest.getName());
             certificate.setIssuedBy(certRequest.getIssuedBy());
             certificate.setDescription(certRequest.getDescription());
-            certificate.setCertImage(certRequest.getCertImage());
-            certificate.setValid(false); // Will be validated by admin
+            certificate.setCertFileName(certRequest.getCertFileName());
+            certificate.setCertFileUrl(certRequest.getCertFileUrl());            certificate.setValid(false); // Will be validated by admin
             
             certificateRepository.save(certificate);
         }
@@ -903,7 +942,8 @@ public class TutorProfileDraftService {
             eduData.put("major", education.getMajor());
             eduData.put("fromTime", education.getFromTime());
             eduData.put("toTime", education.getToTime());
-            eduData.put("degreeImage", education.getDegreeImage());
+            eduData.put("degreeFileName", education.getDegreeFileName());
+            eduData.put("degreeFileUrl", education.getDegreeFileUrl());
             eduData.put("valid", education.getValid());
             return eduData;
         }).collect(Collectors.toList());
@@ -920,7 +960,8 @@ public class TutorProfileDraftService {
             certData.put("name", certificate.getName());
             certData.put("issuedBy", certificate.getIssuedBy());
             certData.put("description", certificate.getDescription());
-            certData.put("certImage", certificate.getCertImage());
+            certData.put("certFileName", certificate.getCertFileName());
+            certData.put("certFileUrl", certificate.getCertFileUrl());
             certData.put("valid", certificate.getValid());
             return certData;
         }).collect(Collectors.toList());
@@ -973,8 +1014,8 @@ public class TutorProfileDraftService {
             targetEdu.setMajor(sourceEdu.getMajor());
             targetEdu.setFromTime(sourceEdu.getFromTime());
             targetEdu.setToTime(sourceEdu.getToTime());
-            targetEdu.setDegreeImage(sourceEdu.getDegreeImage());
-            targetEdu.setValid(true); // Mark as valid when approved by admin
+            targetEdu.setDegreeFileName(sourceEdu.getDegreeFileName());
+            targetEdu.setDegreeFileUrl(sourceEdu.getDegreeFileUrl());            targetEdu.setValid(true); // Mark as valid when approved by admin
             
             educationRepository.save(targetEdu);
         }
@@ -987,8 +1028,8 @@ public class TutorProfileDraftService {
             targetCert.setName(sourceCert.getName());
             targetCert.setIssuedBy(sourceCert.getIssuedBy());
             targetCert.setDescription(sourceCert.getDescription());
-            targetCert.setCertImage(sourceCert.getCertImage());
-            targetCert.setValid(true); // Mark as valid when approved by admin
+            targetCert.setCertFileName(sourceCert.getCertFileName());
+            targetCert.setCertFileUrl(sourceCert.getCertFileUrl());            targetCert.setValid(true); // Mark as valid when approved by admin
             
             certificateRepository.save(targetCert);
         }
@@ -1019,5 +1060,179 @@ public class TutorProfileDraftService {
         
         log.info("Successfully copied {} educations, {} certificates, {} schedules, {} subject fees",
                 sourceEducations.size(), sourceCertificates.size(), sourceSchedules.size(), sourceSubjectFees.size());
+    }
+    
+    /**
+     * Get teaching audiences for profile
+     */
+    private List<Map<String, Object>> getTeachingAudiencesForProfile(Integer profileId) {
+        TutorProfile profile = tutorProfileRepository.findById(profileId).orElse(null);
+        if (profile == null || profile.getTeachingAudiences() == null) {
+            return new ArrayList<>();
+        }
+        
+        return profile.getTeachingAudiences().stream().map(audience -> {
+            Map<String, Object> audienceData = new HashMap<>();
+            audienceData.put("id", audience.getId());
+            audienceData.put("name", audience.getName());
+            return audienceData;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * Đồng bộ dữ liệu từ ProfileApplication sang User và TutorProfile
+     */
+    @Transactional
+    public void syncDataFromProfileApplication(ProfileApplication application, User user, TutorProfile tutorProfile) {
+        log.info("Syncing data from ProfileApplication {} to User {} and TutorProfile {}", 
+                application.getId(), user.getId(), tutorProfile.getId());
+        
+        // Đồng bộ dữ liệu cá nhân từ ProfileApplication sang User
+        if (application.getFirstName() != null && !application.getFirstName().isEmpty()) {
+            user.setFirstName(application.getFirstName());
+        }
+        if (application.getLastName() != null && !application.getLastName().isEmpty()) {
+            user.setLastName(application.getLastName());
+        }
+        if (application.getPhoneNumber() != null && !application.getPhoneNumber().isEmpty()) {
+            user.setPhoneNumber(application.getPhoneNumber());
+        }
+        if (application.getAddress() != null && !application.getAddress().isEmpty()) {
+            user.setAddress(application.getAddress());
+        }
+        if (application.getImageAvatar() != null && !application.getImageAvatar().isEmpty()) {
+            user.setImageAvatar(application.getImageAvatar());
+        }
+        
+        // Đồng bộ dữ liệu tutor-specific từ ProfileApplication sang TutorProfile
+        if (application.getBio() != null && !application.getBio().isEmpty()) {
+            tutorProfile.setBio(application.getBio());
+        }
+        if (application.getHeadline() != null && !application.getHeadline().isEmpty()) {
+            tutorProfile.setHeadline(application.getHeadline());
+        }
+        if (application.getExperience() != null && !application.getExperience().isEmpty()) {
+            tutorProfile.setExperience(application.getExperience());
+        }
+        if (application.getCvFileUrl() != null && !application.getCvFileUrl().isEmpty()) {
+            tutorProfile.setCvFileUrl(application.getCvFileUrl());
+        }
+        if (application.getVideoIntro() != null && !application.getVideoIntro().isEmpty()) {
+            tutorProfile.setVideoIntro(application.getVideoIntro());
+        }
+        
+        // Đồng bộ teaching audiences
+        if (application.getTeachingAudiences() != null && !application.getTeachingAudiences().isEmpty()) {
+            tutorProfile.setTeachingAudiences(new HashSet<>(application.getTeachingAudiences()));
+        }
+        
+        // Đồng bộ educations từ ApplicationEducation sang Education
+        if (application.getEducations() != null && !application.getEducations().isEmpty()) {
+            syncEducationsFromApplication(application, tutorProfile);
+        }
+        
+        // Đồng bộ certificates từ ApplicationCertificate sang Certificate
+        if (application.getCertificates() != null && !application.getCertificates().isEmpty()) {
+            syncCertificatesFromApplication(application, tutorProfile);
+        }
+        
+        // Đồng bộ schedules từ ApplicationSchedule sang Schedule
+        if (application.getSchedules() != null && !application.getSchedules().isEmpty()) {
+            syncSchedulesFromApplication(application, tutorProfile);
+        }
+        
+        // Đồng bộ subject fees từ ApplicationSubjectFee sang TutorProfileSubject
+        if (application.getSubjectFees() != null && !application.getSubjectFees().isEmpty()) {
+            syncSubjectFeesFromApplication(application, tutorProfile);
+        }
+        
+        log.info("Successfully synced data from ProfileApplication to User and TutorProfile");
+    }
+    
+    /**
+     * Đồng bộ educations từ ApplicationEducation sang Education
+     */
+    private void syncEducationsFromApplication(ProfileApplication application, TutorProfile tutorProfile) {
+        // Xóa educations cũ
+        List<Education> existingEducations = educationRepository.findByProfileId(tutorProfile.getId());
+        educationRepository.deleteAll(existingEducations);
+        
+        // Tạo educations mới từ application
+        for (ApplicationEducation appEdu : application.getEducations()) {
+            Education education = new Education();
+            education.setProfile(tutorProfile);
+            education.setSchoolName(appEdu.getSchoolName());
+            education.setMajor(appEdu.getMajor());
+            education.setDegree(appEdu.getDegree());
+            education.setFromTime(appEdu.getFromTime());
+            education.setToTime(appEdu.getToTime());
+            education.setDegreeFileName(appEdu.getDegreeFileName());
+            education.setDegreeFileUrl(appEdu.getDegreeFileUrl());
+            
+            educationRepository.save(education);
+        }
+    }
+    
+    /**
+     * Đồng bộ certificates từ ApplicationCertificate sang Certificate
+     */
+    private void syncCertificatesFromApplication(ProfileApplication application, TutorProfile tutorProfile) {
+        // Xóa certificates cũ
+        List<Certificate> existingCertificates = certificateRepository.findByProfileId(tutorProfile.getId());
+        certificateRepository.deleteAll(existingCertificates);
+        
+        // Tạo certificates mới từ application
+        for (ApplicationCertificate appCert : application.getCertificates()) {
+            Certificate certificate = new Certificate();
+            certificate.setProfile(tutorProfile);
+            certificate.setName(appCert.getName());
+            certificate.setIssuedBy(appCert.getIssuedBy());
+            certificate.setDescription(appCert.getDescription());
+            certificate.setValid(appCert.getValid());
+            certificate.setCertFileName(appCert.getCertFileName());
+            certificate.setCertFileUrl(appCert.getCertFileUrl());
+            
+            certificateRepository.save(certificate);
+        }
+    }
+    
+    /**
+     * Đồng bộ schedules từ ApplicationSchedule sang Schedule
+     */
+    private void syncSchedulesFromApplication(ProfileApplication application, TutorProfile tutorProfile) {
+        // Xóa schedules cũ
+        List<Schedule> existingSchedules = scheduleRepository.findByProfileId(tutorProfile.getId());
+        scheduleRepository.deleteAll(existingSchedules);
+        
+        // Tạo schedules mới từ application
+        for (ApplicationSchedule appSchedule : application.getSchedules()) {
+            Schedule schedule = new Schedule();
+            schedule.setProfile(tutorProfile);
+            schedule.setDayOfWeek(appSchedule.getDayOfWeek());
+            schedule.setFromTime(appSchedule.getFromTime());
+            schedule.setToTime(appSchedule.getToTime());
+            schedule.setEnable(appSchedule.getEnable());
+            
+            scheduleRepository.save(schedule);
+        }
+    }
+    
+    /**
+     * Đồng bộ subject fees từ ApplicationSubjectFee sang TutorProfileSubject
+     */
+    private void syncSubjectFeesFromApplication(ProfileApplication application, TutorProfile tutorProfile) {
+        // Xóa subject fees cũ
+        List<TutorProfileSubject> existingSubjectFees = profileSubjectRepository.findByProfileId(tutorProfile.getId());
+        profileSubjectRepository.deleteAll(existingSubjectFees);
+        
+        // Tạo subject fees mới từ application
+        for (ApplicationSubjectFee appSubjectFee : application.getSubjectFees()) {
+            TutorProfileSubject subjectFee = new TutorProfileSubject();
+            subjectFee.setProfile(tutorProfile);
+            subjectFee.setSubject(appSubjectFee.getSubject());
+            subjectFee.setFees(appSubjectFee.getFees().intValue());
+            
+            profileSubjectRepository.save(subjectFee);
+        }
     }
 }

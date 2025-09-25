@@ -5,16 +5,11 @@ import fsa.training.tutormatch.dto.LoginRequest;
 import fsa.training.tutormatch.dto.SimpleRegisterRequest;
 import fsa.training.tutormatch.entity.Profile;
 import fsa.training.tutormatch.enums.*;
-import fsa.training.tutormatch.entity.StudentProfile;
-import fsa.training.tutormatch.enums.*;
 import fsa.training.tutormatch.entity.TutorProfile;
-import fsa.training.tutormatch.enums.*;
 import fsa.training.tutormatch.entity.User;
-import fsa.training.tutormatch.enums.*;
-import fsa.training.tutormatch.repository.StudentProfileRepository;
 import fsa.training.tutormatch.repository.TutorProfileRepository;
 import fsa.training.tutormatch.security.JwtUtil;
-import fsa.training.tutormatch.service.interfaces.IUserService;
+import fsa.training.tutormatch.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +30,7 @@ import java.util.Optional;
 public class AuthController {
 
     @Autowired
-    private IUserService userService;
+    private UserService userService;
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -46,8 +41,6 @@ public class AuthController {
     @Autowired
     private UserDetailsService userDetailsService;
 
-    @Autowired
-    private StudentProfileRepository studentProfileRepository;
     
     @Autowired
     private TutorProfileRepository tutorProfileRepository;
@@ -88,34 +81,19 @@ public class AuthController {
             User savedUser = userService.save(user);
 
             // Khởi tạo profile phù hợp với role
-            Profile profile;
             if (savedUser.getRole() == UserRole.TUTOR) {
                 TutorProfile tutorProfile = new TutorProfile();
                 tutorProfile.setUser(savedUser);
-                tutorProfile.setProfileStatus(ProfileStatus.PENDING_VERIFICATION);
+                tutorProfile.setEnable(true);
 
                 // Default giá trị rỗng, tránh null
                 tutorProfile.setBio("");
                 tutorProfile.setHeadline("");
                 tutorProfile.setExperience("");
-                tutorProfile.setTeachingLevel("");
                 // Fees are now handled per subject in TutorProfileSubject
 
-                profile = tutorProfile;
-            } else {
-                StudentProfile studentProfile = new StudentProfile();
-                studentProfile.setUser(savedUser);
-                studentProfile.setProfileStatus(ProfileStatus.ACTIVE);
-                studentProfile.setEducationLevel(EducationLevel.INDEPENDENT_LEARNER); // Mặc định là học tự do
-
-                profile = studentProfile;
-            }
-
-            // Lưu profile vào repository phù hợp
-            if (profile instanceof StudentProfile) {
-                studentProfileRepository.save((StudentProfile) profile);
-            } else if (profile instanceof TutorProfile) {
-                tutorProfileRepository.save((TutorProfile) profile);
+                // Lưu profile vào repository
+                tutorProfileRepository.save(tutorProfile);
             }
 
             // Response trả về
@@ -177,7 +155,7 @@ public class AuthController {
             if ("ROLE_TUTOR".equalsIgnoreCase(role)) {
                 Optional<TutorProfile> profileOpt = tutorProfileRepository.findByUserId(user.getId());
                 profileComplete = profileOpt.isPresent()
-                        && profileOpt.get().getProfileStatus() == ProfileStatus.ACTIVE;
+                        && Boolean.TRUE.equals(profileOpt.get().getEnable());
             }
 
             // Create response

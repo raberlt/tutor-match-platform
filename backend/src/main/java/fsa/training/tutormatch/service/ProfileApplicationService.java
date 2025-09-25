@@ -4,7 +4,6 @@ import fsa.training.tutormatch.dto.BecomeTutorRequest;
 import fsa.training.tutormatch.dto.BecomeTutorDraftRequest;
 import fsa.training.tutormatch.entity.*;
 import fsa.training.tutormatch.enums.ApplicationStatus;
-import fsa.training.tutormatch.enums.ApplicationType;
 import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +30,7 @@ public class ProfileApplicationService {
     
     private final UserRepository userRepository;
     private final SubjectRepository subjectRepository;
+    private final TeachingAudienceRepository teachingAudienceRepository;
 
     /**
      * Save draft application for student becoming tutor
@@ -42,9 +42,9 @@ public class ProfileApplicationService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        // Find latest application by user and type
+        // Find latest application by user
         Optional<ProfileApplication> existingApp = applicationRepository
-                .findLatestByUserAndType(user, ApplicationType.BECOME_TUTOR);
+                .findLatestByUser(user);
         
         ProfileApplication application;
         
@@ -56,12 +56,10 @@ public class ProfileApplicationService {
             // Create new application
             application = new ProfileApplication();
             application.setUser(user);
-            application.setApplicationType(ApplicationType.BECOME_TUTOR);
         } else if (existingApp.get().getStatus() == ApplicationStatus.REJECTED) {
             // Nếu hồ sơ bị REJECTED, tạo bản ghi mới
             application = new ProfileApplication();
             application.setUser(user);
-            application.setApplicationType(ApplicationType.BECOME_TUTOR);
         } else {
             // Update existing application (DRAFT/SUBMITTED/APPROVED)
             application = existingApp.get();
@@ -102,13 +100,13 @@ public class ProfileApplicationService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        // Find latest application by user and type
+        // Find latest application by user
         Optional<ProfileApplication> existingApp = applicationRepository
-                .findLatestByUserAndType(user, ApplicationType.BECOME_TUTOR);
+                .findLatestByUser(user);
         
         ProfileApplication application;
         
-        // Logic for submit:
+        // Logic for submit: 
         // - Nếu chưa có hồ sơ -> tạo mới
         // - Nếu có hồ sơ DRAFT/SUBMITTED/APPROVED -> update hồ sơ cũ
         // - Nếu có hồ sơ REJECTED -> tạo bản ghi mới (giữ bản ghi REJECTED để thống kê)
@@ -116,12 +114,10 @@ public class ProfileApplicationService {
             // Create new application
             application = new ProfileApplication();
             application.setUser(user);
-            application.setApplicationType(ApplicationType.BECOME_TUTOR);
         } else if (existingApp.get().getStatus() == ApplicationStatus.REJECTED) {
             // Nếu hồ sơ bị REJECTED, tạo bản ghi mới
             application = new ProfileApplication();
             application.setUser(user);
-            application.setApplicationType(ApplicationType.BECOME_TUTOR);
         } else {
             // Update existing application (DRAFT/SUBMITTED/APPROVED)
             application = existingApp.get();
@@ -151,15 +147,15 @@ public class ProfileApplicationService {
     /**
      * Get draft application data
      */
-    public Map<String, Object> getDraftApplicationData(String username, ApplicationType applicationType) {
+    public Map<String, Object> getDraftApplicationData(String username) {
         log.info("Getting draft application data for user: {}", username);
         
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        // Find latest application by user and type (DRAFT, SUBMITTED, or REJECTED)
+        // Find latest application by user (DRAFT, SUBMITTED, or REJECTED)
         Optional<ProfileApplication> applicationOpt = applicationRepository
-                .findLatestByUserAndType(user, applicationType);
+                .findLatestByUser(user);
 
         Map<String, Object> response = new HashMap<>();
         if (applicationOpt.isEmpty()) {
@@ -181,15 +177,12 @@ public class ProfileApplicationService {
         response.put("imageAvatar", application.getImageAvatar());
         response.put("phoneNumber", application.getPhoneNumber());
         response.put("address", application.getAddress());
-        response.put("timezone", application.getTimezone());
-        
         // Tutor-specific fields
         response.put("bio", application.getBio());
         response.put("headline", application.getHeadline());
         response.put("experience", application.getExperience());
-        response.put("teachingLevel", application.getTeachingLevel() != null ? application.getTeachingLevel().toString() : null);
-        response.put("teachingMethods", application.getTeachingMethods());
-        response.put("cvUrl", application.getCvUrl());
+        response.put("cvFileUrl", application.getCvFileUrl());
+        response.put("cvFileName", application.getCvFileName());
         response.put("videoIntro", application.getVideoIntro());
         
         // Related entities
@@ -204,6 +197,21 @@ public class ProfileApplicationService {
         
         List<ApplicationSubjectFee> subjectFees = subjectFeeRepository.findByApplication(application);
         response.put("subjectFees", buildSubjectFeeDTOs(subjectFees));
+        
+        // Add teaching audiences
+        if (application.getTeachingAudiences() != null) {
+            List<Map<String, Object>> teachingAudienceDTOs = application.getTeachingAudiences().stream()
+                    .map(audience -> {
+                        Map<String, Object> dto = new HashMap<>();
+                        dto.put("id", audience.getId().intValue());
+                        dto.put("name", audience.getName());
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+            response.put("teachingAudiences", teachingAudienceDTOs);
+        } else {
+            response.put("teachingAudiences", new ArrayList<>());
+        }
 
         return response;
     }
@@ -230,22 +238,16 @@ public class ProfileApplicationService {
             appData.put("email", app.getUser().getUsername());
             appData.put("phone", app.getPhoneNumber());
             appData.put("address", app.getAddress());
-            appData.put("dateOfBirth", app.getDateOfBirth());
-            appData.put("gender", app.getGender());
             appData.put("imageAvatar", app.getImageAvatar());
             
             // Application info
-            appData.put("applicationType", app.getApplicationType().toString());
+            appData.put("applicationType", "BECOME_TUTOR");
             appData.put("status", app.getStatus().toString());
             appData.put("bio", app.getBio());
             appData.put("headline", app.getHeadline());
             appData.put("experience", app.getExperience());
-            appData.put("educationLevel", app.getEducationLevel());
-            appData.put("teachingLevel", app.getTeachingLevel());
-            appData.put("teachingMethods", app.getTeachingMethods());
-            appData.put("cvUrl", app.getCvUrl());
+            appData.put("cvFileUrl", app.getCvFileUrl());
             appData.put("videoIntro", app.getVideoIntro());
-            appData.put("timezone", app.getTimezone());
             
             // Timestamps
             appData.put("submittedAt", app.getSubmittedAt());
@@ -289,13 +291,12 @@ public class ProfileApplicationService {
         applicationRepository.save(application);
 
         // Apply changes - simplified version
-        if (application.getApplicationType() == ApplicationType.BECOME_TUTOR) {
-            // Promote student to tutor
-            User user = application.getUser();
-            user.setRole(UserRole.TUTOR);
-            user.setVerified(true);
-            userRepository.save(user);
-        }
+        // Always create tutor profile for become tutor application
+        // Promote student to tutor
+        User user = application.getUser();
+        user.setRole(UserRole.TUTOR);
+        user.setVerified(true);
+        userRepository.save(user);
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
@@ -317,7 +318,7 @@ public class ProfileApplicationService {
         application.setStatus(ApplicationStatus.REJECTED);
         application.setReviewedBy(admin);
         application.setReviewedAt(ZonedDateTime.now());
-        application.setRejectionReason(reason);
+        application.setAdminNote(reason);
 
         applicationRepository.save(application);
 
@@ -335,16 +336,20 @@ public class ProfileApplicationService {
         if (request.getAvatar() != null) application.setImageAvatar(request.getAvatar());
         if (request.getPhoneNumber() != null) application.setPhoneNumber(request.getPhoneNumber());
         if (request.getAddress() != null) application.setAddress(request.getAddress());
-        if (request.getTimezone() != null) application.setTimezone(request.getTimezone());
         
         // Tutor-specific fields
         if (request.getBio() != null) application.setBio(request.getBio());
         if (request.getHeadline() != null) application.setHeadline(request.getHeadline());
         if (request.getExperience() != null) application.setExperience(request.getExperience());
-        if (request.getTeachingLevel() != null) application.setTeachingLevel(request.getTeachingLevel());
-        if (request.getTeachingMethods() != null) application.setTeachingMethods(request.getTeachingMethods());
-        if (request.getCvUrl() != null) application.setCvUrl(request.getCvUrl());
+        if (request.getCvFileUrl() != null) application.setCvFileUrl(request.getCvFileUrl());
+        if (request.getCvFileName() != null) application.setCvFileName(request.getCvFileName());
         if (request.getVideoIntro() != null) application.setVideoIntro(request.getVideoIntro());
+        
+        // Set teaching audiences
+        if (request.getTeachingAudiences() != null && !request.getTeachingAudiences().isEmpty()) {
+            List<TeachingAudience> audiences = teachingAudienceRepository.findByNameIn(request.getTeachingAudiences());
+            application.setTeachingAudiences(audiences);
+        }
     }
 
     private void updateApplicationFromRequest(ProfileApplication application, BecomeTutorDraftRequest request) {
@@ -354,16 +359,20 @@ public class ProfileApplicationService {
         if (request.getAvatar() != null) application.setImageAvatar(request.getAvatar());
         if (request.getPhoneNumber() != null) application.setPhoneNumber(request.getPhoneNumber());
         if (request.getAddress() != null) application.setAddress(request.getAddress());
-        if (request.getTimezone() != null) application.setTimezone(request.getTimezone());
         
         // Tutor-specific fields
         if (request.getBio() != null) application.setBio(request.getBio());
         if (request.getHeadline() != null) application.setHeadline(request.getHeadline());
         if (request.getExperience() != null) application.setExperience(request.getExperience());
-        if (request.getTeachingLevel() != null) application.setTeachingLevel(request.getTeachingLevel());
-        if (request.getTeachingMethods() != null) application.setTeachingMethods(request.getTeachingMethods());
-        if (request.getCvUrl() != null) application.setCvUrl(request.getCvUrl());
+        if (request.getCvFileUrl() != null) application.setCvFileUrl(request.getCvFileUrl());
+        if (request.getCvFileName() != null) application.setCvFileName(request.getCvFileName());
         if (request.getVideoIntro() != null) application.setVideoIntro(request.getVideoIntro());
+        
+        // Set teaching audiences
+        if (request.getTeachingAudiences() != null && !request.getTeachingAudiences().isEmpty()) {
+            List<TeachingAudience> audiences = teachingAudienceRepository.findByNameIn(request.getTeachingAudiences());
+            application.setTeachingAudiences(audiences);
+        }
     }
 
     private void saveApplicationEducations(ProfileApplication application, List<BecomeTutorDraftRequest.EducationRequest> educations) {
@@ -380,8 +389,8 @@ public class ProfileApplicationService {
                 education.setMajor(edu.getMajor());
                 education.setFromTime(edu.getFromTime());
                 education.setToTime(edu.getToTime());
-                education.setDegreeImage(edu.getDegreeImage());
-                
+                education.setDegreeFileName(edu.getDegreeFileName());
+                education.setDegreeFileUrl(edu.getDegreeFileUrl());
                 educationRepository.save(education);
             }
         }
@@ -399,7 +408,8 @@ public class ProfileApplicationService {
                 certificate.setName(cert.getName());
                 certificate.setIssuedBy(cert.getIssuedBy());
                 certificate.setDescription(cert.getDescription());
-                certificate.setCertImage(cert.getCertImage());
+                certificate.setCertFileName(cert.getCertFileName());
+                certificate.setCertFileUrl(cert.getCertFileUrl());
                 certificate.setValid(true);
                 
                 certificateRepository.save(certificate);
@@ -454,7 +464,8 @@ public class ProfileApplicationService {
             eduData.put("major", edu.getMajor());
             eduData.put("fromTime", edu.getFromTime());
             eduData.put("toTime", edu.getToTime());
-            eduData.put("degreeImage", edu.getDegreeImage());
+            eduData.put("degreeFileName", edu.getDegreeFileName());
+            eduData.put("degreeFileUrl", edu.getDegreeFileUrl());
             result.add(eduData);
         }
         return result;
@@ -468,7 +479,8 @@ public class ProfileApplicationService {
             certData.put("name", cert.getName());
             certData.put("issuedBy", cert.getIssuedBy());
             certData.put("description", cert.getDescription());
-            certData.put("certImage", cert.getCertImage());
+            certData.put("certFileName", cert.getCertFileName());
+            certData.put("certFileUrl", cert.getCertFileUrl());
             certData.put("valid", cert.getValid());
             result.add(certData);
         }
@@ -516,8 +528,8 @@ public class ProfileApplicationService {
                 education.setMajor(edu.getMajor());
                 education.setFromTime(edu.getFromTime());
                 education.setToTime(edu.getToTime());
-                education.setDegreeImage(edu.getDegreeImage());
-                
+                education.setDegreeFileName(edu.getDegreeFileName());
+                education.setDegreeFileUrl(edu.getDegreeFileUrl());                
                 educationRepository.save(education);
             }
         }
@@ -535,8 +547,8 @@ public class ProfileApplicationService {
                 certificate.setName(cert.getName());
                 certificate.setIssuedBy(cert.getIssuedBy());
                 certificate.setDescription(cert.getDescription());
-                certificate.setCertImage(cert.getCertImage());
-                certificate.setValid(true);
+                certificate.setCertFileName(cert.getCertFileName());
+                certificate.setCertFileUrl(cert.getCertFileUrl());                certificate.setValid(true);
                 
                 certificateRepository.save(certificate);
             }
@@ -614,5 +626,110 @@ public class ProfileApplicationService {
         
         // Check if schedules overlap: start1 < end2 && start2 < end1
         return start1.isBefore(end2) && start2.isBefore(end1);
+    }
+
+    /**
+     * Get all available subjects
+     */
+    public List<Subject> getAllAvailableSubjects() {
+        return subjectRepository.findAll();
+    }
+
+    /**
+     * Get application status for a user
+     */
+    public Map<String, Object> getApplicationStatus(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        Optional<ProfileApplication> application = applicationRepository.findLatestByUser(user);
+        
+        Map<String, Object> response = new HashMap<>();
+        if (application.isPresent()) {
+            response.put("hasApplication", true);
+            response.put("status", application.get().getStatus().toString());
+            response.put("applicationId", application.get().getId());
+        } else {
+            response.put("hasApplication", false);
+        }
+        
+        return response;
+    }
+
+    /**
+     * Get application details for a user
+     */
+    public Map<String, Object> getApplicationDetails(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        Optional<ProfileApplication> application = applicationRepository.findLatestByUser(user);
+        
+        if (!application.isPresent()) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("hasApplication", false);
+            return response;
+        }
+
+        ProfileApplication app = application.get();
+        Map<String, Object> response = new HashMap<>();
+        response.put("hasApplication", true);
+        response.put("status", app.getStatus().toString());
+        response.put("applicationId", app.getId());
+        response.put("firstName", app.getFirstName());
+        response.put("lastName", app.getLastName());
+        response.put("bio", app.getBio());
+        response.put("headline", app.getHeadline());
+        response.put("experience", app.getExperience());
+        response.put("cvFileUrl", app.getCvFileUrl());
+        response.put("cvFileName", app.getCvFileName());
+        response.put("videoIntro", app.getVideoIntro());
+        response.put("createdAt", app.getCreatedAt());
+        response.put("submittedAt", app.getSubmittedAt());
+        response.put("reviewedAt", app.getReviewedAt());
+        
+        return response;
+    }
+
+    /**
+     * Submit tutor application
+     */
+    @Transactional
+    public Map<String, Object> submitTutorApplication(String username, BecomeTutorRequest request) {
+        return submitApplicationForStudentBecomingTutor(username, request);
+    }
+
+    /**
+     * Cancel tutor application
+     */
+    @Transactional
+    public Map<String, Object> cancelTutorApplication(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        Optional<ProfileApplication> application = applicationRepository.findLatestByUser(user);
+        
+        if (!application.isPresent()) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "No application found");
+            return response;
+        }
+
+        ProfileApplication app = application.get();
+        if (app.getStatus() == ApplicationStatus.APPROVED) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Cannot cancel approved application");
+            return response;
+        }
+
+        app.setStatus(ApplicationStatus.CANCELLED);
+        applicationRepository.save(app);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Application cancelled successfully");
+        return response;
     }
 }

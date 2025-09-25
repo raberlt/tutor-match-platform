@@ -5,13 +5,12 @@ import fsa.training.tutormatch.dto.BookingRequestDTO;
 import fsa.training.tutormatch.entity.Booking;
 import fsa.training.tutormatch.enums.BookingStatus;
 import fsa.training.tutormatch.enums.BookingType;
-import fsa.training.tutormatch.entity.StudentProfile;
 import fsa.training.tutormatch.entity.TutorProfile;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.UserRepository;
 // import fsa.training.tutormatch.service.BookingService; // Deleted - using IBookingService
-import fsa.training.tutormatch.service.interfaces.IBookingService;
+import fsa.training.tutormatch.service.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,10 +34,10 @@ import java.util.stream.Collectors;
 public class BookingController {
 
     @Autowired
-    private IBookingService bookingService;
+    private BookingService bookingService;
 
     @Autowired
-    private IBookingService iBookingService;
+    private BookingService iBookingService;
 
     @Autowired
     private BookingRepository bookingRepository;
@@ -135,17 +134,14 @@ public class BookingController {
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("Student not found"));
             
-            StudentProfile student = user.getStudentProfile()
-                    .orElseThrow(() -> new RuntimeException("Student profile not found"));
-            
             Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
             Page<Booking> bookings;
             
             if (status != null && !status.isEmpty()) {
                 BookingStatus bookingStatus = BookingStatus.valueOf(status.toUpperCase());
-                bookings = bookingRepository.findByStudentAndStatus(student, bookingStatus, pageable);
+                bookings = bookingRepository.findByStudentAndStatus(user, bookingStatus, pageable);
             } else {
-                bookings = bookingRepository.findByStudent(student, pageable);
+                bookings = bookingRepository.findByStudent(user, pageable);
             }
             
             List<BookingRequestDTO> bookingDTOs = bookings.getContent().stream()
@@ -464,8 +460,8 @@ public class BookingController {
         dto.setSessionsPerWeek(booking.getSessionsPerWeek());
 
         // Student info (minimal)
-        if (booking.getStudent() != null && booking.getStudent().getUser() != null) {
-            User studentUser = booking.getStudent().getUser();
+        if (booking.getStudent() != null) {
+            User studentUser = booking.getStudent();
             BookingRequestDTO.StudentInfo studentInfo = new BookingRequestDTO.StudentInfo();
             studentInfo.setId(studentUser.getId());
             studentInfo.setFirstName(studentUser.getFirstName());

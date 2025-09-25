@@ -65,7 +65,7 @@ public class Coupon {
 
     @ManyToOne
     @JoinColumn(name = "created_by")
-    private User createdBy; // Admin tạo mã
+    private User createdBy; // Admin hoặc Tutor tạo mã
 
     @CreationTimestamp
     @Column(updatable = false)

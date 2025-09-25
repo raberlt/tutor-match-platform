@@ -35,9 +35,15 @@ public class Education {
     @Column(nullable = false)
     private Integer toTime;
 
-    private String degreeImage;
+    private String degreeFileName;
+    
+    @Column(columnDefinition = "NVARCHAR(500)")
+    private String degreeFileUrl;
 
     private Boolean valid = false;
+    
+    @Column(nullable = false)
+    private boolean isVerified = false;
 
     @CreationTimestamp
     @Column(updatable = false)

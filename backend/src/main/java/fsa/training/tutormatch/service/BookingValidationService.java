@@ -1,10 +1,10 @@
-package fsa.training.tutormatch.service.interfaces;
+package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.entity.Booking;
 import fsa.training.tutormatch.entity.User;
 
-public interface IBookingValidationService {
+public interface BookingValidationService {
     
     // Validation methods
     void validateBookingRequest(BookingRequestCreateDTO request);

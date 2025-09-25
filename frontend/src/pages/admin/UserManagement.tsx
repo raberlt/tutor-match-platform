@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { adminService } from "../../services/adminService";
+import { TutorApproval } from "./TutorApproval";
 
 interface User {
   id: string;
@@ -20,6 +21,9 @@ export const UserManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<"users" | "tutor-approval">(
+    "users"
+  );
 
   useEffect(() => {
     loadUsers();
@@ -34,6 +38,9 @@ export const UserManagement: React.FC = () => {
       // Xử lý response có thể là array hoặc paginated object
       if (Array.isArray(data)) {
         setUsers(data);
+      } else if (data && Array.isArray(data.users)) {
+        // Response với users array
+        setUsers(data.users);
       } else if (data && Array.isArray(data.content)) {
         // Paginated response
         setUsers(data.content);
@@ -45,9 +52,11 @@ export const UserManagement: React.FC = () => {
         setUsers([]);
         setError("Định dạng dữ liệu không đúng");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error loading users:", err);
-      setError(err.message || "Lỗi khi tải danh sách người dùng");
+      setError(
+        err instanceof Error ? err.message : "Lỗi khi tải danh sách người dùng"
+      );
       setUsers([]);
     } finally {
       setLoading(false);
@@ -127,222 +136,257 @@ export const UserManagement: React.FC = () => {
         </button>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <span className="text-2xl">👥</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">
-                Tổng người dùng
-              </p>
-              <p className="text-2xl font-bold text-gray-900">{users.length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <span className="text-2xl">✅</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">
-                Đang hoạt động
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {users.filter((u) => u.status === "active").length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <span className="text-2xl">👨‍🏫</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Gia sư</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {users.filter((u) => u.role === "tutor").length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <span className="text-2xl">🚫</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Bị cấm</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {users.filter((u) => u.status === "banned").length}
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "users"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Quản lý người dùng
+          </button>
+          <button
+            onClick={() => setActiveTab("tutor-approval")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "tutor-approval"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Duyệt gia sư
+          </button>
+        </nav>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tìm kiếm
-            </label>
-            <input
-              type="text"
-              placeholder="Tìm theo tên hoặc email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-            />
+      {/* Tab Content */}
+      {activeTab === "users" ? (
+        <div className="space-y-6">
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <span className="text-2xl">👥</span>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    Tổng người dùng
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {users.length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <span className="text-2xl">✅</span>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    Đang hoạt động
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {users.filter((u) => u.status === "ACTIVE").length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <span className="text-2xl">👨‍🏫</span>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Gia sư</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {users.filter((u) => u.role === "TUTOR").length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <span className="text-2xl">🚫</span>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Bị cấm</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {users.filter((u) => u.status === "BANNED").length}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Vai trò
-            </label>
-            <select
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-            >
-              <option value="all">Tất cả vai trò</option>
-              <option value="STUDENT">Học viên</option>
-              <option value="TUTOR">Gia sư</option>
-              <option value="ADMIN">Admin</option>
-            </select>
-          </div>
+          {/* Filters */}
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tìm kiếm
+                </label>
+                <input
+                  type="text"
+                  placeholder="Tìm theo tên hoặc email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Trạng thái
-            </label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-            >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="ACTIVE">Hoạt động</option>
-              <option value="INACTIVE">Không hoạt động</option>
-              <option value="BANNED">Bị cấm</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Users Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Danh sách người dùng ({filteredUsers.length})
-          </h2>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Người dùng
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Vai trò
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </label>
+                <select
+                  value={filterRole}
+                  onChange={(e) => setFilterRole(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                >
+                  <option value="all">Tất cả vai trò</option>
+                  <option value="STUDENT">Học viên</option>
+                  <option value="TUTOR">Gia sư</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Trạng thái
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày tạo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Đăng nhập cuối
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-blue-600 font-medium text-sm">
-                            {user.firstName.charAt(0)}
-                          </span>
+                </label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                >
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="ACTIVE">Hoạt động</option>
+                  <option value="INACTIVE">Không hoạt động</option>
+                  <option value="BANNED">Bị cấm</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Users Table */}
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Danh sách người dùng ({filteredUsers.length})
+              </h2>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Người dùng
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Vai trò
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Trạng thái
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ngày tạo
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Đăng nhập cuối
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Thao tác
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                              <span className="text-blue-600 font-medium text-sm">
+                                {user.firstName.charAt(0)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {user.firstName} {user.lastName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {user.email}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {user.firstName} {user.lastName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(
+                            user.role
+                          )}`}
+                        >
+                          {user.role === "STUDENT"
+                            ? "Học viên"
+                            : user.role === "TUTOR"
+                            ? "Gia sư"
+                            : "Admin"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                            user.status
+                          )}`}
+                        >
+                          {user.status === "ACTIVE"
+                            ? "Hoạt động"
+                            : user.status === "INACTIVE"
+                            ? "Không hoạt động"
+                            : "Bị cấm"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {user.createdAt}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {user.lastLogin || "Chưa đăng nhập"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button className="text-blue-600 hover:text-blue-900">
+                            Xem
+                          </button>
+                          <button className="text-yellow-600 hover:text-yellow-900">
+                            Sửa
+                          </button>
+                          <button className="text-red-600 hover:text-red-900">
+                            Cấm
+                          </button>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {user.email}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(
-                        user.role
-                      )}`}
-                    >
-                      {user.role === "STUDENT"
-                        ? "Học viên"
-                        : user.role === "TUTOR"
-                        ? "Gia sư"
-                        : "Admin"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                        user.status
-                      )}`}
-                    >
-                      {user.status === "ACTIVE"
-                        ? "Hoạt động"
-                        : user.status === "INACTIVE"
-                        ? "Không hoạt động"
-                        : "Bị cấm"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {user.createdAt}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {user.lastLogin || "Chưa đăng nhập"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900">
-                        Xem
-                      </button>
-                      <button className="text-yellow-600 hover:text-yellow-900">
-                        Sửa
-                      </button>
-                      <button className="text-red-600 hover:text-red-900">
-                        Cấm
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <TutorApproval />
+      )}
     </div>
   );
 };

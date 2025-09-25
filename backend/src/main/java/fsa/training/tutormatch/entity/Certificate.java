@@ -30,10 +30,16 @@ public class Certificate {
     @Column(columnDefinition = "NVARCHAR(255)")
     private String description;
 
-    private String certImage;
+    private String certFileName;
+    
+    @Column(columnDefinition = "NVARCHAR(500)")
+    private String certFileUrl;
 
     @Column(columnDefinition = "BIT DEFAULT 0")
     private Boolean valid = false;
+    
+    @Column(nullable = false)
+    private boolean isVerified = false;
     
     // Getter method for valid field to match the naming convention
     public Boolean getValid() {

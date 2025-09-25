@@ -5,7 +5,6 @@ import fsa.training.tutormatch.dto.BecomeTutorDraftRequest;
 import fsa.training.tutormatch.dto.StudentProfileRequest;
 import fsa.training.tutormatch.entity.ProfileApplication;
 import fsa.training.tutormatch.enums.ApplicationStatus;
-import fsa.training.tutormatch.enums.ApplicationType;
 import fsa.training.tutormatch.service.ProfileApplicationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -113,7 +112,7 @@ public class ProfileApplicationController {
     public ResponseEntity<?> getDraftApplicationData(Authentication authentication) {
         try {
             String username = authentication.getName();
-            Map<String, Object> result = applicationService.getDraftApplicationData(username, ApplicationType.BECOME_TUTOR);
+            Map<String, Object> result = applicationService.getDraftApplicationData(username);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.error("Error getting draft application data: ", e);
@@ -211,7 +210,7 @@ public class ProfileApplicationController {
         testData.put("experience", "Test experience");
         testData.put("teachingLevel", "MIDDLE_SCHOOL");
         testData.put("imageAvatar", "https://example.com/avatar.jpg");
-        testData.put("cvUrl", "https://example.com/cv.pdf");
+        testData.put("cvFileUrl", "https://example.com/cv.pdf");
         testData.put("videoIntro", "https://youtube.com/watch?v=test");
         testData.put("teachingMethods", "[\"MIDDLE_SCHOOL\", \"HIGH_SCHOOL\"]");
         testData.put("educations", List.of());

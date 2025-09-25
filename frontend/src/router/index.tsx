@@ -39,14 +39,9 @@ import TutorBookings from "../pages/tutor/TutorBookings";
 // Admin Pages
 import { AdminDashboard } from "../pages/admin/AdminDashboard";
 import { UserManagement } from "../pages/admin/UserManagement";
-import { TutorApproval } from "../pages/admin/TutorApproval";
 import { ReportManagement } from "../pages/admin/ReportManagement";
-import AdminBookings from "../pages/admin/AdminBookings";
 import CouponManagement from "../pages/admin/CouponManagement";
 import PaymentManagement from "../pages/admin/PaymentManagement";
-import ContractManagement from "../pages/admin/ContractManagement";
-import ReviewManagement from "../pages/admin/ReviewManagement";
-import SubjectManagement from "../pages/admin/SubjectManagement";
 
 const router = createBrowserRouter([
   // Public routes
@@ -225,20 +220,19 @@ const router = createBrowserRouter([
         element: <UserManagement />,
       },
       {
-        path: "tutors",
-        element: <TutorApproval />,
+        path: "bookings",
+        element: (
+          <div className="text-center p-8">
+            <h1 className="text-2xl font-bold">Quản lý booking</h1>
+            <p className="text-gray-600 mt-2">
+              Trang này đang được phát triển...
+            </p>
+          </div>
+        ),
       },
       {
         path: "reports",
         element: <ReportManagement />,
-      },
-      {
-        path: "bookings",
-        element: (
-          <BookingProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminBookings />
-          </BookingProtectedRoute>
-        ),
       },
       {
         path: "coupons",
@@ -254,52 +248,6 @@ const router = createBrowserRouter([
           <BookingProtectedRoute allowedRoles={["ADMIN"]}>
             <PaymentManagement />
           </BookingProtectedRoute>
-        ),
-      },
-      {
-        path: "contracts",
-        element: (
-          <BookingProtectedRoute allowedRoles={["ADMIN"]}>
-            <ContractManagement />
-          </BookingProtectedRoute>
-        ),
-      },
-      {
-        path: "ratings",
-        element: (
-          <BookingProtectedRoute allowedRoles={["ADMIN"]}>
-            <ReviewManagement />
-          </BookingProtectedRoute>
-        ),
-      },
-      {
-        path: "subjects",
-        element: (
-          <BookingProtectedRoute allowedRoles={["ADMIN"]}>
-            <SubjectManagement />
-          </BookingProtectedRoute>
-        ),
-      },
-      {
-        path: "sessions",
-        element: (
-          <div className="text-center p-8">
-            <h1 className="text-2xl font-bold">Quản lý buổi học</h1>
-            <p className="text-gray-600 mt-2">
-              Trang này đang được phát triển...
-            </p>
-          </div>
-        ),
-      },
-      {
-        path: "settings",
-        element: (
-          <div className="text-center p-8">
-            <h1 className="text-2xl font-bold">Cài đặt hệ thống</h1>
-            <p className="text-gray-600 mt-2">
-              Trang này đang được phát triển...
-            </p>
-          </div>
         ),
       },
     ],

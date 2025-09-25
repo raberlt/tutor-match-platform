@@ -1,4 +1,4 @@
-package fsa.training.tutormatch.service.interfaces;
+package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.entity.Booking;
@@ -6,7 +6,7 @@ import fsa.training.tutormatch.entity.Booking;
 import java.time.LocalDate;
 import java.util.List;
 
-public interface IBookingService {
+public interface BookingService {
     
     // Booking creation
     Booking createBooking(String studentUsername, Integer tutorId, Integer subjectId, 

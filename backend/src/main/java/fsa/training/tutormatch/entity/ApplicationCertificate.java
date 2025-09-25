@@ -30,7 +30,10 @@ public class ApplicationCertificate {
     private String description;
 
     @Column(columnDefinition = "NVARCHAR(255)")
-    private String certImage;
+    private String certFileName;
+
+    @Column(columnDefinition = "NVARCHAR(500)")
+    private String certFileUrl;
 
     @Column(nullable = false)
     private Boolean valid = true;

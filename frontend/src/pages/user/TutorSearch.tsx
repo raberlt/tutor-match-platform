@@ -258,7 +258,7 @@ const TutorSearch: React.FC = () => {
         <aside className="w-80 bg-white shadow-sm border-r border-gray-200">
           <div className="p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
-              🔍 Bộ lọc tìm kiếm
+              Bộ lọc tìm kiếm
             </h2>
 
             {/* Search Input */}
@@ -267,21 +267,6 @@ const TutorSearch: React.FC = () => {
                 Tìm kiếm
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg
-                    className="h-4 w-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
                 <input
                   type="text"
                   placeholder="Tên gia sư, kỹ năng..."
@@ -289,7 +274,7 @@ const TutorSearch: React.FC = () => {
                   onChange={(e) =>
                     handleFilterChange("keyword", e.target.value)
                   }
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -297,7 +282,7 @@ const TutorSearch: React.FC = () => {
             {/* Subject Filter */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                📚 Môn học
+                Môn học
               </label>
               <div className="relative">
                 <select
@@ -308,7 +293,7 @@ const TutorSearch: React.FC = () => {
                       e.target.value ? parseInt(e.target.value) : undefined
                     )
                   }
-                  className="w-full px-3 py-3 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
                 >
                   <option value="">Tất cả môn học</option>
                   {subjects.map((subject) => (
@@ -317,21 +302,6 @@ const TutorSearch: React.FC = () => {
                     </option>
                   ))}
                 </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                  <svg
-                    className="w-5 h-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
               </div>
             </div>
 
@@ -352,21 +322,6 @@ const TutorSearch: React.FC = () => {
                     {formatPrice(filters.minFee || 100000)} -{" "}
                     {formatPrice(filters.maxFee || 500000)}
                   </span>
-                  <svg
-                    className={`w-5 h-5 text-gray-400 transition-transform ${
-                      showPriceSlider ? "rotate-180" : ""
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
                 </button>
 
                 {/* Dropdown Content */}
@@ -472,7 +427,7 @@ const TutorSearch: React.FC = () => {
             {/* Sort Options */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                🔄 Sắp xếp
+                Sắp xếp
               </label>
               <div className="relative">
                 <select
@@ -483,30 +438,15 @@ const TutorSearch: React.FC = () => {
                     setSortBy(newSortBy);
                     setSortDirection(newSortDirection);
                   }}
-                  className="w-full px-3 py-3 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
                 >
                   <option value="id,asc">Mặc định</option>
                   <option value="fees,asc">Học phí: Thấp → Cao</option>
                   <option value="fees,desc">Học phí: Cao → Thấp</option>
                   <option value="ratePointAverage,desc">
-                    ⭐ Đánh giá cao nhất
+                    Đánh giá cao nhất
                   </option>
                 </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                  <svg
-                    className="w-5 h-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
               </div>
             </div>
 
@@ -516,7 +456,7 @@ const TutorSearch: React.FC = () => {
                 onClick={clearFilters}
                 className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium border border-gray-300"
               >
-                🗑️ Xóa bộ lọc
+                Xóa bộ lọc
               </button>
             </div>
           </div>
@@ -591,7 +531,10 @@ const TutorSearch: React.FC = () => {
                             <button
                               onClick={() => {
                                 if (isAuthenticated) {
-                                  navigate(`/tutor/${tutor.id}`);
+                                  // Sử dụng username nếu có, nếu không thì dùng ID
+                                  const identifier =
+                                    tutor.user?.username || tutor.id;
+                                  navigate(`/tutor/${identifier}`);
                                 } else {
                                   navigate("/login");
                                 }
@@ -641,25 +584,8 @@ const TutorSearch: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Rating */}
-                          {tutor.ratePointAverage &&
-                            tutor.ratePointAverage > 0 && (
-                              <div className="flex items-center space-x-2 mb-4">
-                                {renderStars(tutor.ratePointAverage)}
-                                <span className="text-sm font-medium text-gray-600">
-                                  {tutor.ratePointAverage.toFixed(1)}/5.0
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  (Đánh giá)
-                                </span>
-                              </div>
-                            )}
-
                           {/* Subject Tags */}
                           <div className="mb-4">
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                              Môn học:
-                            </h4>
                             <div className="flex flex-wrap gap-2">
                               {"subjectNames" in tutor
                                 ? tutor.subjectNames.map((subject, index) => (
@@ -733,11 +659,36 @@ const TutorSearch: React.FC = () => {
                             </div>
                           )}
 
-                          {/* Bio/Experience */}
+                          {/* Rating - chỉ hiện khi có đánh giá */}
+                          {tutor.ratePointAverage &&
+                            tutor.ratePointAverage > 0 && (
+                              <div className="flex items-center space-x-2 mb-4">
+                                {renderStars(tutor.ratePointAverage)}
+                                <span className="text-sm font-medium text-gray-600">
+                                  {tutor.ratePointAverage.toFixed(1)}/5.0
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  ({tutor.totalPoint || 0} đánh giá)
+                                </span>
+                              </div>
+                            )}
+
+                          {/* Headline - max 2 dòng */}
+                          {"headline" in tutor && tutor.headline && (
+                            <div className="mb-3">
+                              <p className="text-gray-800 font-medium text-sm leading-relaxed line-clamp-2">
+                                {tutor.headline}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Bio - max 2 dòng */}
                           {"bio" in tutor && tutor.bio && (
-                            <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-2">
-                              {tutor.bio}
-                            </p>
+                            <div className="mb-4">
+                              <p className="text-gray-600 text-sm leading-relaxed line-clamp-2">
+                                {tutor.bio}
+                              </p>
+                            </div>
                           )}
                         </div>
                       </div>

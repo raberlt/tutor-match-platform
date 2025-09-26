@@ -76,7 +76,18 @@ export const BecomeTutor: React.FC = () => {
     noCertificates: false,
 
     // Step 4: Học vấn
-    educations: [] as Array<{
+    noEducation: false,
+    educations: [
+      {
+        schoolName: "",
+        degree: "",
+        major: "",
+        fromTime: 0,
+        toTime: 0,
+        degreeFileName: "",
+        degreeFileUrl: "",
+      },
+    ] as Array<{
       schoolName: string;
       degree: string;
       major: string;
@@ -148,15 +159,16 @@ export const BecomeTutor: React.FC = () => {
           );
         case 4:
           return (
-            formData.educations.length > 0 &&
-            formData.educations.every(
-              (edu) =>
-                edu.schoolName &&
-                edu.degree &&
-                edu.major &&
-                edu.fromTime &&
-                edu.toTime
-            )
+            formData.noEducation ||
+            (formData.educations.length > 0 &&
+              formData.educations.every(
+                (edu) =>
+                  edu.schoolName &&
+                  edu.degree &&
+                  edu.major &&
+                  edu.fromTime &&
+                  edu.toTime
+              ))
           );
         case 5:
           return (
@@ -268,11 +280,23 @@ export const BecomeTutor: React.FC = () => {
                 videoUrl: typedDraftData.videoIntro || prev.videoUrl, // Map videoIntro to videoUrl
 
                 // Các mảng dữ liệu
+                noEducation: typedDraftData.noEducation || false,
                 educations:
                   typedDraftData.educations &&
                   typedDraftData.educations.length > 0
                     ? typedDraftData.educations
-                    : prev.educations,
+                    : [
+                        {
+                          schoolName: "",
+                          degree: "",
+                          major: "",
+                          fromTime: 0,
+                          toTime: 0,
+                          degreeFileName: "",
+                          degreeFileUrl: "",
+                        },
+                      ],
+                noCertificates: typedDraftData.noCertificates || false,
                 certificates:
                   typedDraftData.certificates &&
                   typedDraftData.certificates.length > 0
@@ -835,7 +859,7 @@ export const BecomeTutor: React.FC = () => {
         formData.append("file", previewFile);
 
         const response = await fetch(
-          "http://localhost:8080/api/public/upload/image?folder=tutormatch/cvs",
+          "http://localhost:8080/api/files/upload/cv",
           {
             method: "POST",
             body: formData,
@@ -955,6 +979,14 @@ export const BecomeTutor: React.FC = () => {
       ...prev,
       noCertificates: checked,
       // Không xóa dữ liệu certificates, chỉ thay đổi trạng thái hiển thị
+    }));
+  };
+
+  const handleNoEducationChange = (checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      noEducation: checked,
+      // Không xóa dữ liệu educations, chỉ thay đổi trạng thái hiển thị
     }));
   };
 
@@ -1212,11 +1244,13 @@ export const BecomeTutor: React.FC = () => {
   const convertFormDataToTutorData = (): TutorApplicationData => {
     // Convert Vietnamese teaching methods to English
     const vietnameseToEnglish: { [key: string]: string } = {
+      "Học tự do": "INDEPENDENT_LEARNER",
       "Trung học cơ sở": "MIDDLE_SCHOOL",
       "Trung học phổ thông": "HIGH_SCHOOL",
-      "Tiểu học": "ELEMENTARY_SCHOOL",
-      "Đại học": "UNIVERSITY",
-      "Sau đại học": "GRADUATE",
+      "Trung cấp nghề": "VOCATIONAL_SCHOOL",
+      "Cao đẳng / Đại học": "COLLEGE_UNIVERSITY",
+      "Sau đại học": "POSTGRADUATE",
+      "Người đi làm": "WORKING_PROFESSIONAL",
     };
 
     const englishTeachingAudiences = (formData.teachingAudiences || []).map(
@@ -1272,19 +1306,30 @@ export const BecomeTutor: React.FC = () => {
         : [],
 
       // Học vấn - Chuyển đổi thành Array
-      educations: formData.educations || [],
+      educations: !formData.educations
+        ? []
+        : formData.educations
+            .filter((edu) => edu.schoolName && edu.degree && edu.major) // Chỉ gửi những education có đủ thông tin
+            .map((edu) => ({
+              schoolName: edu.schoolName || "",
+              degree: edu.degree || "",
+              major: edu.major || "",
+              fromTime: edu.fromTime || 0,
+              toTime: edu.toTime || 0,
+              degreeFileName: edu.degreeFileName || "",
+              degreeFileUrl: edu.degreeFileUrl || "",
+            })),
 
       // Chứng chỉ - Chuyển đổi thành Array
-      certificates:
-        formData.noCertificates || !formData.certificates
-          ? []
-          : formData.certificates.map((cert) => ({
-              name: cert.name || "",
-              issuedBy: cert.issuedBy || "",
-              description: cert.description || "",
-              certFileName: cert.imageFileName || "",
-              certFileUrl: cert.imageUrl || "",
-            })),
+      certificates: !formData.certificates
+        ? []
+        : formData.certificates.map((cert) => ({
+            name: cert.name || "",
+            issuedBy: cert.issuedBy || "",
+            description: cert.description || "",
+            certFileName: cert.imageFileName || "",
+            certFileUrl: cert.imageUrl || "",
+          })),
     };
   };
 
@@ -1298,8 +1343,12 @@ export const BecomeTutor: React.FC = () => {
       );
       console.log("🔍 Educations structure:", tutorData.educations);
       console.log("🔍 Certificates structure:", tutorData.certificates);
-      console.log("🔍 FormData noCertificates:", formData.noCertificates);
+      console.log(
+        "🔍 TeachingAudiences structure:",
+        tutorData.teachingAudiences
+      );
       console.log("🔍 FormData educations:", formData.educations);
+      console.log("🔍 FormData teachingAudiences:", formData.teachingAudiences);
       console.log("🔍 FormData certificates:", formData.certificates);
       const response = await TutorService.saveDraft(tutorData);
       if (response.success) {
@@ -1345,7 +1394,7 @@ export const BecomeTutor: React.FC = () => {
           <div className="max-w-3xl mx-auto">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               {/* Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
+              {/* <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
                 <h2 className="text-xl font-semibold text-gray-800 flex items-center">
                   <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
                     <svg
@@ -1367,7 +1416,7 @@ export const BecomeTutor: React.FC = () => {
                 <p className="text-sm text-gray-600 mt-1">
                   Điền thông tin cá nhân và liên hệ của bạn
                 </p>
-              </div>
+              </div> */}
 
               <div className="p-6 space-y-6">
                 {/* Thông tin cá nhân - Compact */}
@@ -2299,17 +2348,25 @@ export const BecomeTutor: React.FC = () => {
               </p>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Thông tin học vấn
-              </h3>
-              <p className="text-sm text-gray-600">
-                Thêm thông tin về bằng cấp và học vấn của bạn
-              </p>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="no-education"
+                checked={formData.noEducation}
+                onChange={(e) => handleNoEducationChange(e.target.checked)}
+                className="h-4 w-4 focus:ring-[#94cce6] border-gray-300 rounded"
+              />
+              <label
+                htmlFor="no-education"
+                className="ml-2 block text-sm text-gray-900"
+              >
+                Tôi không có bằng cấp
+              </label>
             </div>
 
-            {formData.educations.length > 0 && (
+            {!formData.noEducation && (
               <div className="space-y-6">
+                {/* Hiển thị lỗi validation */}
                 {errors.educations && (
                   <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                     <p className="text-red-600 text-sm flex items-center">
@@ -2329,387 +2386,386 @@ export const BecomeTutor: React.FC = () => {
                   </div>
                 )}
 
-                {/* Không hiển thị thông báo "chưa có bằng cấp" vì đã có 1 bằng cấp mặc định */}
-
-                {formData.educations.map((education, index) => (
-                  <div
-                    key={index}
-                    className="rounded-xl p-6 relative"
-                    style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
-                  >
-                    {/* Chỉ hiển thị nút xóa khi có nhiều hơn 1 bằng cấp hoặc đã có thông tin */}
-                    {(formData.educations.length > 1 ||
-                      education.schoolName.trim() !== "" ||
-                      education.degree.trim() !== "" ||
-                      education.major.trim() !== "") && (
-                      <button
-                        type="button"
-                        onClick={() => removeEducation(index)}
-                        className="absolute top-4 right-4 text-red-500 hover:text-red-700 p-1"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
+                {/* Education List */}
+                <div className="space-y-4">
+                  {formData.educations.map((education, index) => (
+                    <div
+                      key={index}
+                      className="rounded-xl p-6 hover:bg-gray-50 transition-colors duration-200"
+                      style={{ backgroundColor: "oklch(0.97 0.01 0)" }}
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <h5 className="font-semibold text-gray-800">
+                          Bằng cấp #{index + 1}
+                        </h5>
+                        <button
+                          type="button"
+                          onClick={() => removeEducation(index)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition-colors duration-200"
                         >
-                          <path
-                            fillRule="evenodd"
-                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                            clipRule="evenodd"
+                          <svg
+                            className="w-5 h-5"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Trường *
+                          </label>
+                          <input
+                            type="text"
+                            value={education.schoolName}
+                            onChange={(e) =>
+                              updateEducation(
+                                index,
+                                "schoolName",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 ${
+                              errors[`education_${index}_schoolName`]
+                                ? "border-red-400 bg-red-50"
+                                : "border-gray-300"
+                            }`}
+                            placeholder="Nhập tên trường đại học/cao đẳng"
                           />
-                        </svg>
-                      </button>
-                    )}
-
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                      Bằng cấp {index + 1}
-                    </h4>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Trường *
-                        </label>
-                        <input
-                          type="text"
-                          value={education.schoolName}
-                          onChange={(e) =>
-                            updateEducation(index, "schoolName", e.target.value)
-                          }
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 ${
-                            errors[`education_${index}_schoolName`]
-                              ? "border-red-400 bg-red-50"
-                              : "border-gray-300"
-                          }`}
-                          placeholder="Nhập tên trường đại học/cao đẳng"
-                        />
-                        {errors[`education_${index}_schoolName`] && (
-                          <p className="text-red-500 text-sm mt-1 flex items-center">
-                            <svg
-                              className="w-4 h-4 mr-1"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            {errors[`education_${index}_schoolName`]}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Bằng cấp *
-                        </label>
-                        <select
-                          value={education.degree}
-                          onChange={(e) =>
-                            updateEducation(index, "degree", e.target.value)
-                          }
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 ${
-                            errors[`education_${index}_degree`]
-                              ? "border-red-400 bg-red-50"
-                              : "border-gray-300"
-                          }`}
-                        >
-                          <option value="">Chọn bằng cấp</option>
-                          <option value="Cử nhân">Cử nhân</option>
-                          <option value="Thạc sĩ">Thạc sĩ</option>
-                          <option value="Tiến sĩ">Tiến sĩ</option>
-                          <option value="Cao đẳng">Cao đẳng</option>
-                          <option value="Trung cấp">Trung cấp</option>
-                        </select>
-                        {errors[`education_${index}_degree`] && (
-                          <p className="text-red-500 text-sm mt-1 flex items-center">
-                            <svg
-                              className="w-4 h-4 mr-1"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            {errors[`education_${index}_degree`]}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Chuyên ngành *
-                        </label>
-                        <input
-                          type="text"
-                          value={education.major}
-                          onChange={(e) =>
-                            updateEducation(index, "major", e.target.value)
-                          }
-                          className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 ${
-                            errors[`education_${index}_major`]
-                              ? "border-red-400 bg-red-50"
-                              : "border-gray-300"
-                          }`}
-                          placeholder="Nhập chuyên ngành học"
-                        />
-                        {errors[`education_${index}_major`] && (
-                          <p className="text-red-500 text-sm mt-1 flex items-center">
-                            <svg
-                              className="w-4 h-4 mr-1"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            {errors[`education_${index}_major`]}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Thời gian học
-                        </label>
-                        <div className="flex space-x-3">
-                          <select
-                            value={education.fromTime}
-                            onChange={(e) =>
-                              updateEducation(
-                                index,
-                                "fromTime",
-                                parseInt(e.target.value) ||
-                                  new Date().getFullYear()
-                              )
-                            }
-                            className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200"
-                          >
-                            <option value="">Bắt đầu</option>
-                            {Array.from(
-                              { length: new Date().getFullYear() - 1900 },
-                              (_, i) => new Date().getFullYear() - 1 - i
-                            ).map((year) => (
-                              <option key={year} value={year}>
-                                {year}
-                              </option>
-                            ))}
-                          </select>
-                          <span className="flex items-center text-gray-500 text-lg font-medium">
-                            -
-                          </span>
-                          <select
-                            value={education.toTime}
-                            onChange={(e) =>
-                              updateEducation(
-                                index,
-                                "toTime",
-                                parseInt(e.target.value) ||
-                                  new Date().getFullYear()
-                              )
-                            }
-                            className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200"
-                          >
-                            <option value="">Kết thúc</option>
-                            <option value="hiện tại">
-                              Hiện tại (đang học)
-                            </option>
-                            {Array.from(
-                              { length: new Date().getFullYear() - 1899 },
-                              (_, i) => new Date().getFullYear() - i
-                            ).map((year) => (
-                              <option key={year} value={year}>
-                                {year}
-                              </option>
-                            ))}
-                          </select>
+                          {errors[`education_${index}_schoolName`] && (
+                            <p className="text-red-500 text-sm mt-1 flex items-center">
+                              <svg
+                                className="w-4 h-4 mr-1"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              {errors[`education_${index}_schoolName`]}
+                            </p>
+                          )}
                         </div>
-                        {errors[`degree_${index}_year`] && (
-                          <p className="text-red-500 text-sm mt-1 flex items-center">
-                            <svg
-                              className="w-4 h-4 mr-1"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            {errors[`degree_${index}_year`]}
-                          </p>
-                        )}
-                      </div>
-                    </div>
 
-                    <div className="mt-4">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Tải lên bằng cấp
-                      </label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        className="hidden"
-                        id={`education-file-${index}`}
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0] || null;
-                          console.log("Degree file selected:", file);
-                          if (file) {
-                            console.log("File details:", {
-                              name: file.name,
-                              type: file.type,
-                              size: file.size,
-                            });
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Bằng cấp *
+                          </label>
+                          <select
+                            value={education.degree}
+                            onChange={(e) =>
+                              updateEducation(index, "degree", e.target.value)
+                            }
+                            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 ${
+                              errors[`education_${index}_degree`]
+                                ? "border-red-400 bg-red-50"
+                                : "border-gray-300"
+                            }`}
+                          >
+                            <option value="">Chọn bằng cấp</option>
+                            <option value="Cử nhân">Cử nhân</option>
+                            <option value="Thạc sĩ">Thạc sĩ</option>
+                            <option value="Tiến sĩ">Tiến sĩ</option>
+                            <option value="Cao đẳng">Cao đẳng</option>
+                            <option value="Trung cấp">Trung cấp</option>
+                          </select>
+                          {errors[`education_${index}_degree`] && (
+                            <p className="text-red-500 text-sm mt-1 flex items-center">
+                              <svg
+                                className="w-4 h-4 mr-1"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              {errors[`education_${index}_degree`]}
+                            </p>
+                          )}
+                        </div>
 
-                            // Upload to backend
-                            try {
-                              const uploadFormData = new FormData();
-                              uploadFormData.append("file", file);
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Chuyên ngành *
+                          </label>
+                          <input
+                            type="text"
+                            value={education.major}
+                            onChange={(e) =>
+                              updateEducation(index, "major", e.target.value)
+                            }
+                            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 ${
+                              errors[`education_${index}_major`]
+                                ? "border-red-400 bg-red-50"
+                                : "border-gray-300"
+                            }`}
+                            placeholder="Nhập chuyên ngành học"
+                          />
+                          {errors[`education_${index}_major`] && (
+                            <p className="text-red-500 text-sm mt-1 flex items-center">
+                              <svg
+                                className="w-4 h-4 mr-1"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              {errors[`education_${index}_major`]}
+                            </p>
+                          )}
+                        </div>
 
-                              console.log("Uploading degree to backend...");
-                              const response = await fetch(
-                                "http://localhost:8080/api/files/upload/degree",
-                                {
-                                  method: "POST",
-                                  body: uploadFormData,
-                                }
-                              );
-
-                              console.log(
-                                "Degree upload response:",
-                                response.status,
-                                response.statusText
-                              );
-
-                              if (response.ok) {
-                                const data = await response.json();
-                                console.log("Degree upload success:", data);
-                                console.log("🔍 Degree URL:", data.url);
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Thời gian học
+                          </label>
+                          <div className="flex space-x-3">
+                            <select
+                              value={education.fromTime || ""}
+                              onChange={(e) =>
                                 updateEducation(
                                   index,
-                                  "degreeFileUrl",
-                                  data.url
-                                );
-                                updateEducation(
-                                  index,
-                                  "degreeFileName",
-                                  file.name
-                                );
-                              } else {
-                                const errorData = await response.text();
-                                console.error(
-                                  "Degree upload failed:",
-                                  response.status,
-                                  errorData
-                                );
-                                console.error(
-                                  "🔍 Degree upload error details:",
-                                  errorData
-                                );
+                                  "fromTime",
+                                  parseInt(e.target.value) || 0
+                                )
                               }
-                            } catch (error) {
-                              console.error("Degree upload error:", error);
-                            }
-                          } else {
-                            console.log("No file selected for degree");
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor={`education-file-${index}`}
-                        className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors duration-200"
-                      >
-                        <svg
-                          className="w-5 h-5 mr-2 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                          />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-600">
-                          {education.degreeFileUrl
-                            ? education.degreeFileName ||
-                              "File đã tải lên từ trước"
-                            : "Chọn file hoặc kéo thả vào đây"}
-                        </span>
-                      </label>
-                      {education.degreeFileUrl && (
-                        <div className="mt-2">
-                          <p className="text-xs text-green-600 flex items-center mb-1">
-                            <svg
-                              className="w-4 h-4 mr-1"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
+                              className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200"
                             >
-                              <path
-                                fillRule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            {education.degreeFileName || "Bằng cấp đã tải lên"}
-                          </p>
-                          <a
-                            href={education.degreeFileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:text-blue-800 underline"
-                          >
-                            Xem bằng cấp
-                          </a>
+                              <option value="">Bắt đầu</option>
+                              {Array.from(
+                                { length: new Date().getFullYear() - 1900 },
+                                (_, i) => new Date().getFullYear() - 1 - i
+                              ).map((year) => (
+                                <option key={year} value={year}>
+                                  {year}
+                                </option>
+                              ))}
+                            </select>
+                            <span className="flex items-center text-gray-500 text-lg font-medium">
+                              -
+                            </span>
+                            <select
+                              value={education.toTime || ""}
+                              onChange={(e) =>
+                                updateEducation(
+                                  index,
+                                  "toTime",
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                              className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200"
+                            >
+                              <option value="">Kết thúc</option>
+                              <option value="hiện tại">
+                                Hiện tại (đang học)
+                              </option>
+                              {Array.from(
+                                { length: new Date().getFullYear() - 1899 },
+                                (_, i) => new Date().getFullYear() - i
+                              ).map((year) => (
+                                <option key={year} value={year}>
+                                  {year}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          {errors[`degree_${index}_year`] && (
+                            <p className="text-red-500 text-sm mt-1 flex items-center">
+                              <svg
+                                className="w-4 h-4 mr-1"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              {errors[`degree_${index}_year`]}
+                            </p>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                      </div>
 
-                <button
-                  type="button"
-                  onClick={addEducation}
-                  className="flex items-center justify-center w-full px-6 py-3 border-2 border-dashed rounded-xl transition-colors duration-200 font-medium"
-                  style={{
-                    borderColor: "#94cce6",
-                    color: "#94cce6",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "#94cce6";
-                    e.currentTarget.style.backgroundColor = "#f0f8ff";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "#94cce6";
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
-                >
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                      <div className="mt-4">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Tải lên bằng cấp
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          className="hidden"
+                          id={`education-file-${index}`}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0] || null;
+                            console.log("Degree file selected:", file);
+                            if (file) {
+                              console.log("File details:", {
+                                name: file.name,
+                                type: file.type,
+                                size: file.size,
+                              });
+
+                              // Upload to backend
+                              try {
+                                const uploadFormData = new FormData();
+                                uploadFormData.append("file", file);
+
+                                console.log("Uploading degree to backend...");
+                                const response = await fetch(
+                                  "http://localhost:8080/api/files/upload/degree",
+                                  {
+                                    method: "POST",
+                                    body: uploadFormData,
+                                  }
+                                );
+
+                                console.log(
+                                  "Degree upload response:",
+                                  response.status,
+                                  response.statusText
+                                );
+
+                                if (response.ok) {
+                                  const data = await response.json();
+                                  console.log("Degree upload success:", data);
+                                  console.log("🔍 Degree URL:", data.url);
+                                  updateEducation(
+                                    index,
+                                    "degreeFileUrl",
+                                    data.url
+                                  );
+                                  updateEducation(
+                                    index,
+                                    "degreeFileName",
+                                    file.name
+                                  );
+                                } else {
+                                  const errorData = await response.text();
+                                  console.error(
+                                    "Degree upload failed:",
+                                    response.status,
+                                    errorData
+                                  );
+                                  console.error(
+                                    "🔍 Degree upload error details:",
+                                    errorData
+                                  );
+                                }
+                              } catch (error) {
+                                console.error("Degree upload error:", error);
+                              }
+                            } else {
+                              console.log("No file selected for degree");
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`education-file-${index}`}
+                          className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors duration-200"
+                        >
+                          <svg
+                            className="w-5 h-5 mr-2 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                            />
+                          </svg>
+                          <span className="text-sm font-medium text-gray-600">
+                            {education.degreeFileUrl
+                              ? education.degreeFileName ||
+                                "File đã tải lên từ trước"
+                              : "Chọn file hoặc kéo thả vào đây"}
+                          </span>
+                        </label>
+                        {education.degreeFileUrl && (
+                          <div className="mt-2">
+                            <p className="text-xs text-green-600 flex items-center mb-1">
+                              <svg
+                                className="w-4 h-4 mr-1"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              {education.degreeFileName ||
+                                "Bằng cấp đã tải lên"}
+                            </p>
+                            <a
+                              href={education.degreeFileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:text-blue-800 underline"
+                            >
+                              Xem bằng cấp
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={addEducation}
+                    className="flex items-center justify-center w-full px-6 py-3 border-2 border-dashed rounded-xl transition-colors duration-200 font-medium"
+                    style={{
+                      borderColor: "#94cce6",
+                      color: "#94cce6",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "#94cce6";
+                      e.currentTarget.style.backgroundColor = "#f0f8ff";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "#94cce6";
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                  Thêm bằng cấp khác
-                </button>
+                    <svg
+                      className="w-5 h-5 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    Thêm bằng cấp khác
+                  </button>
+                </div>
               </div>
             )}
           </div>

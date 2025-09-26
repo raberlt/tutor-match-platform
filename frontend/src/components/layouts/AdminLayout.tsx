@@ -53,6 +53,25 @@ export const AdminLayout: React.FC = () => {
       ),
     },
     {
+      name: "Quản lý hồ sơ",
+      href: "/admin/profiles",
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      ),
+    },
+    {
       name: "Quản lý booking",
       href: "/admin/bookings",
       icon: (
@@ -132,9 +151,9 @@ export const AdminLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white shadow-sm min-h-screen border-r">
-        <div className="p-6">
+      {/* Sidebar - Fixed width and position */}
+      <aside className="w-64 bg-white shadow-sm min-h-screen border-r flex-shrink-0 fixed left-0 top-0 z-10">
+        <div className="p-6 h-full overflow-y-auto">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 mb-8">
             <div
@@ -204,9 +223,11 @@ export const AdminLayout: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 p-6">
-        <Outlet />
+      {/* Main content - Offset by sidebar width */}
+      <main className="flex-1 ml-64 min-h-screen overflow-x-auto">
+        <div className="p-6">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

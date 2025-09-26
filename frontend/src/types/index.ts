@@ -61,14 +61,86 @@ export interface StudentProfile {
 export interface TutorProfile {
   id: number;
   user: User;
+  firstName?: string;
+  lastName?: string;
+  imageAvatar?: string;
   headline?: string;
   bio?: string;
   experience?: string;
+  videoIntro?: string;
   fees?: number;
   teachingLevel?: string;
   city?: string;
   ratePointAverage?: number;
   totalPoint?: number;
+  cvFileUrl?: string;
+  enable?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  profileSubjects?: TutorProfileSubject[];
+  schedules?: Schedule[];
+  educations?: Education[];
+  teachingAudiences?: TeachingAudience[];
+  certificates?: Certificate[];
+}
+
+export interface TutorProfileSubject {
+  id: number;
+  fees: number;
+  subject: Subject;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Subject {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export interface Schedule {
+  id: number;
+  dayOfWeek: string;
+  fromTime: string;
+  toTime: string;
+  enable?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Education {
+  id: number;
+  schoolName: string;
+  degree: string;
+  major: string;
+  fromTime: string;
+  toTime: string;
+  degreeFileName?: string;
+  degreeFileUrl?: string;
+  valid?: boolean;
+  isVerified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TeachingAudience {
+  id: number;
+  name: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Certificate {
+  id: number;
+  name: string;
+  issuedBy: string;
+  description?: string;
+  certFileName?: string;
+  certFileUrl?: string;
+  valid?: boolean;
+  isVerified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Contract {
@@ -249,6 +321,7 @@ export interface TutorPreviewProfile {
   totalPoint?: number;
   city?: string;
   subjectNames: string[];
+  user?: User;
 }
 
 export interface TutorProfile {

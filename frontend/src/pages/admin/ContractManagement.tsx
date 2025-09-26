@@ -2,174 +2,176 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 // Types based on backend entities
-interface Coupon {
+interface Contract {
   id: number;
-  code: string;
-  name: string;
-  description: string;
-  discountType: "PERCENTAGE" | "FIXED_AMOUNT";
-  discountValue: number;
-  minOrderAmount: number;
-  maxDiscountAmount: number;
-  usageLimit: number;
-  usedCount: number;
+  tutor: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  student: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  subject: string;
   startDate: string;
   endDate: string;
-  isActive: boolean;
+  totalSessions: number;
+  completedSessions: number;
+  hourlyRate: number;
+  totalAmount: number;
+  status: "ACTIVE" | "COMPLETED" | "CANCELLED" | "SUSPENDED";
   createdAt: string;
   updatedAt: string;
 }
 
-interface CouponStats {
-  totalCoupons: number;
-  activeCoupons: number;
-  expiredCoupons: number;
-  totalUsage: number;
-  totalDiscountGiven: number;
-  mostUsedCoupon: {
-    code: string;
-    usageCount: number;
-  };
+interface ContractStats {
+  totalContracts: number;
+  activeContracts: number;
+  completedContracts: number;
+  cancelledContracts: number;
+  totalRevenue: number;
+  averageContractValue: number;
 }
 
-const CouponManagement: React.FC = () => {
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [stats, setStats] = useState<CouponStats | null>(null);
+const ContractManagement: React.FC = () => {
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [stats, setStats] = useState<ContractStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
-  const [selectedType, setSelectedType] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
 
   // Mock data - replace with actual API calls
   useEffect(() => {
-    const mockCoupons: Coupon[] = [
+    const mockContracts: Contract[] = [
       {
         id: 1,
-        code: "WELCOME10",
-        name: "Chào mừng khách hàng mới",
-        description: "Giảm 10% cho khách hàng lần đầu đăng ký",
-        discountType: "PERCENTAGE",
-        discountValue: 10,
-        minOrderAmount: 500000,
-        maxDiscountAmount: 100000,
-        usageLimit: 1000,
-        usedCount: 245,
+        tutor: {
+          id: 1,
+          firstName: "Trần",
+          lastName: "Thị B",
+          email: "tranthib@email.com",
+        },
+        student: {
+          id: 2,
+          firstName: "Nguyễn",
+          lastName: "Văn A",
+          email: "nguyenvana@email.com",
+        },
+        subject: "Toán học",
         startDate: "2024-01-01",
-        endDate: "2024-12-31",
-        isActive: true,
+        endDate: "2024-06-30",
+        totalSessions: 24,
+        completedSessions: 18,
+        hourlyRate: 200000,
+        totalAmount: 4800000,
+        status: "ACTIVE",
         createdAt: "2024-01-01T00:00:00Z",
-        updatedAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-15T10:30:00Z",
       },
       {
         id: 2,
-        code: "SUMMER50K",
-        name: "Khuyến mãi mùa hè",
-        description: "Giảm 50,000 VNĐ cho đơn hàng từ 1,000,000 VNĐ",
-        discountType: "FIXED_AMOUNT",
-        discountValue: 50000,
-        minOrderAmount: 1000000,
-        maxDiscountAmount: 50000,
-        usageLimit: 500,
-        usedCount: 89,
-        startDate: "2024-06-01",
-        endDate: "2024-08-31",
-        isActive: true,
-        createdAt: "2024-05-15T00:00:00Z",
-        updatedAt: "2024-05-15T00:00:00Z",
+        tutor: {
+          id: 3,
+          firstName: "Phạm",
+          lastName: "Văn C",
+          email: "phamvanc@email.com",
+        },
+        student: {
+          id: 4,
+          firstName: "Lê",
+          lastName: "Thị D",
+          email: "lethid@email.com",
+        },
+        subject: "Vật lý",
+        startDate: "2023-09-01",
+        endDate: "2024-01-31",
+        totalSessions: 20,
+        completedSessions: 20,
+        hourlyRate: 180000,
+        totalAmount: 3600000,
+        status: "COMPLETED",
+        createdAt: "2023-08-25T00:00:00Z",
+        updatedAt: "2024-01-31T23:59:59Z",
       },
       {
         id: 3,
-        code: "STUDENT20",
-        name: "Ưu đãi học sinh",
-        description: "Giảm 20% cho học sinh, sinh viên",
-        discountType: "PERCENTAGE",
-        discountValue: 20,
-        minOrderAmount: 300000,
-        maxDiscountAmount: 200000,
-        usageLimit: 2000,
-        usedCount: 1567,
-        startDate: "2024-01-01",
-        endDate: "2024-12-31",
-        isActive: true,
-        createdAt: "2024-01-01T00:00:00Z",
-        updatedAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: 4,
-        code: "EXPIRED15",
-        name: "Mã giảm giá đã hết hạn",
-        description: "Giảm 15% - đã hết hạn",
-        discountType: "PERCENTAGE",
-        discountValue: 15,
-        minOrderAmount: 400000,
-        maxDiscountAmount: 150000,
-        usageLimit: 100,
-        usedCount: 45,
-        startDate: "2023-01-01",
-        endDate: "2023-12-31",
-        isActive: false,
-        createdAt: "2023-01-01T00:00:00Z",
-        updatedAt: "2023-12-31T23:59:59Z",
+        tutor: {
+          id: 5,
+          firstName: "Hoàng",
+          lastName: "Thị E",
+          email: "hoangthie@email.com",
+        },
+        student: {
+          id: 6,
+          firstName: "Vũ",
+          lastName: "Văn F",
+          email: "vuvanf@email.com",
+        },
+        subject: "Hóa học",
+        startDate: "2024-02-01",
+        endDate: "2024-05-31",
+        totalSessions: 16,
+        completedSessions: 5,
+        hourlyRate: 220000,
+        totalAmount: 3520000,
+        status: "CANCELLED",
+        createdAt: "2024-01-20T00:00:00Z",
+        updatedAt: "2024-03-15T14:20:00Z",
       },
     ];
 
-    const mockStats: CouponStats = {
-      totalCoupons: 25,
-      activeCoupons: 18,
-      expiredCoupons: 7,
-      totalUsage: 2847,
-      totalDiscountGiven: 125000000,
-      mostUsedCoupon: {
-        code: "STUDENT20",
-        usageCount: 1567,
-      },
+    const mockStats: ContractStats = {
+      totalContracts: 156,
+      activeContracts: 89,
+      completedContracts: 45,
+      cancelledContracts: 22,
+      totalRevenue: 125000000,
+      averageContractValue: 800000,
     };
 
-    setCoupons(mockCoupons);
+    setContracts(mockContracts);
     setStats(mockStats);
     setLoading(false);
   }, []);
 
-  const getStatusColor = (isActive: boolean, endDate: string) => {
-    const now = new Date();
-    const end = new Date(endDate);
-
-    if (!isActive) return "bg-red-100 text-red-800";
-    if (end < now) return "bg-orange-100 text-orange-800";
-    return "bg-green-100 text-green-800";
-  };
-
-  const getStatusText = (isActive: boolean, endDate: string) => {
-    const now = new Date();
-    const end = new Date(endDate);
-
-    if (!isActive) return "Tạm dừng";
-    if (end < now) return "Hết hạn";
-    return "Hoạt động";
-  };
-
-  const getTypeColor = (type: string) => {
-    return type === "PERCENTAGE"
-      ? "bg-blue-100 text-blue-800"
-      : "bg-purple-100 text-purple-800";
-  };
-
-  const getTypeText = (type: string) => {
-    return type === "PERCENTAGE" ? "Phần trăm" : "Số tiền cố định";
-  };
-
-  const formatDiscountValue = (coupon: Coupon) => {
-    if (coupon.discountType === "PERCENTAGE") {
-      return `${coupon.discountValue}%`;
-    } else {
-      return `${coupon.discountValue.toLocaleString("vi-VN")} VNĐ`;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "ACTIVE":
+        return "bg-green-100 text-green-800";
+      case "COMPLETED":
+        return "bg-blue-100 text-blue-800";
+      case "CANCELLED":
+        return "bg-red-100 text-red-800";
+      case "SUSPENDED":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const getUsagePercentage = (usedCount: number, usageLimit: number) => {
-    return Math.round((usedCount / usageLimit) * 100);
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "ACTIVE":
+        return "Đang hoạt động";
+      case "COMPLETED":
+        return "Hoàn thành";
+      case "CANCELLED":
+        return "Đã hủy";
+      case "SUSPENDED":
+        return "Tạm dừng";
+      default:
+        return status;
+    }
+  };
+
+  const getProgressPercentage = (completed: number, total: number) => {
+    return Math.round((completed / total) * 100);
   };
 
   if (loading) {
@@ -209,16 +211,16 @@ const CouponManagement: React.FC = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Quản lý Mã giảm giá
+                Quản lý Hợp đồng
               </h1>
               <p className="mt-1 text-gray-600">
-                Quản lý và theo dõi tất cả các mã giảm giá trong hệ thống
+                Quản lý và theo dõi tất cả các hợp đồng gia sư trong hệ thống
               </p>
             </div>
           </div>
@@ -241,10 +243,10 @@ const CouponManagement: React.FC = () => {
                     className="text-sm font-medium mb-1"
                     style={{ color: "rgb(148, 204, 230)" }}
                   >
-                    Tổng mã giảm giá
+                    Tổng hợp đồng
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
-                    {stats.totalCoupons}
+                    {stats.totalContracts}
                   </p>
                 </div>
                 <div
@@ -261,7 +263,7 @@ const CouponManagement: React.FC = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
                 </div>
@@ -285,7 +287,7 @@ const CouponManagement: React.FC = () => {
                     Đang hoạt động
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
-                    {stats.activeCoupons}
+                    {stats.activeContracts}
                   </p>
                 </div>
                 <div
@@ -323,10 +325,10 @@ const CouponManagement: React.FC = () => {
                     className="text-sm font-medium mb-1"
                     style={{ color: "rgb(148, 204, 230)" }}
                   >
-                    Tổng sử dụng
+                    Hoàn thành
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
-                    {stats.totalUsage}
+                    {stats.completedContracts}
                   </p>
                 </div>
                 <div
@@ -343,7 +345,7 @@ const CouponManagement: React.FC = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                      d="M5 13l4 4L19 7"
                     />
                   </svg>
                 </div>
@@ -364,10 +366,10 @@ const CouponManagement: React.FC = () => {
                     className="text-sm font-medium mb-1"
                     style={{ color: "rgb(148, 204, 230)" }}
                   >
-                    Tổng giảm giá
+                    Tổng doanh thu
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
-                    {stats.totalDiscountGiven.toLocaleString("vi-VN")} VNĐ
+                    {stats.totalRevenue.toLocaleString("vi-VN")} VNĐ
                   </p>
                 </div>
                 <div
@@ -393,48 +395,6 @@ const CouponManagement: React.FC = () => {
           </div>
         )}
 
-        {/* Most Used Coupon */}
-        {stats && (
-          <div
-            className="p-6 rounded-2xl shadow-lg mb-6"
-            style={{
-              backgroundColor: "white",
-              borderColor: "rgba(148, 204, 230, 0.2)",
-              border: "1px solid",
-            }}
-          >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Mã giảm giá được sử dụng nhiều nhất
-            </h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {stats.mostUsedCoupon.code}
-                </div>
-                <div className="text-sm text-gray-600">
-                  Đã sử dụng {stats.mostUsedCoupon.usageCount} lần
-                </div>
-              </div>
-              <div
-                className="p-4 rounded-xl"
-                style={{
-                  backgroundColor: "rgba(148, 204, 230, 0.1)",
-                  borderColor: "rgba(148, 204, 230, 0.2)",
-                  border: "1px solid",
-                }}
-              >
-                <div
-                  className="text-3xl font-bold"
-                  style={{ color: "rgb(148, 204, 230)" }}
-                >
-                  {stats.mostUsedCoupon.usageCount}
-                </div>
-                <div className="text-sm text-gray-600">lần sử dụng</div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Filters and Search */}
         <div
           className="p-6 rounded-2xl shadow-lg mb-6"
@@ -449,7 +409,7 @@ const CouponManagement: React.FC = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm theo mã, tên, mô tả..."
+                  placeholder="Tìm kiếm theo gia sư, học viên, môn học..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200 w-full sm:w-80"
@@ -485,23 +445,10 @@ const CouponManagement: React.FC = () => {
                 }}
               >
                 <option value="">Tất cả trạng thái</option>
-                <option value="active">Hoạt động</option>
-                <option value="expired">Hết hạn</option>
-                <option value="inactive">Tạm dừng</option>
-              </select>
-
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
-                style={{
-                  borderColor: "rgba(148, 204, 230, 0.3)",
-                  focusRingColor: "rgb(148, 204, 230)",
-                }}
-              >
-                <option value="">Tất cả loại</option>
-                <option value="PERCENTAGE">Phần trăm</option>
-                <option value="FIXED_AMOUNT">Số tiền cố định</option>
+                <option value="ACTIVE">Đang hoạt động</option>
+                <option value="COMPLETED">Hoàn thành</option>
+                <option value="CANCELLED">Đã hủy</option>
+                <option value="SUSPENDED">Tạm dừng</option>
               </select>
             </div>
 
@@ -519,13 +466,13 @@ const CouponManagement: React.FC = () => {
                 className="px-4 py-3 text-white rounded-xl transition-colors duration-200 font-medium"
                 style={{ backgroundColor: "rgb(148, 204, 230)" }}
               >
-                Tạo mới
+                Tạo hợp đồng mới
               </button>
             </div>
           </div>
         </div>
 
-        {/* Coupons Table */}
+        {/* Contracts Table */}
         <div
           className="rounded-2xl shadow-lg overflow-hidden"
           style={{
@@ -542,22 +489,25 @@ const CouponManagement: React.FC = () => {
               >
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Mã
+                    ID
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tên
+                    Gia sư
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Loại giảm giá
+                    Học viên
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Giá trị
+                    Môn học
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Sử dụng
+                    Tiến độ
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Thời hạn
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Giá trị
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Trạng thái
@@ -568,80 +518,94 @@ const CouponManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {coupons.map((coupon) => (
-                  <tr key={coupon.id} className="hover:bg-gray-50">
+                {contracts.map((contract) => (
+                  <tr key={contract.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      #{contract.id}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {coupon.code}
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {contract.tutor.firstName} {contract.tutor.lastName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {contract.tutor.email}
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {coupon.name}
-                      </div>
-                      <div className="text-sm text-gray-500 max-w-xs truncate">
-                        {coupon.description}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {contract.student.firstName}{" "}
+                          {contract.student.lastName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {contract.student.email}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(
-                          coupon.discountType
-                        )}`}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                        style={{
+                          backgroundColor: "rgba(148, 204, 230, 0.1)",
+                          color: "rgb(148, 204, 230)",
+                        }}
                       >
-                        {getTypeText(coupon.discountType)}
+                        {contract.subject}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {formatDiscountValue(coupon)}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        Tối thiểu:{" "}
-                        {coupon.minOrderAmount.toLocaleString("vi-VN")} VNĐ
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {coupon.usedCount} / {coupon.usageLimit}
+                      <div className="text-sm text-gray-900">
+                        {contract.completedSessions} / {contract.totalSessions}{" "}
+                        buổi
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                         <div
                           className="h-2 rounded-full"
                           style={{
                             backgroundColor: "rgb(148, 204, 230)",
-                            width: `${getUsagePercentage(
-                              coupon.usedCount,
-                              coupon.usageLimit
+                            width: `${getProgressPercentage(
+                              contract.completedSessions,
+                              contract.totalSessions
                             )}%`,
                           }}
                         ></div>
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {getUsagePercentage(
-                          coupon.usedCount,
-                          coupon.usageLimit
+                        {getProgressPercentage(
+                          contract.completedSessions,
+                          contract.totalSessions
                         )}
                         %
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {new Date(coupon.startDate).toLocaleDateString("vi-VN")}
+                        {new Date(contract.startDate).toLocaleDateString(
+                          "vi-VN"
+                        )}
                       </div>
                       <div className="text-sm text-gray-500">
                         đến{" "}
-                        {new Date(coupon.endDate).toLocaleDateString("vi-VN")}
+                        {new Date(contract.endDate).toLocaleDateString("vi-VN")}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {contract.totalAmount.toLocaleString("vi-VN")} VNĐ
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {contract.hourlyRate.toLocaleString("vi-VN")} VNĐ/giờ
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                          coupon.isActive,
-                          coupon.endDate
+                          contract.status
                         )}`}
                       >
-                        {getStatusText(coupon.isActive, coupon.endDate)}
+                        {getStatusText(contract.status)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -660,12 +624,14 @@ const CouponManagement: React.FC = () => {
                         </button>
                         <button
                           className={`${
-                            coupon.isActive
+                            contract.status === "ACTIVE"
                               ? "text-orange-600 hover:text-orange-900"
                               : "text-green-600 hover:text-green-900"
                           }`}
                         >
-                          {coupon.isActive ? "Tạm dừng" : "Kích hoạt"}
+                          {contract.status === "ACTIVE"
+                            ? "Tạm dừng"
+                            : "Kích hoạt"}
                         </button>
                         <button className="text-red-600 hover:text-red-900">
                           Xóa
@@ -714,4 +680,4 @@ const CouponManagement: React.FC = () => {
   );
 };
 
-export default CouponManagement;
+export default ContractManagement;

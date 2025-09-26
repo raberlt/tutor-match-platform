@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { adminService } from "../../services/adminService";
-import { TutorApproval } from "./TutorApproval";
 
 interface User {
   id: string;
@@ -21,9 +20,6 @@ export const UserManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"users" | "tutor-approval">(
-    "users"
-  );
 
   useEffect(() => {
     loadUsers();
@@ -128,43 +124,17 @@ export const UserManagement: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý người dùng</h1>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-          Thêm người dùng
-        </button>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab("users")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "users"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            Quản lý người dùng
-          </button>
-          <button
-            onClick={() => setActiveTab("tutor-approval")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "tutor-approval"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            Duyệt gia sư
-          </button>
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === "users" ? (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Quản lý người dùng
+            </h1>
+            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+              Thêm người dùng
+            </button>
+          </div>
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -384,9 +354,7 @@ export const UserManagement: React.FC = () => {
             </div>
           </div>
         </div>
-      ) : (
-        <TutorApproval />
-      )}
+      </div>
     </div>
   );
 };

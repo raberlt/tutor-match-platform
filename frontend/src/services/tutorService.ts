@@ -104,6 +104,7 @@ export interface TutorApplicationData {
   }>;
 
   // Học vấn
+  noEducation: boolean;
   educations: Array<{
     schoolName: string;
     degree: string;
@@ -115,6 +116,7 @@ export interface TutorApplicationData {
   }>;
 
   // Chứng chỉ
+  noCertificates: boolean;
   certificates: Array<{
     name: string;
     issuedBy: string;
@@ -483,6 +485,53 @@ export class TutorService {
     } catch (error) {
       console.error("Error fetching teaching audiences:", error);
       return [];
+    }
+  }
+
+  // Lấy thông tin chi tiết gia sư theo username
+  static async getTutorByUsername(username: string): Promise<TutorProfile> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/public/tutors/username/${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch tutor details");
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching tutor details:", error);
+      throw error;
+    }
+  }
+
+  // Lấy thông tin chi tiết gia sư theo ID
+  static async getTutorById(id: number): Promise<TutorProfile> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/public/tutors/${id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch tutor details");
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching tutor details:", error);
+      throw error;
     }
   }
 }

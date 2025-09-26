@@ -7,6 +7,9 @@ interface TutorApplication {
   firstName: string;
   lastName: string;
   email: string;
+  phoneNumber?: string;
+  address?: string;
+  imageAvatar?: string;
   bio: string;
   headline: string;
   experience: string;
@@ -21,7 +24,12 @@ interface TutorApplication {
   certificates: Certificate[];
   subjectFees: SubjectFee[];
   schedules: Schedule[];
-  teachingAudiences: string[];
+  teachingAudiences: TeachingAudience[];
+}
+
+interface TeachingAudience {
+  id: number;
+  name: string;
 }
 
 interface Education {
@@ -414,21 +422,25 @@ export const TutorApproval: React.FC = () => {
 
       {/* Review Modal */}
       {showModal && selectedApplication && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Xem xét hồ sơ: {selectedApplication.firstName}{" "}
-                  {selectedApplication.lastName}
-                </h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-4 mx-auto p-0 border-0 w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 shadow-2xl rounded-lg bg-white">
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-lg">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-bold">Chi tiết hồ sơ gia sư</h3>
+                  <p className="text-blue-100 mt-1">
+                    {selectedApplication.firstName}{" "}
+                    {selectedApplication.lastName}
+                  </p>
+                </div>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-white hover:text-blue-200 transition-colors"
                 >
                   <span className="sr-only">Đóng</span>
                   <svg
-                    className="h-6 w-6"
+                    className="h-8 w-8"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -442,129 +454,357 @@ export const TutorApproval: React.FC = () => {
                   </svg>
                 </button>
               </div>
+            </div>
 
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {/* Basic Info */}
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">
-                    Thông tin cơ bản
-                  </h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p>
-                      <strong>Email:</strong> {selectedApplication.email}
-                    </p>
-                    <p>
-                      <strong>Tiêu đề:</strong> {selectedApplication.headline}
-                    </p>
-                    <p>
-                      <strong>Giới thiệu:</strong> {selectedApplication.bio}
-                    </p>
-                    <p>
-                      <strong>Kinh nghiệm:</strong>{" "}
-                      {selectedApplication.experience}
-                    </p>
-                    {selectedApplication.videoIntro && (
-                      <p>
-                        <strong>Video giới thiệu:</strong>{" "}
-                        {selectedApplication.videoIntro}
-                      </p>
-                    )}
+            {/* Content */}
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column */}
+                <div className="space-y-6">
+                  {/* Personal Information */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                      Thông tin cá nhân
+                    </h4>
+                    <div className="space-y-4">
+                      {/* Avatar */}
+                      {selectedApplication.imageAvatar && (
+                        <div className="flex justify-center mb-4">
+                          <img
+                            src={selectedApplication.imageAvatar}
+                            alt="Avatar"
+                            className="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-3">
+                        <div className="flex">
+                          <span className="w-24 text-gray-600 font-medium">
+                            Họ tên:
+                          </span>
+                          <span className="text-gray-900">
+                            {selectedApplication.firstName}{" "}
+                            {selectedApplication.lastName}
+                          </span>
+                        </div>
+                        <div className="flex">
+                          <span className="w-24 text-gray-600 font-medium">
+                            Email:
+                          </span>
+                          <span className="text-gray-900">
+                            {selectedApplication.email}
+                          </span>
+                        </div>
+                        <div className="flex">
+                          <span className="w-24 text-gray-600 font-medium">
+                            SĐT:
+                          </span>
+                          <span className="text-gray-900">
+                            {selectedApplication.phoneNumber || "Chưa cập nhật"}
+                          </span>
+                        </div>
+                        <div className="flex">
+                          <span className="w-24 text-gray-600 font-medium">
+                            Địa chỉ:
+                          </span>
+                          <span className="text-gray-900">
+                            {selectedApplication.address || "Chưa cập nhật"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Professional Info */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                      Thông tin chuyên môn
+                    </h4>
+                    <div className="space-y-4">
+                      <div>
+                        <span className="text-gray-600 font-medium block mb-1">
+                          Tiêu đề:
+                        </span>
+                        <p className="text-gray-900 bg-gray-50 p-3 rounded-md">
+                          {selectedApplication.headline || "Chưa cập nhật"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 font-medium block mb-1">
+                          Giới thiệu bản thân:
+                        </span>
+                        <p className="text-gray-900 bg-gray-50 p-3 rounded-md whitespace-pre-wrap">
+                          {selectedApplication.bio || "Chưa cập nhật"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 font-medium block mb-1">
+                          Kinh nghiệm:
+                        </span>
+                        <p className="text-gray-900 bg-gray-50 p-3 rounded-md whitespace-pre-wrap">
+                          {selectedApplication.experience || "Chưa cập nhật"}
+                        </p>
+                      </div>
+                      {selectedApplication.videoIntro && (
+                        <div>
+                          <span className="text-gray-600 font-medium block mb-1">
+                            Video giới thiệu:
+                          </span>
+                          <a
+                            href={selectedApplication.videoIntro}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline break-all"
+                          >
+                            {selectedApplication.videoIntro}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* CV Information */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                      Hồ sơ CV
+                    </h4>
+                    <div className="space-y-3">
+                      {selectedApplication.cvFileUrl ? (
+                        <div className="space-y-3">
+                          <div>
+                            <span className="text-gray-600 font-medium block mb-1">
+                              Tên file:
+                            </span>
+                            <p className="text-gray-900">
+                              {selectedApplication.cvFileName || "CV.pdf"}
+                            </p>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-gray-600 font-medium mr-2">
+                              Link CV:
+                            </span>
+                            <a
+                              href={selectedApplication.cvFileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 underline"
+                            >
+                              Xem CV
+                            </a>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 italic">Chưa tải lên CV</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Education */}
-                {selectedApplication.educations &&
-                  selectedApplication.educations.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-2">
+                {/* Right Column */}
+                <div className="space-y-6">
+                  {/* Education */}
+                  {selectedApplication.educations &&
+                  selectedApplication.educations.length > 0 ? (
+                    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
                         Học vấn
                       </h4>
-                      <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="space-y-4">
                         {selectedApplication.educations.map((edu, index) => (
-                          <div key={index} className="mb-2">
-                            <p>
-                              <strong>{edu.schoolName}</strong> - {edu.degree}
+                          <div
+                            key={index}
+                            className="border-l-4 border-blue-500 pl-4"
+                          >
+                            <h5 className="font-semibold text-gray-900">
+                              {edu.schoolName}
+                            </h5>
+                            <p className="text-gray-700">{edu.degree}</p>
+                            {edu.major && (
+                              <p className="text-gray-600 text-sm">
+                                Chuyên ngành: {edu.major}
+                              </p>
+                            )}
+                            <p className="text-gray-500 text-sm">
+                              {edu.fromTime} - {edu.toTime || "Hiện tại"}
                             </p>
-                            <p className="text-sm text-gray-600">
-                              {edu.major} ({edu.fromTime} - {edu.toTime})
-                            </p>
+                            {edu.degreeFileUrl && (
+                              <a
+                                href={edu.degreeFileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 text-sm underline"
+                              >
+                                Xem bằng cấp
+                              </a>
+                            )}
                           </div>
                         ))}
                       </div>
                     </div>
+                  ) : (
+                    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                        Học vấn
+                      </h4>
+                      <p className="text-gray-500 italic">
+                        Chưa cập nhật thông tin học vấn
+                      </p>
+                    </div>
                   )}
 
-                {/* Certificates */}
-                {selectedApplication.certificates &&
-                  selectedApplication.certificates.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-2">
+                  {/* Certificates */}
+                  {selectedApplication.certificates &&
+                  selectedApplication.certificates.length > 0 ? (
+                    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
                         Chứng chỉ
                       </h4>
-                      <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="space-y-4">
                         {selectedApplication.certificates.map((cert, index) => (
-                          <div key={index} className="mb-2">
-                            <p>
-                              <strong>{cert.name}</strong> - {cert.issuedBy}
+                          <div
+                            key={index}
+                            className="border-l-4 border-green-500 pl-4"
+                          >
+                            <h5 className="font-semibold text-gray-900">
+                              {cert.name}
+                            </h5>
+                            <p className="text-gray-700">
+                              Tổ chức cấp: {cert.issuedBy}
                             </p>
-                            <p className="text-sm text-gray-600">
-                              {cert.description}
-                            </p>
+                            {cert.description && (
+                              <p className="text-gray-600 text-sm">
+                                {cert.description}
+                              </p>
+                            )}
+                            {cert.certFileUrl && (
+                              <a
+                                href={cert.certFileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 text-sm underline"
+                              >
+                                Xem chứng chỉ
+                              </a>
+                            )}
                           </div>
                         ))}
                       </div>
                     </div>
+                  ) : (
+                    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                        Chứng chỉ
+                      </h4>
+                      <p className="text-gray-500 italic">
+                        Chưa cập nhật chứng chỉ
+                      </p>
+                    </div>
                   )}
 
-                {/* Subject Fees */}
-                {selectedApplication.subjectFees &&
-                  selectedApplication.subjectFees.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-2">
-                        Môn học và học phí
-                      </h4>
-                      <div className="bg-gray-50 p-4 rounded-lg">
+                  {/* Subject Fees */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                      Môn học và học phí
+                    </h4>
+                    {selectedApplication.subjectFees &&
+                    selectedApplication.subjectFees.length > 0 ? (
+                      <div className="space-y-3">
                         {selectedApplication.subjectFees.map(
                           (subject, index) => (
-                            <div key={index} className="mb-2">
-                              <p>
-                                <strong>{subject.subjectName}</strong>:{" "}
-                                {subject.fees.toLocaleString("vi-VN")} VNĐ/buổi
-                              </p>
+                            <div
+                              key={index}
+                              className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-md"
+                            >
+                              <span className="font-medium text-gray-900">
+                                {subject.subjectName || `Môn học ${index + 1}`}
+                              </span>
+                              <span className="text-green-600 font-semibold">
+                                {subject.fees
+                                  ? subject.fees.toLocaleString("vi-VN")
+                                  : "0"}{" "}
+                                VNĐ/buổi
+                              </span>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">
+                        Chưa cập nhật môn học
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Teaching Audiences */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                      Đối tượng dạy
+                    </h4>
+                    {selectedApplication.teachingAudiences &&
+                    selectedApplication.teachingAudiences.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedApplication.teachingAudiences.map(
+                          (audience, index) => (
+                            <span
+                              key={index}
+                              className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full font-medium"
+                            >
+                              {audience.name}
+                            </span>
+                          )
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">
+                        Chưa cập nhật đối tượng dạy
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Schedules */}
+                  {selectedApplication.schedules &&
+                  selectedApplication.schedules.length > 0 ? (
+                    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                        Lịch dạy
+                      </h4>
+                      <div className="space-y-2">
+                        {selectedApplication.schedules.map(
+                          (schedule, index) => (
+                            <div
+                              key={index}
+                              className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-md"
+                            >
+                              <span className="font-medium text-gray-900">
+                                {schedule.dayOfWeek}
+                              </span>
+                              <span className="text-gray-600">
+                                {schedule.fromTime} - {schedule.toTime}
+                              </span>
                             </div>
                           )
                         )}
                       </div>
                     </div>
-                  )}
-
-                {/* Teaching Audiences */}
-                {selectedApplication.teachingAudiences &&
-                  selectedApplication.teachingAudiences.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-2">
-                        Đối tượng dạy
+                  ) : (
+                    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                        Lịch dạy
                       </h4>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="flex flex-wrap gap-2">
-                          {selectedApplication.teachingAudiences.map(
-                            (audience, index) => (
-                              <span
-                                key={index}
-                                className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                              >
-                                {audience}
-                              </span>
-                            )
-                          )}
-                        </div>
-                      </div>
+                      <p className="text-gray-500 italic">
+                        Chưa cập nhật lịch dạy
+                      </p>
                     </div>
                   )}
+                </div>
               </div>
+            </div>
 
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-lg border-t border-gray-200">
               {/* Admin Note */}
-              <div className="mt-4">
+              <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Ghi chú của admin
                 </label>
@@ -572,16 +812,16 @@ export const TutorApproval: React.FC = () => {
                   value={adminNote}
                   onChange={(e) => setAdminNote(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  placeholder="Nhập ghi chú..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Nhập ghi chú về hồ sơ này..."
                 />
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 mt-6">
+              <div className="flex justify-end space-x-3">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+                  className="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Đóng
                 </button>
@@ -589,15 +829,15 @@ export const TutorApproval: React.FC = () => {
                   <>
                     <button
                       onClick={handleReject}
-                      className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700"
+                      className="px-6 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
                     >
                       Từ chối
                     </button>
                     <button
                       onClick={handleApprove}
-                      className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700"
+                      className="px-6 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
                     >
-                      Duyệt
+                      Duyệt hồ sơ
                     </button>
                   </>
                 )}

@@ -1,382 +1,918 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { adminService } from "../../services/adminService";
-import type { DashboardStats } from "../../services/adminService";
 
-export const AdminDashboard: React.FC = () => {
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(
-    null
+// Types based on backend entities
+interface DashboardStats {
+  totalUsers: number;
+  totalTutors: number;
+  totalBookings: number;
+  totalRevenue: number;
+  pendingApplications: number;
+  activeCoupons: number;
+  averageRating: number;
+  monthlyGrowth: {
+    users: number;
+    bookings: number;
+    revenue: number;
+  };
+}
+
+interface RecentActivity {
+  id: number;
+  type: "booking" | "application" | "payment" | "review";
+  description: string;
+  timestamp: string;
+  status: "success" | "warning" | "error" | "info";
+}
+
+interface TopTutor {
+  id: number;
+  name: string;
+  subject: string;
+  rating: number;
+  totalBookings: number;
+  revenue: number;
+}
+
+const AdminDashboard: React.FC = () => {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>(
+    []
   );
+  const [topTutors, setTopTutors] = useState<TopTutor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
+  // Mock data - replace with actual API calls
   useEffect(() => {
-    loadDashboardData();
+    const mockStats: DashboardStats = {
+      totalUsers: 1250,
+      totalTutors: 89,
+      totalBookings: 3420,
+      totalRevenue: 125000000,
+      pendingApplications: 12,
+      activeCoupons: 8,
+      averageRating: 4.6,
+      monthlyGrowth: {
+        users: 15.2,
+        bookings: 23.8,
+        revenue: 18.5,
+      },
+    };
+
+    const mockActivities: RecentActivity[] = [
+      {
+        id: 1,
+        type: "booking",
+        description: "Nguyễn Văn A đã đặt lịch học Toán với gia sư Trần Thị B",
+        timestamp: "2024-01-25T10:30:00Z",
+        status: "success",
+      },
+      {
+        id: 2,
+        type: "application",
+        description: "Có đơn đăng ký gia sư mới từ Phạm Văn C",
+        timestamp: "2024-01-25T09:15:00Z",
+        status: "info",
+      },
+      {
+        id: 3,
+        type: "payment",
+        description: "Thanh toán thành công cho buổi học #1234 - 500,000 VNĐ",
+        timestamp: "2024-01-25T08:45:00Z",
+        status: "success",
+      },
+      {
+        id: 4,
+        type: "review",
+        description: "Đánh giá 5 sao mới từ học viên Lê Thị D",
+        timestamp: "2024-01-25T07:20:00Z",
+        status: "success",
+      },
+      {
+        id: 5,
+        type: "booking",
+        description: "Hủy buổi học #1233 - Lý do: Gia sư bận việc",
+        timestamp: "2024-01-24T16:30:00Z",
+        status: "warning",
+      },
+    ];
+
+    const mockTopTutors: TopTutor[] = [
+      {
+        id: 1,
+        name: "Trần Thị B",
+        subject: "Toán học",
+        rating: 4.9,
+        totalBookings: 156,
+        revenue: 12500000,
+      },
+      {
+        id: 2,
+        name: "Phạm Văn C",
+        subject: "Vật lý",
+        rating: 4.8,
+        totalBookings: 134,
+        revenue: 10800000,
+      },
+      {
+        id: 3,
+        name: "Lê Thị D",
+        subject: "Hóa học",
+        rating: 4.7,
+        totalBookings: 98,
+        revenue: 8900000,
+      },
+    ];
+
+    setStats(mockStats);
+    setRecentActivities(mockActivities);
+    setTopTutors(mockTopTutors);
+    setLoading(false);
   }, []);
 
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      const data = await adminService.getDashboardOverview();
-      setDashboardStats(data);
-    } catch (err: unknown) {
-      setError((err as Error).message || "Lỗi khi tải dữ liệu dashboard");
-    } finally {
-      setLoading(false);
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case "booking":
+        return (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+        );
+      case "application":
+        return (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+        );
+      case "payment":
+        return (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+            />
+          </svg>
+        );
+      case "review":
+        return (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+            />
+          </svg>
+        );
+      default:
+        return null;
     }
   };
 
-  const stats = dashboardStats
-    ? [
-        {
-          label: "Tổng người dùng",
-          value: dashboardStats.users.totalUsers.toString(),
-          change: "+12%",
-          color: "blue",
-          icon: "👥",
-        },
-        {
-          label: "Gia sư hoạt động",
-          value: dashboardStats.users.totalTutors.toString(),
-          change: "+8%",
-          color: "green",
-          icon: "👨‍🏫",
-        },
-        {
-          label: "Buổi học hôm nay",
-          value: dashboardStats.bookings.todayBookings.toString(),
-          change: "+15%",
-          color: "yellow",
-          icon: "📚",
-        },
-        {
-          label: "Đặt lịch chờ duyệt",
-          value: dashboardStats.bookings.pendingBookings.toString(),
-          change: "+23%",
-          color: "purple",
-          icon: "💰",
-        },
-      ]
-    : [];
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "success":
+        return "text-green-600";
+      case "warning":
+        return "text-yellow-600";
+      case "error":
+        return "text-red-600";
+      case "info":
+        return "text-blue-600";
+      default:
+        return "text-gray-600";
+    }
+  };
 
-  const recentActivities = [
-    {
-      type: "user_registered",
-      user: "Nguyễn Văn A",
-      time: "5 phút trước",
-      icon: "👤",
-    },
-    {
-      type: "tutor_approved",
-      user: "Trần Thị B",
-      time: "10 phút trước",
-      icon: "✅",
-    },
-    {
-      type: "session_completed",
-      user: "Lê Văn C",
-      time: "15 phút trước",
-      icon: "📖",
-    },
-    {
-      type: "payment_received",
-      user: "Phạm Thị D",
-      time: "20 phút trước",
-      icon: "💳",
-    },
-  ];
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffInMinutes = Math.floor(
+      (now.getTime() - time.getTime()) / (1000 * 60)
+    );
 
-  const pendingApprovals = [
-    {
-      id: 1,
-      name: "Hoàng Minh E",
-      type: "Đăng ký gia sư",
-      subject: "Tiếng Anh",
-      submitted: "2 ngày trước",
-    },
-    {
-      id: 2,
-      name: "Lý Thành F",
-      type: "Đăng ký gia sư",
-      subject: "Toán",
-      submitted: "1 ngày trước",
-    },
-    {
-      id: 3,
-      name: "Đinh Văn G",
-      type: "Cập nhật hồ sơ",
-      subject: "Hóa học",
-      submitted: "3 giờ trước",
-    },
-  ];
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes} phút trước`;
+    } else if (diffInMinutes < 1440) {
+      return `${Math.floor(diffInMinutes / 60)} giờ trước`;
+    } else {
+      return `${Math.floor(diffInMinutes / 1440)} ngày trước`;
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "#f8fafc" }}
+      >
         <div className="text-center">
-          <div className="text-red-600 text-xl mb-4">Lỗi: {error}</div>
-          <button
-            onClick={loadDashboardData}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Thử lại
-          </button>
+          <div
+            className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
+            style={{ borderColor: "rgb(148, 204, 230)" }}
+          ></div>
+          <p className="mt-4 text-gray-600">Đang tải...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-lg p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">Bảng điều khiển Admin 🛡️</h1>
-        <p className="opacity-90">
-          Quản lý và giám sát hoạt động hệ thống TutorMatch
-        </p>
-      </div>
+    <div className="min-h-screen py-8" style={{ backgroundColor: "#f8fafc" }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-4 mb-4">
+            <div
+              className="p-3 rounded-xl"
+              style={{ backgroundColor: "rgb(148, 204, 230)" }}
+            >
+              <svg
+                className="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Dashboard Tổng quan
+              </h1>
+              <p className="mt-1 text-gray-600">
+                Tổng quan về hoạt động và hiệu suất của hệ thống
+              </p>
+            </div>
+          </div>
+        </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  {stat.label}
-                </p>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+        {/* Main Statistics */}
+        {stats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div
+              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(148, 204, 230, 0.1)",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: "rgb(148, 204, 230)" }}
+                  >
+                    Tổng người dùng
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stats.totalUsers.toLocaleString("vi-VN")}
+                  </p>
+                  <p className="text-sm text-green-600 mt-1">
+                    +{stats.monthlyGrowth.users}% so với tháng trước
+                  </p>
+                </div>
                 <div
-                  className={`text-xs font-medium text-${stat.color}-600 mt-1`}
+                  className="p-3 rounded-full"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
-                  {stat.change} so với tháng trước
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                    />
+                  </svg>
                 </div>
               </div>
-              <div className="text-2xl">{stat.icon}</div>
+            </div>
+
+            <div
+              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(148, 204, 230, 0.1)",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: "rgb(148, 204, 230)" }}
+                  >
+                    Tổng gia sư
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stats.totalTutors}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {stats.pendingApplications} đơn chờ duyệt
+                  </p>
+                </div>
+                <div
+                  className="p-3 rounded-full"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                >
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(148, 204, 230, 0.1)",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: "rgb(148, 204, 230)" }}
+                  >
+                    Tổng buổi học
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stats.totalBookings.toLocaleString("vi-VN")}
+                  </p>
+                  <p className="text-sm text-green-600 mt-1">
+                    +{stats.monthlyGrowth.bookings}% so với tháng trước
+                  </p>
+                </div>
+                <div
+                  className="p-3 rounded-full"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                >
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(148, 204, 230, 0.1)",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: "rgb(148, 204, 230)" }}
+                  >
+                    Tổng doanh thu
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stats.totalRevenue.toLocaleString("vi-VN")} VNĐ
+                  </p>
+                  <p className="text-sm text-green-600 mt-1">
+                    +{stats.monthlyGrowth.revenue}% so với tháng trước
+                  </p>
+                </div>
+                <div
+                  className="p-3 rounded-full"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                >
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                    />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link
-          to="/admin/users"
-          className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow text-center group"
-        >
-          <div className="text-2xl mb-2">👥</div>
-          <h3 className="font-medium text-gray-900 group-hover:text-red-600">
-            Quản lý Users
-          </h3>
-        </Link>
+        {/* Secondary Statistics */}
+        {stats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div
+              className="p-6 rounded-2xl shadow-lg"
+              style={{
+                backgroundColor: "white",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Đánh giá trung bình
+                </h3>
+                <div
+                  className="p-2 rounded-lg"
+                  style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    style={{ color: "rgb(148, 204, 230)" }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-2">
+                {stats.averageRating}
+              </div>
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <svg
+                    key={i}
+                    className={`w-5 h-5 ${
+                      i < Math.floor(stats.averageRating)
+                        ? "text-yellow-400"
+                        : "text-gray-300"
+                    }`}
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+                <span className="ml-2 text-sm text-gray-600">
+                  ({stats.averageRating}/5.0)
+                </span>
+              </div>
+            </div>
 
-        <Link
-          to="/admin/tutors"
-          className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow text-center group"
-        >
-          <div className="text-2xl mb-2">👨‍🏫</div>
-          <h3 className="font-medium text-gray-900 group-hover:text-red-600">
-            Quản lý Tutors
-          </h3>
-        </Link>
+            <div
+              className="p-6 rounded-2xl shadow-lg"
+              style={{
+                backgroundColor: "white",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Mã giảm giá hoạt động
+                </h3>
+                <div
+                  className="p-2 rounded-lg"
+                  style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    style={{ color: "rgb(148, 204, 230)" }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-2">
+                {stats.activeCoupons}
+              </div>
+              <div className="text-sm text-gray-600">
+                Mã giảm giá đang hoạt động
+              </div>
+            </div>
 
-        <Link
-          to="/admin/sessions"
-          className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow text-center group"
-        >
-          <div className="text-2xl mb-2">📚</div>
-          <h3 className="font-medium text-gray-900 group-hover:text-red-600">
-            Quản lý Sessions
-          </h3>
-        </Link>
-
-        <Link
-          to="/admin/reports"
-          className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow text-center group"
-        >
-          <div className="text-2xl mb-2">📊</div>
-          <h3 className="font-medium text-gray-900 group-hover:text-red-600">
-            Báo cáo
-          </h3>
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending Approvals */}
-        <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Chờ phê duyệt
-              </h2>
-              <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                {pendingApprovals.length}
-              </span>
+            <div
+              className="p-6 rounded-2xl shadow-lg"
+              style={{
+                backgroundColor: "white",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Đơn chờ duyệt
+                </h3>
+                <div
+                  className="p-2 rounded-lg"
+                  style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    style={{ color: "rgb(148, 204, 230)" }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-2">
+                {stats.pendingApplications}
+              </div>
+              <div className="text-sm text-gray-600">
+                Đơn đăng ký gia sư chờ duyệt
+              </div>
             </div>
           </div>
-          <div className="divide-y divide-gray-200">
-            {pendingApprovals.map((item) => (
-              <div key={item.id} className="p-6 hover:bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                        <span className="text-orange-600 font-medium text-sm">
-                          {item.name.charAt(0)}
-                        </span>
-                      </div>
+        )}
+
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Recent Activities */}
+          <div
+            className="p-6 rounded-2xl shadow-lg"
+            style={{
+              backgroundColor: "white",
+              borderColor: "rgba(148, 204, 230, 0.2)",
+              border: "1px solid",
+            }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Hoạt động gần đây
+              </h3>
+              <Link
+                to="/admin/activities"
+                className="text-sm font-medium"
+                style={{ color: "rgb(148, 204, 230)" }}
+              >
+                Xem tất cả
+              </Link>
+            </div>
+            <div className="space-y-4">
+              {recentActivities.map((activity) => (
+                <div key={activity.id} className="flex items-start space-x-3">
+                  <div
+                    className={`p-2 rounded-lg ${getStatusColor(
+                      activity.status
+                    )}`}
+                    style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+                  >
+                    {getActivityIcon(activity.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-900">
+                      {activity.description}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formatTimeAgo(activity.timestamp)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Top Tutors */}
+          <div
+            className="p-6 rounded-2xl shadow-lg"
+            style={{
+              backgroundColor: "white",
+              borderColor: "rgba(148, 204, 230, 0.2)",
+              border: "1px solid",
+            }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Gia sư hàng đầu
+              </h3>
+              <Link
+                to="/admin/tutors"
+                className="text-sm font-medium"
+                style={{ color: "rgb(148, 204, 230)" }}
+              >
+                Xem tất cả
+              </Link>
+            </div>
+            <div className="space-y-4">
+              {topTutors.map((tutor, index) => (
+                <div
+                  key={tutor.id}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                      style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                    >
+                      {index + 1}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {item.name}
+                        {tutor.name}
                       </p>
-                      <p className="text-sm text-gray-500">
-                        {item.type} - {item.subject}
-                      </p>
-                      <p className="text-xs text-gray-400">{item.submitted}</p>
+                      <p className="text-xs text-gray-500">{tutor.subject}</p>
                     </div>
                   </div>
-                  <div className="flex space-x-2">
-                    <button className="text-green-600 hover:text-green-700 text-sm font-medium">
-                      Phê duyệt
-                    </button>
-                    <button className="text-red-600 hover:text-red-700 text-sm font-medium">
-                      Từ chối
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Activities */}
-        <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Hoạt động gần đây
-            </h2>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {recentActivities.map((activity, index) => (
-              <div key={index} className="p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="text-xl">{activity.icon}</div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
-                      {activity.user}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {activity.type === "user_registered" &&
-                        "đã đăng ký tài khoản mới"}
-                      {activity.type === "tutor_approved" &&
-                        "đã được phê duyệt làm gia sư"}
-                      {activity.type === "session_completed" &&
-                        "đã hoàn thành buổi học"}
-                      {activity.type === "payment_received" &&
-                        "đã thanh toán thành công"}
-                    </p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <p className="text-xs text-gray-400">{activity.time}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Thống kê người dùng
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Học viên</span>
-                <span className="text-sm font-medium text-gray-900">
-                  1,678 (72%)
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full"
-                  style={{ width: "72%" }}
-                ></div>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Gia sư</span>
-                <span className="text-sm font-medium text-gray-900">
-                  567 (24%)
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-green-600 h-2 rounded-full"
-                  style={{ width: "24%" }}
-                ></div>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Admin</span>
-                <span className="text-sm font-medium text-gray-900">
-                  100 (4%)
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-red-600 h-2 rounded-full"
-                  style={{ width: "4%" }}
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Doanh thu 7 ngày qua
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="space-y-3">
-              {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((day) => (
-                <div key={day} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{day}</span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-32 bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-purple-600 h-2 rounded-full"
-                        style={{ width: `${Math.random() * 100}%` }}
-                      ></div>
+                  <div className="text-right">
+                    <div className="flex items-center space-x-1">
+                      <svg
+                        className="w-4 h-4 text-yellow-400"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      <span className="text-sm font-medium text-gray-900">
+                        {tutor.rating}
+                      </span>
                     </div>
-                    <span className="text-sm font-medium text-gray-900">
-                      {(Math.random() * 20 + 5).toFixed(1)}M
-                    </span>
+                    <p className="text-xs text-gray-500">
+                      {tutor.totalBookings} buổi học
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
+
+        {/* Quick Actions */}
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Thao tác nhanh
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+            <Link
+              to="/admin/bookings"
+              className="p-4 rounded-xl text-center hover:shadow-lg transition-all duration-200"
+              style={{
+                backgroundColor: "white",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div
+                className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+              >
+                <svg
+                  className="w-4 h-4"
+                  style={{ color: "rgb(148, 204, 230)" }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-gray-900">Buổi học</p>
+            </Link>
+
+            <Link
+              to="/admin/payments"
+              className="p-4 rounded-xl text-center hover:shadow-lg transition-all duration-200"
+              style={{
+                backgroundColor: "white",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div
+                className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+              >
+                <svg
+                  className="w-4 h-4"
+                  style={{ color: "rgb(148, 204, 230)" }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-gray-900">Thanh toán</p>
+            </Link>
+
+            <Link
+              to="/admin/tutor-applications"
+              className="p-4 rounded-xl text-center hover:shadow-lg transition-all duration-200"
+              style={{
+                backgroundColor: "white",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div
+                className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+              >
+                <svg
+                  className="w-4 h-4"
+                  style={{ color: "rgb(148, 204, 230)" }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-gray-900">Đơn đăng ký</p>
+            </Link>
+
+            <Link
+              to="/admin/ratings"
+              className="p-4 rounded-xl text-center hover:shadow-lg transition-all duration-200"
+              style={{
+                backgroundColor: "white",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div
+                className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+              >
+                <svg
+                  className="w-4 h-4"
+                  style={{ color: "rgb(148, 204, 230)" }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-gray-900">Đánh giá</p>
+            </Link>
+
+            <Link
+              to="/admin/schedules"
+              className="p-4 rounded-xl text-center hover:shadow-lg transition-all duration-200"
+              style={{
+                backgroundColor: "white",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div
+                className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+              >
+                <svg
+                  className="w-4 h-4"
+                  style={{ color: "rgb(148, 204, 230)" }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-gray-900">Lịch học</p>
+            </Link>
+
+            <Link
+              to="/admin/coupons"
+              className="p-4 rounded-xl text-center hover:shadow-lg transition-all duration-200"
+              style={{
+                backgroundColor: "white",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div
+                className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+              >
+                <svg
+                  className="w-4 h-4"
+                  style={{ color: "rgb(148, 204, 230)" }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-gray-900">Mã giảm giá</p>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
+
+export default AdminDashboard;

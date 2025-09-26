@@ -27,6 +27,13 @@ public class ProfileApplicationService {
     private final ApplicationCertificateRepository certificateRepository;
     private final ApplicationScheduleRepository scheduleRepository;
     private final ApplicationSubjectFeeRepository subjectFeeRepository;
+    private final TutorProfileRepository tutorProfileRepository;
+    private final EducationRepository educationRepositoryMain;
+    private final CertificateRepository certificateRepositoryMain;
+    private final ScheduleRepository scheduleRepositoryMain;
+    private final ProfileSubjectRepository profileSubjectRepository;
+    private final ApplicationTeachingAudienceRepository applicationTeachingAudienceRepository;
+    private final TutorTeachingAudienceRepository tutorTeachingAudienceRepository;
     
     private final UserRepository userRepository;
     private final SubjectRepository subjectRepository;
@@ -38,6 +45,7 @@ public class ProfileApplicationService {
     @Transactional
     public Map<String, Object> saveDraftForStudentBecomingTutor(String username, BecomeTutorDraftRequest request) {
         log.info("Saving draft for student becoming tutor: {}", username);
+        log.info("Request data: {}", request);
         
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
@@ -65,23 +73,31 @@ public class ProfileApplicationService {
             application = existingApp.get();
         }
         
-        // Always set status to DRAFT when saving draft
-        application.setStatus(ApplicationStatus.DRAFT);
+        // Only set status to DRAFT if current status is not SUBMITTED
+        // If status is SUBMITTED, keep it as SUBMITTED (admin hasn't reviewed yet)
+        if (application.getStatus() != ApplicationStatus.SUBMITTED) {
+            application.setStatus(ApplicationStatus.DRAFT);
+        }
 
-        // Update basic fields
-        updateApplicationFromRequest(application, request);
+        try {
+            // Update basic fields
+            updateApplicationFromRequest(application, request);
 
-        // Validate schedules for overlapping times
-        validateSchedules(request.getSchedules());
+            // Validate schedules for overlapping times
+            validateSchedules(request.getSchedules());
 
-        // Save application
-        application = applicationRepository.save(application);
+            // Save application
+            application = applicationRepository.save(application);
 
-        // Save related entities
-        saveApplicationEducations(application, request.getEducations());
-        saveApplicationCertificates(application, request.getCertificates());
-        saveApplicationSchedules(application, request.getSchedules());
-        saveApplicationSubjectFees(application, request.getSubjectFees());
+            // Save related entities
+            saveApplicationEducations(application, request.getEducations());
+            saveApplicationCertificates(application, request.getCertificates());
+            saveApplicationSchedules(application, request.getSchedules());
+            saveApplicationSubjectFees(application, request.getSubjectFees());
+        } catch (Exception e) {
+            log.error("Error in saveDraftForStudentBecomingTutor: ", e);
+            throw e;
+        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
@@ -236,7 +252,7 @@ public class ProfileApplicationService {
             appData.put("firstName", app.getFirstName());
             appData.put("lastName", app.getLastName());
             appData.put("email", app.getUser().getUsername());
-            appData.put("phone", app.getPhoneNumber());
+            appData.put("phoneNumber", app.getPhoneNumber());
             appData.put("address", app.getAddress());
             appData.put("imageAvatar", app.getImageAvatar());
             
@@ -247,6 +263,7 @@ public class ProfileApplicationService {
             appData.put("headline", app.getHeadline());
             appData.put("experience", app.getExperience());
             appData.put("cvFileUrl", app.getCvFileUrl());
+            appData.put("cvFileName", app.getCvFileName());
             appData.put("videoIntro", app.getVideoIntro());
             
             // Timestamps
@@ -254,7 +271,7 @@ public class ProfileApplicationService {
             appData.put("createdAt", app.getCreatedAt());
             appData.put("updatedAt", app.getUpdatedAt());
             
-            // Related entities
+            // Related entities - Load with minimal data to avoid circular references
             List<ApplicationEducation> educations = educationRepository.findByApplicationOrderByFromTimeDesc(app);
             appData.put("educations", buildEducationDTOs(educations));
             
@@ -266,6 +283,10 @@ public class ProfileApplicationService {
             
             List<ApplicationSubjectFee> subjectFees = subjectFeeRepository.findByApplication(app);
             appData.put("subjectFees", buildSubjectFeeDTOs(subjectFees));
+            
+            // Teaching audiences
+            List<ApplicationTeachingAudience> teachingAudiences = applicationTeachingAudienceRepository.findByApplication(app);
+            appData.put("teachingAudiences", buildTeachingAudienceDTOs(teachingAudiences));
             
             result.add(appData);
         }
@@ -290,13 +311,61 @@ public class ProfileApplicationService {
 
         applicationRepository.save(application);
 
-        // Apply changes - simplified version
-        // Always create tutor profile for become tutor application
-        // Promote student to tutor
+        // Copy data from ProfileApplication to User and create TutorProfile
         User user = application.getUser();
+        
+        // Update User information from ProfileApplication
+        if (application.getFirstName() != null) {
+            user.setFirstName(application.getFirstName());
+        }
+        if (application.getLastName() != null) {
+            user.setLastName(application.getLastName());
+        }
+        if (application.getImageAvatar() != null) {
+            user.setImageAvatar(application.getImageAvatar());
+        }
+        if (application.getPhoneNumber() != null) {
+            user.setPhoneNumber(application.getPhoneNumber());
+        }
+        if (application.getAddress() != null) {
+            user.setAddress(application.getAddress());
+        }
+        
+        // Change role to TUTOR and verify
         user.setRole(UserRole.TUTOR);
         user.setVerified(true);
         userRepository.save(user);
+
+        // Create or update TutorProfile
+        TutorProfile tutorProfile = tutorProfileRepository.findByUser(user)
+                .orElse(new TutorProfile());
+        
+        // Set user relationship
+        tutorProfile.setUser(user);
+        
+        // Copy tutor-specific information from ProfileApplication
+        if (application.getBio() != null) {
+            tutorProfile.setBio(application.getBio());
+        }
+        if (application.getHeadline() != null) {
+            tutorProfile.setHeadline(application.getHeadline());
+        }
+        if (application.getExperience() != null) {
+            tutorProfile.setExperience(application.getExperience());
+        }
+        if (application.getCvFileUrl() != null) {
+            tutorProfile.setCvFileUrl(application.getCvFileUrl());
+        }
+        if (application.getVideoIntro() != null) {
+            tutorProfile.setVideoIntro(application.getVideoIntro());
+        }
+        
+        // Enable the tutor profile
+        tutorProfile.setEnable(true);
+        tutorProfileRepository.save(tutorProfile);
+
+        // Copy related data (educations, certificates, etc.)
+        copyApplicationDataToTutorProfile(application, tutorProfile);
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
@@ -305,6 +374,76 @@ public class ProfileApplicationService {
     }
 
     /**
+     * Copy related data from ProfileApplication to TutorProfile
+     */
+    private void copyApplicationDataToTutorProfile(ProfileApplication application, TutorProfile tutorProfile) {
+        // Copy educations
+        if (application.getEducations() != null) {
+            for (ApplicationEducation appEdu : application.getEducations()) {
+                Education education = new Education();
+                education.setProfile(tutorProfile);
+                education.setSchoolName(appEdu.getSchoolName());
+                education.setDegree(appEdu.getDegree());
+                education.setFromTime(appEdu.getFromTime());
+                education.setToTime(appEdu.getToTime());
+                education.setDegreeFileUrl(appEdu.getDegreeFileUrl());
+                education.setDegreeFileName(appEdu.getDegreeFileName());
+                education.setVerified(false); // Default to false for new educations
+                educationRepositoryMain.save(education);
+            }
+        }
+
+        // Copy certificates
+        if (application.getCertificates() != null) {
+            for (ApplicationCertificate appCert : application.getCertificates()) {
+                Certificate certificate = new Certificate();
+                certificate.setProfile(tutorProfile);
+                certificate.setName(appCert.getName());
+                certificate.setIssuedBy(appCert.getIssuedBy());
+                certificate.setCertFileUrl(appCert.getCertFileUrl());
+                certificate.setCertFileName(appCert.getCertFileName());
+                certificate.setVerified(false); // Default to false for new certificates
+                certificateRepositoryMain.save(certificate);
+            }
+        }
+
+        // Copy schedules
+        if (application.getSchedules() != null) {
+            for (ApplicationSchedule appSchedule : application.getSchedules()) {
+                Schedule schedule = new Schedule();
+                schedule.setProfile(tutorProfile);
+                schedule.setDayOfWeek(appSchedule.getDayOfWeek());
+                schedule.setFromTime(appSchedule.getFromTime());
+                schedule.setToTime(appSchedule.getToTime());
+                scheduleRepositoryMain.save(schedule);
+            }
+        }
+
+        // Copy subject fees
+        if (application.getSubjectFees() != null) {
+            for (ApplicationSubjectFee appSubjectFee : application.getSubjectFees()) {
+                TutorProfileSubject tutorProfileSubject = new TutorProfileSubject();
+                tutorProfileSubject.setProfile(tutorProfile);
+                tutorProfileSubject.setSubject(appSubjectFee.getSubject());
+                tutorProfileSubject.setFees(appSubjectFee.getFees().intValue());
+                profileSubjectRepository.save(tutorProfileSubject);
+            }
+        }
+
+        // Copy teaching audiences
+        List<ApplicationTeachingAudience> appTeachingAudiences = 
+            applicationTeachingAudienceRepository.findByApplication(application);
+        if (appTeachingAudiences != null) {
+            for (ApplicationTeachingAudience appTeachingAudience : appTeachingAudiences) {
+                TutorTeachingAudience tutorTeachingAudience = new TutorTeachingAudience();
+                tutorTeachingAudience.setTutorProfile(tutorProfile);
+                tutorTeachingAudience.setTeachingAudience(appTeachingAudience.getTeachingAudience());
+                tutorTeachingAudienceRepository.save(tutorTeachingAudience);
+            }
+        }
+    }
+
+      /**
      * Reject application
      */
     @Transactional
@@ -353,6 +492,8 @@ public class ProfileApplicationService {
     }
 
     private void updateApplicationFromRequest(ProfileApplication application, BecomeTutorDraftRequest request) {
+        log.info("Updating application from draft request: {}", request);
+        
         // Personal info
         if (request.getFirstName() != null) application.setFirstName(request.getFirstName());
         if (request.getLastName() != null) application.setLastName(request.getLastName());
@@ -370,8 +511,15 @@ public class ProfileApplicationService {
         
         // Set teaching audiences
         if (request.getTeachingAudiences() != null && !request.getTeachingAudiences().isEmpty()) {
-            List<TeachingAudience> audiences = teachingAudienceRepository.findByNameIn(request.getTeachingAudiences());
-            application.setTeachingAudiences(audiences);
+            log.info("Processing teaching audiences: {}", request.getTeachingAudiences());
+            try {
+                List<TeachingAudience> audiences = teachingAudienceRepository.findByNameIn(request.getTeachingAudiences());
+                log.info("Found teaching audiences: {}", audiences);
+                application.setTeachingAudiences(audiences);
+            } catch (Exception e) {
+                log.error("Error processing teaching audiences: ", e);
+                // Don't fail the entire request for this
+            }
         }
     }
 
@@ -507,8 +655,20 @@ public class ProfileApplicationService {
             Map<String, Object> feeData = new HashMap<>();
             feeData.put("id", fee.getId());
             feeData.put("subjectId", fee.getSubject() != null ? fee.getSubject().getId() : null);
+            feeData.put("subjectName", fee.getSubject() != null ? fee.getSubject().getName() : "Unknown Subject");
             feeData.put("fees", fee.getFees());
             result.add(feeData);
+        }
+        return result;
+    }
+
+    private List<Map<String, Object>> buildTeachingAudienceDTOs(List<ApplicationTeachingAudience> teachingAudiences) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (ApplicationTeachingAudience ta : teachingAudiences) {
+            Map<String, Object> taData = new HashMap<>();
+            taData.put("id", ta.getId());
+            taData.put("name", ta.getTeachingAudience() != null ? ta.getTeachingAudience().getName() : "Unknown");
+            result.add(taData);
         }
         return result;
     }

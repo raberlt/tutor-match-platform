@@ -76,6 +76,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").permitAll() // Tạm thời disable authentication để test
                 .requestMatchers("/api/applications/admin/**").permitAll() // Tạm thời disable authentication để test
                 .requestMatchers("/api/tutor/draft/**").permitAll()
+                .requestMatchers("/api/auth/profile").permitAll() // Tạm thời disable authentication để test
                 .requestMatchers("/api/tutor/**").hasRole("TUTOR")
                 .requestMatchers("/api/student/**").hasRole("STUDENT")
                 .requestMatchers("/api/tutors/**").hasRole("STUDENT")

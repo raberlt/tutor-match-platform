@@ -2,174 +2,164 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 // Types based on backend entities
-interface Coupon {
+interface Schedule {
   id: number;
-  code: string;
-  name: string;
-  description: string;
-  discountType: "PERCENTAGE" | "FIXED_AMOUNT";
-  discountValue: number;
-  minOrderAmount: number;
-  maxDiscountAmount: number;
-  usageLimit: number;
-  usedCount: number;
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
+  tutor: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  dayOfWeek: string;
+  fromTime: string;
+  toTime: string;
+  enable: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-interface CouponStats {
-  totalCoupons: number;
-  activeCoupons: number;
-  expiredCoupons: number;
-  totalUsage: number;
-  totalDiscountGiven: number;
-  mostUsedCoupon: {
-    code: string;
-    usageCount: number;
+interface ScheduleStats {
+  totalSchedules: number;
+  activeSchedules: number;
+  inactiveSchedules: number;
+  schedulesByDay: {
+    Monday: number;
+    Tuesday: number;
+    Wednesday: number;
+    Thursday: number;
+    Friday: number;
+    Saturday: number;
+    Sunday: number;
   };
 }
 
-const CouponManagement: React.FC = () => {
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [stats, setStats] = useState<CouponStats | null>(null);
+const ScheduleManagement: React.FC = () => {
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [stats, setStats] = useState<ScheduleStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [selectedDay, setSelectedDay] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
-  const [selectedType, setSelectedType] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
 
   // Mock data - replace with actual API calls
   useEffect(() => {
-    const mockCoupons: Coupon[] = [
+    const mockSchedules: Schedule[] = [
       {
         id: 1,
-        code: "WELCOME10",
-        name: "Chào mừng khách hàng mới",
-        description: "Giảm 10% cho khách hàng lần đầu đăng ký",
-        discountType: "PERCENTAGE",
-        discountValue: 10,
-        minOrderAmount: 500000,
-        maxDiscountAmount: 100000,
-        usageLimit: 1000,
-        usedCount: 245,
-        startDate: "2024-01-01",
-        endDate: "2024-12-31",
-        isActive: true,
-        createdAt: "2024-01-01T00:00:00Z",
-        updatedAt: "2024-01-01T00:00:00Z",
+        tutor: {
+          id: 1,
+          firstName: "Trần",
+          lastName: "Thị B",
+          email: "tranthib@email.com",
+        },
+        dayOfWeek: "Monday",
+        fromTime: "09:00",
+        toTime: "17:00",
+        enable: true,
+        createdAt: "2024-01-10T10:00:00Z",
+        updatedAt: "2024-01-10T10:00:00Z",
       },
       {
         id: 2,
-        code: "SUMMER50K",
-        name: "Khuyến mãi mùa hè",
-        description: "Giảm 50,000 VNĐ cho đơn hàng từ 1,000,000 VNĐ",
-        discountType: "FIXED_AMOUNT",
-        discountValue: 50000,
-        minOrderAmount: 1000000,
-        maxDiscountAmount: 50000,
-        usageLimit: 500,
-        usedCount: 89,
-        startDate: "2024-06-01",
-        endDate: "2024-08-31",
-        isActive: true,
-        createdAt: "2024-05-15T00:00:00Z",
-        updatedAt: "2024-05-15T00:00:00Z",
+        tutor: {
+          id: 1,
+          firstName: "Trần",
+          lastName: "Thị B",
+          email: "tranthib@email.com",
+        },
+        dayOfWeek: "Wednesday",
+        fromTime: "14:00",
+        toTime: "18:00",
+        enable: true,
+        createdAt: "2024-01-10T10:00:00Z",
+        updatedAt: "2024-01-10T10:00:00Z",
       },
       {
         id: 3,
-        code: "STUDENT20",
-        name: "Ưu đãi học sinh",
-        description: "Giảm 20% cho học sinh, sinh viên",
-        discountType: "PERCENTAGE",
-        discountValue: 20,
-        minOrderAmount: 300000,
-        maxDiscountAmount: 200000,
-        usageLimit: 2000,
-        usedCount: 1567,
-        startDate: "2024-01-01",
-        endDate: "2024-12-31",
-        isActive: true,
-        createdAt: "2024-01-01T00:00:00Z",
-        updatedAt: "2024-01-01T00:00:00Z",
+        tutor: {
+          id: 2,
+          firstName: "Phạm",
+          lastName: "Văn C",
+          email: "phamvanc@email.com",
+        },
+        dayOfWeek: "Tuesday",
+        fromTime: "19:00",
+        toTime: "21:00",
+        enable: false,
+        createdAt: "2024-01-11T09:00:00Z",
+        updatedAt: "2024-01-11T09:00:00Z",
       },
       {
         id: 4,
-        code: "EXPIRED15",
-        name: "Mã giảm giá đã hết hạn",
-        description: "Giảm 15% - đã hết hạn",
-        discountType: "PERCENTAGE",
-        discountValue: 15,
-        minOrderAmount: 400000,
-        maxDiscountAmount: 150000,
-        usageLimit: 100,
-        usedCount: 45,
-        startDate: "2023-01-01",
-        endDate: "2023-12-31",
-        isActive: false,
-        createdAt: "2023-01-01T00:00:00Z",
-        updatedAt: "2023-12-31T23:59:59Z",
+        tutor: {
+          id: 3,
+          firstName: "Lê",
+          lastName: "Thị D",
+          email: "lethid@email.com",
+        },
+        dayOfWeek: "Saturday",
+        fromTime: "08:00",
+        toTime: "12:00",
+        enable: true,
+        createdAt: "2024-01-12T08:00:00Z",
+        updatedAt: "2024-01-12T08:00:00Z",
       },
     ];
 
-    const mockStats: CouponStats = {
-      totalCoupons: 25,
-      activeCoupons: 18,
-      expiredCoupons: 7,
-      totalUsage: 2847,
-      totalDiscountGiven: 125000000,
-      mostUsedCoupon: {
-        code: "STUDENT20",
-        usageCount: 1567,
+    const mockStats: ScheduleStats = {
+      totalSchedules: 45,
+      activeSchedules: 38,
+      inactiveSchedules: 7,
+      schedulesByDay: {
+        Monday: 8,
+        Tuesday: 6,
+        Wednesday: 7,
+        Thursday: 5,
+        Friday: 4,
+        Saturday: 10,
+        Sunday: 5,
       },
     };
 
-    setCoupons(mockCoupons);
+    setSchedules(mockSchedules);
     setStats(mockStats);
     setLoading(false);
   }, []);
 
-  const getStatusColor = (isActive: boolean, endDate: string) => {
-    const now = new Date();
-    const end = new Date(endDate);
-
-    if (!isActive) return "bg-red-100 text-red-800";
-    if (end < now) return "bg-orange-100 text-orange-800";
-    return "bg-green-100 text-green-800";
+  const getDayText = (day: string) => {
+    const dayMap: { [key: string]: string } = {
+      Monday: "Thứ 2",
+      Tuesday: "Thứ 3",
+      Wednesday: "Thứ 4",
+      Thursday: "Thứ 5",
+      Friday: "Thứ 6",
+      Saturday: "Thứ 7",
+      Sunday: "Chủ nhật",
+    };
+    return dayMap[day] || day;
   };
 
-  const getStatusText = (isActive: boolean, endDate: string) => {
-    const now = new Date();
-    const end = new Date(endDate);
-
-    if (!isActive) return "Tạm dừng";
-    if (end < now) return "Hết hạn";
-    return "Hoạt động";
+  const getStatusColor = (enable: boolean) => {
+    return enable ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
   };
 
-  const getTypeColor = (type: string) => {
-    return type === "PERCENTAGE"
-      ? "bg-blue-100 text-blue-800"
-      : "bg-purple-100 text-purple-800";
+  const getStatusText = (enable: boolean) => {
+    return enable ? "Hoạt động" : "Tạm dừng";
   };
 
-  const getTypeText = (type: string) => {
-    return type === "PERCENTAGE" ? "Phần trăm" : "Số tiền cố định";
-  };
-
-  const formatDiscountValue = (coupon: Coupon) => {
-    if (coupon.discountType === "PERCENTAGE") {
-      return `${coupon.discountValue}%`;
-    } else {
-      return `${coupon.discountValue.toLocaleString("vi-VN")} VNĐ`;
-    }
-  };
-
-  const getUsagePercentage = (usedCount: number, usageLimit: number) => {
-    return Math.round((usedCount / usageLimit) * 100);
+  const getDayColor = (day: string) => {
+    const colors: { [key: string]: string } = {
+      Monday: "bg-blue-100 text-blue-800",
+      Tuesday: "bg-green-100 text-green-800",
+      Wednesday: "bg-yellow-100 text-yellow-800",
+      Thursday: "bg-purple-100 text-purple-800",
+      Friday: "bg-pink-100 text-pink-800",
+      Saturday: "bg-orange-100 text-orange-800",
+      Sunday: "bg-red-100 text-red-800",
+    };
+    return colors[day] || "bg-gray-100 text-gray-800";
   };
 
   if (loading) {
@@ -209,16 +199,16 @@ const CouponManagement: React.FC = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Quản lý Mã giảm giá
+                Quản lý Lịch học
               </h1>
               <p className="mt-1 text-gray-600">
-                Quản lý và theo dõi tất cả các mã giảm giá trong hệ thống
+                Quản lý và theo dõi lịch giảng dạy của các gia sư
               </p>
             </div>
           </div>
@@ -241,10 +231,10 @@ const CouponManagement: React.FC = () => {
                     className="text-sm font-medium mb-1"
                     style={{ color: "rgb(148, 204, 230)" }}
                   >
-                    Tổng mã giảm giá
+                    Tổng lịch học
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
-                    {stats.totalCoupons}
+                    {stats.totalSchedules}
                   </p>
                 </div>
                 <div
@@ -261,7 +251,7 @@ const CouponManagement: React.FC = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
                 </div>
@@ -285,7 +275,7 @@ const CouponManagement: React.FC = () => {
                     Đang hoạt động
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
-                    {stats.activeCoupons}
+                    {stats.activeSchedules}
                   </p>
                 </div>
                 <div
@@ -323,10 +313,51 @@ const CouponManagement: React.FC = () => {
                     className="text-sm font-medium mb-1"
                     style={{ color: "rgb(148, 204, 230)" }}
                   >
-                    Tổng sử dụng
+                    Tạm dừng
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
-                    {stats.totalUsage}
+                    {stats.inactiveSchedules}
+                  </p>
+                </div>
+                <div
+                  className="p-3 rounded-full"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                >
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(148, 204, 230, 0.1)",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: "rgb(148, 204, 230)" }}
+                  >
+                    Thứ 7 (nhiều nhất)
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stats.schedulesByDay.Saturday}
                   </p>
                 </div>
                 <div
@@ -349,51 +380,10 @@ const CouponManagement: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
-              style={{
-                backgroundColor: "rgba(148, 204, 230, 0.1)",
-                borderColor: "rgba(148, 204, 230, 0.2)",
-                border: "1px solid",
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p
-                    className="text-sm font-medium mb-1"
-                    style={{ color: "rgb(148, 204, 230)" }}
-                  >
-                    Tổng giảm giá
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {stats.totalDiscountGiven.toLocaleString("vi-VN")} VNĐ
-                  </p>
-                </div>
-                <div
-                  className="p-3 rounded-full"
-                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                >
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
-        {/* Most Used Coupon */}
+        {/* Schedule Distribution Chart */}
         {stats && (
           <div
             className="p-6 rounded-2xl shadow-lg mb-6"
@@ -404,33 +394,28 @@ const CouponManagement: React.FC = () => {
             }}
           >
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Mã giảm giá được sử dụng nhiều nhất
+              Phân bố lịch học theo ngày
             </h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {stats.mostUsedCoupon.code}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+              {Object.entries(stats.schedulesByDay).map(([day, count]) => (
+                <div key={day} className="text-center">
+                  <div
+                    className="p-4 rounded-xl mb-2"
+                    style={{
+                      backgroundColor: "rgba(148, 204, 230, 0.1)",
+                      borderColor: "rgba(148, 204, 230, 0.2)",
+                      border: "1px solid",
+                    }}
+                  >
+                    <div className="text-2xl font-bold text-gray-900">
+                      {count}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {getDayText(day)}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-sm text-gray-600">
-                  Đã sử dụng {stats.mostUsedCoupon.usageCount} lần
-                </div>
-              </div>
-              <div
-                className="p-4 rounded-xl"
-                style={{
-                  backgroundColor: "rgba(148, 204, 230, 0.1)",
-                  borderColor: "rgba(148, 204, 230, 0.2)",
-                  border: "1px solid",
-                }}
-              >
-                <div
-                  className="text-3xl font-bold"
-                  style={{ color: "rgb(148, 204, 230)" }}
-                >
-                  {stats.mostUsedCoupon.usageCount}
-                </div>
-                <div className="text-sm text-gray-600">lần sử dụng</div>
-              </div>
+              ))}
             </div>
           </div>
         )}
@@ -449,7 +434,7 @@ const CouponManagement: React.FC = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm theo mã, tên, mô tả..."
+                  placeholder="Tìm kiếm theo tên gia sư, email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200 w-full sm:w-80"
@@ -476,6 +461,25 @@ const CouponManagement: React.FC = () => {
               </div>
 
               <select
+                value={selectedDay}
+                onChange={(e) => setSelectedDay(e.target.value)}
+                className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
+                style={{
+                  borderColor: "rgba(148, 204, 230, 0.3)",
+                  focusRingColor: "rgb(148, 204, 230)",
+                }}
+              >
+                <option value="">Tất cả ngày</option>
+                <option value="Monday">Thứ 2</option>
+                <option value="Tuesday">Thứ 3</option>
+                <option value="Wednesday">Thứ 4</option>
+                <option value="Thursday">Thứ 5</option>
+                <option value="Friday">Thứ 6</option>
+                <option value="Saturday">Thứ 7</option>
+                <option value="Sunday">Chủ nhật</option>
+              </select>
+
+              <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
@@ -485,23 +489,8 @@ const CouponManagement: React.FC = () => {
                 }}
               >
                 <option value="">Tất cả trạng thái</option>
-                <option value="active">Hoạt động</option>
-                <option value="expired">Hết hạn</option>
-                <option value="inactive">Tạm dừng</option>
-              </select>
-
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
-                style={{
-                  borderColor: "rgba(148, 204, 230, 0.3)",
-                  focusRingColor: "rgb(148, 204, 230)",
-                }}
-              >
-                <option value="">Tất cả loại</option>
-                <option value="PERCENTAGE">Phần trăm</option>
-                <option value="FIXED_AMOUNT">Số tiền cố định</option>
+                <option value="true">Hoạt động</option>
+                <option value="false">Tạm dừng</option>
               </select>
             </div>
 
@@ -519,13 +508,13 @@ const CouponManagement: React.FC = () => {
                 className="px-4 py-3 text-white rounded-xl transition-colors duration-200 font-medium"
                 style={{ backgroundColor: "rgb(148, 204, 230)" }}
               >
-                Tạo mới
+                Thêm mới
               </button>
             </div>
           </div>
         </div>
 
-        {/* Coupons Table */}
+        {/* Schedules Table */}
         <div
           className="rounded-2xl shadow-lg overflow-hidden"
           style={{
@@ -542,25 +531,22 @@ const CouponManagement: React.FC = () => {
               >
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Mã
+                    ID
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tên
+                    Gia sư
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Loại giảm giá
+                    Ngày trong tuần
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Giá trị
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Sử dụng
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Thời hạn
+                    Thời gian
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Trạng thái
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ngày tạo
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Hành động
@@ -568,81 +554,56 @@ const CouponManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {coupons.map((coupon) => (
-                  <tr key={coupon.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {coupon.code}
-                      </div>
+                {schedules.map((schedule) => (
+                  <tr key={schedule.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      #{schedule.id}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {coupon.name}
-                      </div>
-                      <div className="text-sm text-gray-500 max-w-xs truncate">
-                        {coupon.description}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {schedule.tutor.firstName} {schedule.tutor.lastName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {schedule.tutor.email}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(
-                          coupon.discountType
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDayColor(
+                          schedule.dayOfWeek
                         )}`}
                       >
-                        {getTypeText(coupon.discountType)}
+                        {getDayText(schedule.dayOfWeek)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {formatDiscountValue(coupon)}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        Tối thiểu:{" "}
-                        {coupon.minOrderAmount.toLocaleString("vi-VN")} VNĐ
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {coupon.usedCount} / {coupon.usageLimit}
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                        <div
-                          className="h-2 rounded-full"
-                          style={{
-                            backgroundColor: "rgb(148, 204, 230)",
-                            width: `${getUsagePercentage(
-                              coupon.usedCount,
-                              coupon.usageLimit
-                            )}%`,
-                          }}
-                        ></div>
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {getUsagePercentage(
-                          coupon.usedCount,
-                          coupon.usageLimit
-                        )}
-                        %
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {new Date(coupon.startDate).toLocaleDateString("vi-VN")}
+                        {schedule.fromTime} - {schedule.toTime}
                       </div>
                       <div className="text-sm text-gray-500">
-                        đến{" "}
-                        {new Date(coupon.endDate).toLocaleDateString("vi-VN")}
+                        {Math.abs(
+                          new Date(`2000-01-01T${schedule.toTime}`).getTime() -
+                            new Date(
+                              `2000-01-01T${schedule.fromTime}`
+                            ).getTime()
+                        ) /
+                          (1000 * 60 * 60)}{" "}
+                        giờ
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                          coupon.isActive,
-                          coupon.endDate
+                          schedule.enable
                         )}`}
                       >
-                        {getStatusText(coupon.isActive, coupon.endDate)}
+                        {getStatusText(schedule.enable)}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(schedule.createdAt).toLocaleDateString("vi-VN")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
@@ -660,12 +621,12 @@ const CouponManagement: React.FC = () => {
                         </button>
                         <button
                           className={`${
-                            coupon.isActive
+                            schedule.enable
                               ? "text-orange-600 hover:text-orange-900"
                               : "text-green-600 hover:text-green-900"
                           }`}
                         >
-                          {coupon.isActive ? "Tạm dừng" : "Kích hoạt"}
+                          {schedule.enable ? "Tạm dừng" : "Kích hoạt"}
                         </button>
                         <button className="text-red-600 hover:text-red-900">
                           Xóa
@@ -714,4 +675,4 @@ const CouponManagement: React.FC = () => {
   );
 };
 
-export default CouponManagement;
+export default ScheduleManagement;

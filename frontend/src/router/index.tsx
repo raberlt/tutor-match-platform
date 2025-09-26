@@ -37,11 +37,13 @@ import { Contracts } from "../pages/tutor/Contracts";
 import TutorBookings from "../pages/tutor/TutorBookings";
 
 // Admin Pages
-import { AdminDashboard } from "../pages/admin/AdminDashboard";
+import AdminDashboard from "../pages/admin/AdminDashboard";
 import { UserManagement } from "../pages/admin/UserManagement";
+import { AdminProfileManagement } from "../pages/admin/ProfileManagement";
 import { ReportManagement } from "../pages/admin/ReportManagement";
 import CouponManagement from "../pages/admin/CouponManagement";
 import PaymentManagement from "../pages/admin/PaymentManagement";
+import BookingManagement from "../pages/admin/BookingManagement";
 
 const router = createBrowserRouter([
   // Public routes
@@ -142,7 +144,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "tutor/:id",
+        path: "tutor/:username",
         element: <TutorDetail />,
       },
       {
@@ -220,14 +222,15 @@ const router = createBrowserRouter([
         element: <UserManagement />,
       },
       {
+        path: "profiles",
+        element: <AdminProfileManagement />,
+      },
+      {
         path: "bookings",
         element: (
-          <div className="text-center p-8">
-            <h1 className="text-2xl font-bold">Quản lý booking</h1>
-            <p className="text-gray-600 mt-2">
-              Trang này đang được phát triển...
-            </p>
-          </div>
+          <BookingProtectedRoute allowedRoles={["ADMIN"]}>
+            <BookingManagement />
+          </BookingProtectedRoute>
         ),
       },
       {

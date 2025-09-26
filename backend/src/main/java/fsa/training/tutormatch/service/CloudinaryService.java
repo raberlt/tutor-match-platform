@@ -2,7 +2,8 @@ package fsa.training.tutormatch.service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -10,45 +11,59 @@ import java.io.IOException;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class CloudinaryService {
 
-    @Autowired
-    private Cloudinary cloudinary;
+    private final Cloudinary cloudinary;
 
-    public String uploadFile(MultipartFile file, String folder) throws IOException {
-        Map<?, ?> uploadResult = cloudinary.uploader().upload(
-                file.getBytes(),
-                ObjectUtils.asMap(
-                        "folder", folder,
-                        "resource_type", "auto"
-                )
-        );
-        return (String) uploadResult.get("secure_url");
+    public String uploadImage(MultipartFile file, String folder) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> params = ObjectUtils.asMap(
+                "folder", folder,
+                "resource_type", "image",
+                "transformation", "w_500,h_500,c_fill,q_auto"
+            );
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), params);
+            String imageUrl = (String) result.get("secure_url");
+            
+            log.info("Image uploaded successfully: {}", imageUrl);
+            return imageUrl;
+        } catch (IOException e) {
+            log.error("Error uploading image to Cloudinary: ", e);
+            throw new RuntimeException("Failed to upload image", e);
+        }
     }
 
-    public String uploadImage(MultipartFile file, String folder) throws IOException {
-        Map<?, ?> uploadResult = cloudinary.uploader().upload(
-                file.getBytes(),
-                ObjectUtils.asMap(
-                        "folder", folder,
-                        "resource_type", "image"
-                )
-        );
-        return (String) uploadResult.get("secure_url");
+    public String uploadDocument(MultipartFile file, String folder) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> params = ObjectUtils.asMap(
+                "folder", folder,
+                "resource_type", "raw"
+            );
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), params);
+            String documentUrl = (String) result.get("secure_url");
+            
+            log.info("Document uploaded successfully: {}", documentUrl);
+            return documentUrl;
+        } catch (IOException e) {
+            log.error("Error uploading document to Cloudinary: ", e);
+            throw new RuntimeException("Failed to upload document", e);
+        }
     }
 
-    public String uploadDocument(MultipartFile file, String folder) throws IOException {
-        Map<?, ?> uploadResult = cloudinary.uploader().upload(
-                file.getBytes(),
-                ObjectUtils.asMap(
-                        "folder", folder,
-                        "resource_type", "raw"
-                )
-        );
-        return (String) uploadResult.get("secure_url");
-    }
-
-    public void deleteFile(String publicId) throws IOException {
-        cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+    public void deleteImage(String publicId) {
+        try {
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            log.info("Image deleted successfully: {}", publicId);
+        } catch (Exception e) {
+            log.error("Error deleting image from Cloudinary: ", e);
+        }
     }
 }

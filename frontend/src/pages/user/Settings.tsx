@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import api from "../../services/api";
 
@@ -14,12 +14,128 @@ export const Settings: React.FC = () => {
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
     email: user?.email || "",
+    username: user?.username || "",
     phoneNumber: user?.phoneNumber || "",
     dateOfBirth: user?.dateOfBirth || "",
     gender: user?.gender || "",
     address: user?.address || "",
-    bio: user?.bio || "",
+    educationLevel: user?.educationLevel || "INDEPENDENT_LEARNER",
+    avatar: user?.imageAvatar || "",
   });
+
+  // Avatar upload
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
+
+  // Danh sách 63 tỉnh thành Việt Nam
+  const vietnamProvinces = [
+    "An Giang",
+    "Bà Rịa - Vũng Tàu",
+    "Bạc Liêu",
+    "Bắc Giang",
+    "Bắc Kạn",
+    "Bắc Ninh",
+    "Bến Tre",
+    "Bình Định",
+    "Bình Dương",
+    "Bình Phước",
+    "Bình Thuận",
+    "Cà Mau",
+    "Cao Bằng",
+    "Đắk Lắk",
+    "Đắk Nông",
+    "Điện Biên",
+    "Đồng Nai",
+    "Đồng Tháp",
+    "Gia Lai",
+    "Hà Giang",
+    "Hà Nam",
+    "Hà Tĩnh",
+    "Hải Dương",
+    "Hậu Giang",
+    "Hòa Bình",
+    "Hưng Yên",
+    "Khánh Hòa",
+    "Kiên Giang",
+    "Kon Tum",
+    "Lai Châu",
+    "Lâm Đồng",
+    "Lạng Sơn",
+    "Lào Cai",
+    "Long An",
+    "Nam Định",
+    "Nghệ An",
+    "Ninh Bình",
+    "Ninh Thuận",
+    "Phú Thọ",
+    "Phú Yên",
+    "Quảng Bình",
+    "Quảng Nam",
+    "Quảng Ngãi",
+    "Quảng Ninh",
+    "Quảng Trị",
+    "Sóc Trăng",
+    "Sơn La",
+    "Tây Ninh",
+    "Thái Bình",
+    "Thái Nguyên",
+    "Thanh Hóa",
+    "Thừa Thiên Huế",
+    "Tiền Giang",
+    "Trà Vinh",
+    "Tuyên Quang",
+    "Vĩnh Long",
+    "Vĩnh Phúc",
+    "Yên Bái",
+    "Hà Nội",
+    "TP. Hồ Chí Minh",
+    "Đà Nẵng",
+    "Hải Phòng",
+    "Cần Thơ",
+  ];
+
+  // Load user profile data from API
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        const response = await api.get("/auth/profile");
+        if (response.data.success) {
+          const userData = response.data.data;
+          setProfileData({
+            firstName: userData.firstName || "",
+            lastName: userData.lastName || "",
+            email: userData.email || "",
+            username: userData.username || "",
+            phoneNumber: userData.phoneNumber || "",
+            dateOfBirth: userData.dateOfBirth || "",
+            gender: userData.gender || "",
+            address: userData.address || "",
+            educationLevel: userData.educationLevel || "INDEPENDENT_LEARNER",
+            avatar: userData.imageAvatar || "",
+          });
+        }
+      } catch (err) {
+        console.error("Error loading user profile:", err);
+        // Fallback to user data from context if API fails
+        if (user) {
+          setProfileData({
+            firstName: user.firstName || "",
+            lastName: user.lastName || "",
+            email: user.email || "",
+            username: user.username || "",
+            phoneNumber: user.phoneNumber || "",
+            dateOfBirth: user.dateOfBirth || "",
+            gender: user.gender || "",
+            address: user.address || "",
+            educationLevel: user.educationLevel || "INDEPENDENT_LEARNER",
+            avatar: user.imageAvatar || "",
+          });
+        }
+      }
+    };
+
+    loadUserProfile();
+  }, [user]);
 
   // Password form
   const [passwordData, setPasswordData] = useState({
@@ -35,6 +151,18 @@ export const Settings: React.FC = () => {
     accountHolder: "",
   });
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -42,7 +170,20 @@ export const Settings: React.FC = () => {
     setMessage("");
 
     try {
-      await api.put("/auth/profile", profileData);
+      // Tạo object data không bao gồm email vì email không thể chỉnh sửa
+      const { email, ...updateData } = profileData;
+
+      // Nếu có avatar file mới, upload trước
+      if (avatarFile) {
+        const formData = new FormData();
+        formData.append("avatar", avatarFile);
+        const avatarResponse = await api.post("/auth/upload-avatar", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        updateData.avatar = avatarResponse.data.avatarUrl;
+      }
+
+      await api.put("/auth/profile", updateData);
       setMessage("Cập nhật thông tin thành công!");
     } catch (err: any) {
       setError(err.response?.data?.error || "Cập nhật thất bại");
@@ -122,8 +263,8 @@ export const Settings: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto p-6">
-        {/* Header */}
+      <div className="max-w-3xl mx-auto p-4">
+        {/* Header
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             ⚙️ Cài đặt tài khoản
@@ -131,38 +272,56 @@ export const Settings: React.FC = () => {
           <p className="text-gray-600">
             Quản lý thông tin cá nhân, bảo mật và thanh toán của bạn
           </p>
-        </div>
+        </div> */}
 
         {/* Tabs */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 mb-6 overflow-hidden">
           <nav className="flex">
             <button
               onClick={() => setActiveTab("profile")}
-              className={`flex-1 py-4 px-6 text-center font-semibold transition-all duration-200 ${
+              className={`flex-1 py-3 px-4 text-center font-semibold text-base transition-all duration-200 ${
                 activeTab === "profile"
-                  ? "bg-blue-50 text-blue-700 border-b-2 border-blue-500"
+                  ? "text-white border-b-2 border-white"
                   : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
               }`}
+              style={{
+                backgroundColor:
+                  activeTab === "profile"
+                    ? "rgb(148, 204, 230)"
+                    : "transparent",
+              }}
             >
               Thông tin cá nhân
             </button>
             <button
               onClick={() => setActiveTab("password")}
-              className={`flex-1 py-4 px-6 text-center font-semibold transition-all duration-200 ${
+              className={`flex-1 py-3 px-4 text-center font-semibold text-base transition-all duration-200 ${
                 activeTab === "password"
-                  ? "bg-blue-50 text-blue-700 border-b-2 border-blue-500"
+                  ? "text-white border-b-2 border-white"
                   : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
               }`}
+              style={{
+                backgroundColor:
+                  activeTab === "password"
+                    ? "rgb(148, 204, 230)"
+                    : "transparent",
+              }}
             >
               Đổi mật khẩu
             </button>
             <button
               onClick={() => setActiveTab("payment")}
-              className={`flex-1 py-4 px-6 text-center font-semibold transition-all duration-200 ${
+              className={`flex-1 py-3 px-4 text-center font-semibold text-base transition-all duration-200 ${
                 activeTab === "payment"
-                  ? "bg-blue-50 text-blue-700 border-b-2 border-blue-500"
+                  ? "text-white border-b-2 border-white"
                   : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
               }`}
+              style={{
+                backgroundColor:
+                  activeTab === "payment"
+                    ? "rgb(148, 204, 230)"
+                    : "transparent",
+              }}
             >
               Thanh toán
             </button>
@@ -171,9 +330,9 @@ export const Settings: React.FC = () => {
 
         {/* Messages */}
         {message && (
-          <div className="mb-6 bg-green-50 border border-green-200 text-green-600 px-6 py-4 rounded-xl flex items-center space-x-3">
+          <div className="mb-4 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg flex items-center space-x-2">
             <svg
-              className="w-5 h-5 text-green-600"
+              className="w-4 h-4 text-green-600"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -183,14 +342,14 @@ export const Settings: React.FC = () => {
                 clipRule="evenodd"
               />
             </svg>
-            <span className="font-medium">{message}</span>
+            <span className="text-sm font-medium">{message}</span>
           </div>
         )}
 
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-6 py-4 rounded-xl flex items-center space-x-3">
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-center space-x-2">
             <svg
-              className="w-5 h-5 text-red-600"
+              className="w-4 h-4 text-red-600"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -200,28 +359,66 @@ export const Settings: React.FC = () => {
                 clipRule="evenodd"
               />
             </svg>
-            <span className="font-medium">{error}</span>
+            <span className="text-sm font-medium">{error}</span>
           </div>
         )}
 
         {/* Profile Tab */}
         {activeTab === "profile" && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-8 py-6 border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">
                 Thông tin cá nhân
               </h2>
-              <p className="text-gray-600 mt-2">
+              <p className="text-gray-600 text-xs mt-1">
                 Cập nhật thông tin cơ bản của bạn
               </p>
             </div>
 
-            <div className="p-8">
-              <form onSubmit={handleProfileSubmit} className="space-y-8">
-                {/* Thông tin cơ bản */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">
+            <div className="p-4">
+              <form onSubmit={handleProfileSubmit} className="space-y-4">
+                {/* Avatar Section - Top Center */}
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="relative">
+                    <img
+                      src={
+                        avatarPreview ||
+                        profileData.avatar ||
+                        "/default-avatar.png"
+                      }
+                      alt="Avatar"
+                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                    />
+                    {avatarPreview && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <input
+                      type="file"
+                      id="avatar-upload"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="avatar-upload"
+                      className="text-xs text-gray-600 hover:text-gray-800 cursor-pointer underline"
+                    >
+                      Thay đổi ảnh
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      JPG, PNG tối đa 5MB
+                    </p>
+                  </div>
+                </div>
+
+                {/* Họ và Tên */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Họ *
                     </label>
                     <input
@@ -233,14 +430,14 @@ export const Settings: React.FC = () => {
                           firstName: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Nhập họ của bạn"
                       required
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Tên *
                     </label>
                     <input
@@ -252,35 +449,55 @@ export const Settings: React.FC = () => {
                           lastName: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Nhập tên của bạn"
                       required
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">
+                {/* Email and Username */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Email *
                     </label>
                     <input
                       type="email"
                       value={profileData.email}
+                      className="w-full px-3 py-2 text-base border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                      placeholder="Email không thể chỉnh sửa"
+                      disabled
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      Email không thể thay đổi
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tên đăng nhập *
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.username}
                       onChange={(e) =>
                         setProfileData({
                           ...profileData,
-                          email: e.target.value,
+                          username: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                      placeholder="Nhập địa chỉ email"
+                      className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Nhập tên đăng nhập"
                       required
                     />
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">
+                {/* Phone and Education Level */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Số điện thoại
                     </label>
                     <input
@@ -292,15 +509,44 @@ export const Settings: React.FC = () => {
                           phoneNumber: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Nhập số điện thoại"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Trình độ học vấn
+                    </label>
+                    <select
+                      value={profileData.educationLevel}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          educationLevel: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="INDEPENDENT_LEARNER">
+                        Người học tự do
+                      </option>
+                      <option value="MIDDLE_SCHOOL">Trung học cơ sở</option>
+                      <option value="HIGH_SCHOOL">Trung học phổ thông</option>
+                      <option value="VOCATIONAL_SCHOOL">Trung cấp nghề</option>
+                      <option value="COLLEGE_UNIVERSITY">
+                        Cao đẳng / Đại học
+                      </option>
+                      <option value="POSTGRADUATE">Sau đại học</option>
+                      <option value="WORKING_PROFESSIONAL">Người đi làm</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">
+                {/* Date of Birth and Gender */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Ngày sinh
                     </label>
                     <input
@@ -312,12 +558,12 @@ export const Settings: React.FC = () => {
                           dateOfBirth: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Giới tính
                     </label>
                     <select
@@ -328,7 +574,7 @@ export const Settings: React.FC = () => {
                           gender: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Chọn giới tính</option>
                       <option value="MALE">Nam</option>
@@ -338,12 +584,12 @@ export const Settings: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Địa chỉ
+                {/* Address */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tỉnh/Thành phố
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={profileData.address}
                     onChange={(e) =>
                       setProfileData({
@@ -351,62 +597,26 @@ export const Settings: React.FC = () => {
                         address: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                    placeholder="Nhập địa chỉ của bạn"
-                  />
+                    className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Chọn tỉnh/thành phố</option>
+                    {vietnamProvinces.map((province) => (
+                      <option key={province} value={province}>
+                        {province}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Giới thiệu bản thân
-                  </label>
-                  <textarea
-                    value={profileData.bio}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        bio: e.target.value,
-                      })
-                    }
-                    rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
-                    placeholder="Viết một vài dòng giới thiệu về bản thân..."
-                  />
-                </div>
-
-                <div className="flex justify-end pt-4">
+                {/* Submit Button */}
+                <div className="flex justify-end pt-3 border-t border-gray-200">
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="text-white px-8 py-3 rounded-xl hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                    className="px-6 py-2 text-base text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 font-medium transition-all duration-200"
                     style={{ backgroundColor: "rgb(148, 204, 230)" }}
                   >
-                    {isLoading ? (
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          className="animate-spin w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        <span>Đang cập nhật...</span>
-                      </div>
-                    ) : (
-                      "💾 Cập nhật thông tin"
-                    )}
+                    {isLoading ? "Đang cập nhật..." : "Cập nhật thông tin"}
                   </button>
                 </div>
               </form>
@@ -416,17 +626,21 @@ export const Settings: React.FC = () => {
 
         {/* Password Tab */}
         {activeTab === "password" && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-8 py-6 border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900">Đổi mật khẩu</h2>
-              <p className="text-gray-600 mt-2">Bảo mật tài khoản của bạn</p>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Đổi mật khẩu
+              </h2>
+              <p className="text-gray-600 text-xs mt-1">
+                Bảo mật tài khoản của bạn
+              </p>
             </div>
 
-            <div className="p-8">
+            <div className="p-4">
               {/* Kiểm tra nếu user đăng nhập bằng OAuth2 */}
               {user?.provider === "GOOGLE" ? (
-                <div className="space-y-8">
-                  <div className="bg-blue-50 border border-blue-200 text-blue-600 px-6 py-4 rounded-xl flex items-center space-x-3">
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 text-blue-600 px-4 py-3 rounded-xl flex items-center space-x-3">
                     <svg
                       className="w-5 h-5 text-blue-600"
                       fill="currentColor"
@@ -444,206 +658,133 @@ export const Settings: React.FC = () => {
                     </p>
                   </div>
 
-                  <form onSubmit={handlePasswordSubmit} className="space-y-8">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
+                  <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Mật khẩu mới
                       </label>
-                      <div className="relative">
-                        <input
-                          type="password"
-                          value={passwordData.newPassword}
-                          onChange={(e) =>
-                            setPasswordData({
-                              ...passwordData,
-                              newPassword: e.target.value,
-                            })
-                          }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                          placeholder="Nhập mật khẩu mới"
-                          required
-                        />
-                      </div>
+                      <input
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) =>
+                          setPasswordData({
+                            ...passwordData,
+                            newPassword: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Nhập mật khẩu mới"
+                        required
+                      />
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Xác nhận mật khẩu mới
                       </label>
-                      <div className="relative">
-                        <input
-                          type="password"
-                          value={passwordData.confirmPassword}
-                          onChange={(e) =>
-                            setPasswordData({
-                              ...passwordData,
-                              confirmPassword: e.target.value,
-                            })
-                          }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                          placeholder="Xác nhận mật khẩu mới"
-                          required
-                        />
-                      </div>
+                      <input
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) =>
+                          setPasswordData({
+                            ...passwordData,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Xác nhận mật khẩu mới"
+                        required
+                      />
                     </div>
 
-                    <div className="flex justify-end pt-4">
+                    <div className="flex justify-end pt-3 border-t border-gray-200">
                       <button
                         type="submit"
                         disabled={isLoading}
-                        className="text-white px-8 py-3 rounded-xl hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                        className="px-6 py-2 text-base text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 font-medium transition-all duration-200"
                         style={{ backgroundColor: "rgb(148, 204, 230)" }}
                       >
-                        {isLoading ? (
-                          <div className="flex items-center space-x-2">
-                            <svg
-                              className="animate-spin w-4 h-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              ></circle>
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              ></path>
-                            </svg>
-                            <span>Đang đặt mật khẩu...</span>
-                          </div>
-                        ) : (
-                          "🔐 Đặt mật khẩu"
-                        )}
+                        {isLoading ? "Đang cập nhật..." : "Đặt mật khẩu"}
                       </button>
                     </div>
                   </form>
                 </div>
               ) : (
-                <div className="space-y-8">
-                  <form onSubmit={handlePasswordSubmit} className="space-y-8">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
+                <div className="space-y-4">
+                  <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Mật khẩu hiện tại
                       </label>
-                      <div className="relative">
-                        <input
-                          type="password"
-                          value={passwordData.currentPassword}
-                          onChange={(e) =>
-                            setPasswordData({
-                              ...passwordData,
-                              currentPassword: e.target.value,
-                            })
-                          }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                          placeholder="Nhập mật khẩu hiện tại"
-                          required
-                        />
-                      </div>
+                      <input
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={(e) =>
+                          setPasswordData({
+                            ...passwordData,
+                            currentPassword: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Nhập mật khẩu hiện tại"
+                        required
+                      />
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Mật khẩu mới
                       </label>
-                      <div className="relative">
-                        <input
-                          type="password"
-                          value={passwordData.newPassword}
-                          onChange={(e) =>
-                            setPasswordData({
-                              ...passwordData,
-                              newPassword: e.target.value,
-                            })
-                          }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                          placeholder="Nhập mật khẩu mới"
-                          required
-                        />
-                      </div>
+                      <input
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) =>
+                          setPasswordData({
+                            ...passwordData,
+                            newPassword: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Nhập mật khẩu mới"
+                        required
+                      />
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Xác nhận mật khẩu mới
                       </label>
-                      <div className="relative">
-                        <input
-                          type="password"
-                          value={passwordData.confirmPassword}
-                          onChange={(e) =>
-                            setPasswordData({
-                              ...passwordData,
-                              confirmPassword: e.target.value,
-                            })
-                          }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                          placeholder="Xác nhận mật khẩu mới"
-                          required
-                        />
-                      </div>
+                      <input
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) =>
+                          setPasswordData({
+                            ...passwordData,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Xác nhận mật khẩu mới"
+                        required
+                      />
                     </div>
 
-                    <div className="flex justify-between items-center pt-4">
+                    <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                       <button
                         type="button"
                         onClick={handleForgotPassword}
-                        className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-1"
+                        className="text-sm text-gray-600 hover:text-gray-800 font-medium"
                       >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <span>Quên mật khẩu?</span>
+                        Quên mật khẩu?
                       </button>
 
                       <button
                         type="submit"
                         disabled={isLoading}
-                        className="text-white px-8 py-3 rounded-xl hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                        className="px-6 py-2 text-base text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 font-medium transition-all duration-200"
                         style={{ backgroundColor: "rgb(148, 204, 230)" }}
                       >
-                        {isLoading ? (
-                          <div className="flex items-center space-x-2">
-                            <svg
-                              className="animate-spin w-4 h-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              ></circle>
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              ></path>
-                            </svg>
-                            <span>Đang đổi mật khẩu...</span>
-                          </div>
-                        ) : (
-                          "🔐 Đổi mật khẩu"
-                        )}
+                        {isLoading ? "Đang cập nhật..." : "Đổi mật khẩu"}
                       </button>
                     </div>
                   </form>
@@ -655,16 +796,18 @@ export const Settings: React.FC = () => {
 
         {/* Payment Tab */}
         {activeTab === "payment" && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-8 py-6 border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900">Thanh toán</h2>
-              <p className="text-gray-600 mt-2">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Thanh toán
+              </h2>
+              <p className="text-gray-600 text-sm mt-1">
                 Quản lý thông tin thanh toán và rút tiền
               </p>
             </div>
 
-            <div className="p-8">
-              <div className="mb-8">
+            <div className="p-6">
+              <div className="mb-6">
                 <div className="bg-blue-50 border border-blue-200 text-blue-600 px-6 py-4 rounded-xl flex items-center space-x-3">
                   <svg
                     className="w-5 h-5 text-blue-600"
@@ -684,113 +827,82 @@ export const Settings: React.FC = () => {
                 </div>
               </div>
 
-              <form onSubmit={handlePaymentSubmit} className="space-y-8">
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
+              <form onSubmit={handlePaymentSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Ngân hàng
                   </label>
-                  <div className="relative">
-                    <select
-                      value={paymentData.bankName}
-                      onChange={(e) =>
-                        setPaymentData({
-                          ...paymentData,
-                          bankName: e.target.value,
-                        })
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 appearance-none bg-white"
-                      required
-                    >
-                      <option value="">Chọn ngân hàng</option>
-                      <option value="Vietcombank">Vietcombank</option>
-                      <option value="VietinBank">VietinBank</option>
-                      <option value="BIDV">BIDV</option>
-                      <option value="Agribank">Agribank</option>
-                      <option value="Techcombank">Techcombank</option>
-                      <option value="ACB">ACB</option>
-                      <option value="Sacombank">Sacombank</option>
-                      <option value="MBBank">MBBank</option>
-                      <option value="VPBank">VPBank</option>
-                      <option value="TPBank">TPBank</option>
-                    </select>
-                  </div>
+                  <select
+                    value={paymentData.bankName}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        bankName: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  >
+                    <option value="">Chọn ngân hàng</option>
+                    <option value="Vietcombank">Vietcombank</option>
+                    <option value="VietinBank">VietinBank</option>
+                    <option value="BIDV">BIDV</option>
+                    <option value="Agribank">Agribank</option>
+                    <option value="Techcombank">Techcombank</option>
+                    <option value="ACB">ACB</option>
+                    <option value="Sacombank">Sacombank</option>
+                    <option value="MBBank">MBBank</option>
+                    <option value="VPBank">VPBank</option>
+                    <option value="TPBank">TPBank</option>
+                  </select>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Số tài khoản
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={paymentData.accountNumber}
-                      onChange={(e) =>
-                        setPaymentData({
-                          ...paymentData,
-                          accountNumber: e.target.value,
-                        })
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
-                      placeholder="Nhập số tài khoản"
-                      required
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={paymentData.accountNumber}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        accountNumber: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Nhập số tài khoản"
+                    required
+                  />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Chủ tài khoản
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={paymentData.accountHolder}
-                      onChange={(e) =>
-                        setPaymentData({
-                          ...paymentData,
-                          accountHolder: e.target.value,
-                        })
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
-                      placeholder="Nhập tên chủ tài khoản"
-                      required
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={paymentData.accountHolder}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        accountHolder: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Nhập tên chủ tài khoản"
+                    required
+                  />
                 </div>
 
-                <div className="flex justify-end pt-4">
+                <div className="flex justify-end pt-4 border-t border-gray-200">
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="text-white px-8 py-3 rounded-xl hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                    className="px-6 py-2 text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 font-medium transition-all duration-200"
                     style={{ backgroundColor: "rgb(148, 204, 230)" }}
                   >
-                    {isLoading ? (
-                      <div className="flex items-center space-x-2">
-                        <svg
-                          className="animate-spin w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        <span>Đang cập nhật...</span>
-                      </div>
-                    ) : (
-                      "💳 Cập nhật thông tin"
-                    )}
+                    {isLoading ? "Đang cập nhật..." : "Cập nhật thông tin"}
                   </button>
                 </div>
               </form>

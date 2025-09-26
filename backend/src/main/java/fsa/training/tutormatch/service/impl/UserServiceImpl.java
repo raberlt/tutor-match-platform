@@ -26,7 +26,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User save(User user){
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        // Chỉ encode password nếu nó chưa được encode (không bắt đầu với $2a$)
+        if (user.getPassword() != null && !user.getPassword().startsWith("$2a$")) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
 
         // Default role
         if (user.getRole() == null) {

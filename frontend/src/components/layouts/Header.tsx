@@ -106,10 +106,8 @@ export const Header: React.FC = () => {
                 <Link
                   key={index}
                   to={item.href}
-                  className={`transition-colors px-3 py-2 rounded-lg ${
-                    isActive
-                      ? "font-semibold"
-                      : "text-gray-600 hover:opacity-80"
+                  className={`transition-colors px-3 py-2 rounded-lg text-sm font-semibold ${
+                    isActive ? "" : "text-gray-600 hover:opacity-80"
                   }`}
                   style={
                     isActive
@@ -132,7 +130,7 @@ export const Header: React.FC = () => {
                 {/* Avatar Button */}
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center space-x-2 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                  className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
                 >
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center"
@@ -154,6 +152,19 @@ export const Header: React.FC = () => {
                       </span>
                     )}
                   </div>
+
+                  {/* Tên người dùng */}
+                  <div className="hidden md:block text-left">
+                    <div className="text-sm font-medium text-gray-900">
+                      {user.firstName} {user.lastName}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {user.role === "STUDENT" && "Học sinh"}
+                      {user.role === "TUTOR" && "Gia sư"}
+                      {user.role === "ADMIN" && "Quản trị viên"}
+                    </div>
+                  </div>
+
                   <svg
                     className={`w-4 h-4 text-gray-400 transition-transform ${
                       isDropdownOpen ? "rotate-180" : ""
@@ -296,7 +307,7 @@ export const Header: React.FC = () => {
               <div className="flex items-center space-x-3">
                 <Link
                   to="/login"
-                  className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                  className={`px-4 py-2 rounded-lg transition-colors font-semibold text-sm ${
                     location.pathname === "/login"
                       ? "hover:opacity-80"
                       : "text-gray-700 hover:text-gray-900"
@@ -314,7 +325,7 @@ export const Header: React.FC = () => {
                 </Link>
                 <Link
                   to="/register"
-                  className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                  className={`px-4 py-2 rounded-lg transition-colors font-semibold text-sm ${
                     location.pathname === "/register"
                       ? "hover:opacity-80"
                       : "text-gray-700 hover:text-gray-900"

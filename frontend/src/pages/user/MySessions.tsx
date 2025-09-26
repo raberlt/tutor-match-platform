@@ -230,10 +230,13 @@ const MySessions: React.FC = () => {
 
   if (loading && bookings.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen" style={{ backgroundColor: "#f8fafc" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <div
+              className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
+              style={{ borderColor: "rgb(148, 204, 230)" }}
+            ></div>
             <p className="mt-4 text-gray-600">Đang tải...</p>
           </div>
         </div>
@@ -242,12 +245,15 @@ const MySessions: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen py-8" style={{ backgroundColor: "#f8fafc" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center space-x-4 mb-4">
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
+            <div
+              className="p-3 rounded-xl"
+              style={{ backgroundColor: "rgb(148, 204, 230)" }}
+            >
               <BookIcon />
             </div>
             <div>
@@ -265,57 +271,102 @@ const MySessions: React.FC = () => {
         {stats && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Tổng Booking */}
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl shadow-sm border border-blue-200 hover:shadow-md transition-all duration-300">
+            <div
+              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(148, 204, 230, 0.1)",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-700 mb-1">
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: "rgb(148, 204, 230)" }}
+                  >
                     Tổng Booking
                   </p>
-                  <p className="text-3xl font-bold text-blue-900">
+                  <p className="text-3xl font-bold text-gray-900">
                     {stats.totalBookings}
                   </p>
                 </div>
-                <div className="p-3 bg-blue-500 rounded-full">
+                <div
+                  className="p-3 rounded-full"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                >
                   <BookIcon />
                 </div>
               </div>
-              <div className="mt-3 flex items-center text-sm text-blue-600">
+              <div
+                className="mt-3 flex items-center text-sm"
+                style={{ color: "rgb(148, 204, 230)" }}
+              >
                 <span className="font-medium">Tất cả buổi học</span>
               </div>
             </div>
 
             {/* Chờ xử lý */}
-            <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-6 rounded-xl shadow-sm border border-amber-200 hover:shadow-md transition-all duration-300">
+            <div
+              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(148, 204, 230, 0.1)",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-amber-700 mb-1">
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: "rgb(148, 204, 230)" }}
+                  >
                     Chờ xử lý
                   </p>
-                  <p className="text-3xl font-bold text-amber-900">
+                  <p className="text-3xl font-bold text-gray-900">
                     {stats.pendingBookings}
                   </p>
                 </div>
-                <div className="p-3 bg-amber-500 rounded-full">
+                <div
+                  className="p-3 rounded-full"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                >
                   <ClockIcon />
                 </div>
               </div>
-              <div className="mt-3 flex items-center text-sm text-amber-600">
+              <div
+                className="mt-3 flex items-center text-sm"
+                style={{ color: "rgb(148, 204, 230)" }}
+              >
                 <span className="font-medium">Đang chờ phản hồi</span>
               </div>
             </div>
 
             {/* Hoàn thành */}
-            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 rounded-xl shadow-sm border border-emerald-200 hover:shadow-md transition-all duration-300">
+            <div
+              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(148, 204, 230, 0.1)",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-emerald-700 mb-1">
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: "rgb(148, 204, 230)" }}
+                  >
                     Hoàn thành
                   </p>
-                  <p className="text-3xl font-bold text-emerald-900">
+                  <p className="text-3xl font-bold text-gray-900">
                     {stats.completedBookings}
                   </p>
                 </div>
-                <div className="p-3 bg-emerald-500 rounded-full">
+                <div
+                  className="p-3 rounded-full"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                >
                   <svg
                     className="w-5 h-5 text-white"
                     fill="none"
@@ -331,23 +382,39 @@ const MySessions: React.FC = () => {
                   </svg>
                 </div>
               </div>
-              <div className="mt-3 flex items-center text-sm text-emerald-600">
+              <div
+                className="mt-3 flex items-center text-sm"
+                style={{ color: "rgb(148, 204, 230)" }}
+              >
                 <span className="font-medium">Đã hoàn thành</span>
               </div>
             </div>
 
             {/* Đã hủy */}
-            <div className="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-xl shadow-sm border border-red-200 hover:shadow-md transition-all duration-300">
+            <div
+              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              style={{
+                backgroundColor: "rgba(148, 204, 230, 0.1)",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-red-700 mb-1">
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: "rgb(148, 204, 230)" }}
+                  >
                     Đã hủy
                   </p>
-                  <p className="text-3xl font-bold text-red-900">
+                  <p className="text-3xl font-bold text-gray-900">
                     {stats.cancelledBookings}
                   </p>
                 </div>
-                <div className="p-3 bg-red-500 rounded-full">
+                <div
+                  className="p-3 rounded-full"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                >
                   <svg
                     className="w-5 h-5 text-white"
                     fill="none"
@@ -363,7 +430,10 @@ const MySessions: React.FC = () => {
                   </svg>
                 </div>
               </div>
-              <div className="mt-3 flex items-center text-sm text-red-600">
+              <div
+                className="mt-3 flex items-center text-sm"
+                style={{ color: "rgb(148, 204, 230)" }}
+              >
                 <span className="font-medium">Đã hủy bỏ</span>
               </div>
             </div>
@@ -371,7 +441,14 @@ const MySessions: React.FC = () => {
         )}
 
         {/* Bộ lọc và Hành động nhanh */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
+        <div
+          className="p-6 rounded-2xl shadow-lg mb-6"
+          style={{
+            backgroundColor: "white",
+            borderColor: "rgba(148, 204, 230, 0.2)",
+            border: "1px solid",
+          }}
+        >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* Bộ lọc */}
             <div className="flex flex-col sm:flex-row gap-4">
@@ -384,7 +461,11 @@ const MySessions: React.FC = () => {
                       (e.target.value as BookingStatus) || undefined
                     )
                   }
-                  className="pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 font-medium"
+                  className="pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
+                  style={{
+                    borderColor: "rgba(148, 204, 230, 0.3)",
+                    focusRingColor: "rgb(148, 204, 230)",
+                  }}
                 >
                   <option value="">Tất cả trạng thái</option>
                   <option value="PENDING">Chờ xử lý</option>
@@ -406,7 +487,12 @@ const MySessions: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
                 to="/find-tutor"
-                className="inline-flex items-center px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200 font-medium"
+                className="inline-flex items-center px-4 py-3 rounded-xl focus:outline-none focus:ring-2 transition-colors duration-200 font-medium"
+                style={{
+                  backgroundColor: "rgba(148, 204, 230, 0.1)",
+                  color: "rgb(148, 204, 230)",
+                  focusRingColor: "rgb(148, 204, 230)",
+                }}
               >
                 <UserIcon />
                 <span className="ml-2">Tìm gia sư</span>
@@ -414,7 +500,11 @@ const MySessions: React.FC = () => {
 
               <Link
                 to="/user/create-booking"
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+                className="inline-flex items-center px-6 py-3 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                style={{
+                  backgroundColor: "rgb(148, 204, 230)",
+                  focusRingColor: "rgb(148, 204, 230)",
+                }}
               >
                 <PlusIcon />
                 <span className="ml-2">Đặt lịch mới</span>
@@ -425,9 +515,19 @@ const MySessions: React.FC = () => {
 
         {/* Danh sách booking - Thiết kế mới */}
         {bookings.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div
+            className="rounded-2xl shadow-lg"
+            style={{
+              backgroundColor: "white",
+              borderColor: "rgba(148, 204, 230, 0.2)",
+              border: "1px solid",
+            }}
+          >
             <div className="text-center py-16">
-              <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+              <div
+                className="mx-auto w-24 h-24 rounded-full flex items-center justify-center mb-6"
+                style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+              >
                 <BookIcon />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -440,14 +540,19 @@ const MySessions: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   to="/find-tutor"
-                  className="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium"
+                  className="inline-flex items-center px-6 py-3 rounded-xl transition-colors duration-200 font-medium"
+                  style={{
+                    backgroundColor: "rgba(148, 204, 230, 0.1)",
+                    color: "rgb(148, 204, 230)",
+                  }}
                 >
                   <UserIcon />
                   <span className="ml-2">Tìm gia sư</span>
                 </Link>
                 <Link
                   to="/user/create-booking"
-                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+                  className="inline-flex items-center px-6 py-3 text-white rounded-xl transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <PlusIcon />
                   <span className="ml-2">Đặt lịch mới</span>
@@ -460,10 +565,18 @@ const MySessions: React.FC = () => {
             {bookings.map((booking) => (
               <div
                 key={booking.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden"
+                className="rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                style={{
+                  backgroundColor: "white",
+                  borderColor: "rgba(148, 204, 230, 0.2)",
+                  border: "1px solid",
+                }}
               >
                 {/* Header với status */}
-                <div className="p-6 border-b border-gray-100">
+                <div
+                  className="p-6 border-b"
+                  style={{ borderColor: "rgba(148, 204, 230, 0.1)" }}
+                >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <span
@@ -473,7 +586,10 @@ const MySessions: React.FC = () => {
                       >
                         {getStatusText(booking.status)}
                       </span>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                      <span
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
+                        style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                      >
                         {getBookingTypeText(booking.bookingType)}
                       </span>
                     </div>
@@ -489,7 +605,10 @@ const MySessions: React.FC = () => {
 
                   {/* Thông tin gia sư */}
                   <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                    >
                       <span className="text-white font-semibold text-lg">
                         {booking.tutor.user.firstName.charAt(0)}
                       </span>
@@ -526,14 +645,20 @@ const MySessions: React.FC = () => {
 
                     {/* Ghi chú */}
                     {booking.note && (
-                      <div className="bg-gray-50 rounded-lg p-3">
+                      <div
+                        className="rounded-lg p-3"
+                        style={{ backgroundColor: "rgba(148, 204, 230, 0.05)" }}
+                      >
                         <p className="text-sm text-gray-700">{booking.note}</p>
                       </div>
                     )}
 
                     {/* Giá */}
                     {booking.amount > 0 && (
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                      <div
+                        className="flex items-center justify-between pt-2 border-t"
+                        style={{ borderColor: "rgba(148, 204, 230, 0.1)" }}
+                      >
                         <span className="text-sm font-medium text-gray-600">
                           Tổng tiền:
                         </span>
@@ -545,10 +670,14 @@ const MySessions: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="mt-6 pt-4 border-t border-gray-100">
+                  <div
+                    className="mt-6 pt-4 border-t"
+                    style={{ borderColor: "rgba(148, 204, 230, 0.1)" }}
+                  >
                     <Link
                       to={`/user/booking-detail/${booking.id}`}
-                      className="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors duration-200 font-medium"
+                      className="w-full inline-flex items-center justify-center px-4 py-2 text-white rounded-xl transition-colors duration-200 font-medium"
+                      style={{ backgroundColor: "rgb(148, 204, 230)" }}
                     >
                       Xem chi tiết
                     </Link>
@@ -562,11 +691,18 @@ const MySessions: React.FC = () => {
         {/* Phân trang - Thiết kế mới */}
         {totalPages > 1 && (
           <div className="mt-8 flex justify-center">
-            <nav className="flex items-center space-x-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2">
+            <nav
+              className="flex items-center space-x-2 rounded-2xl shadow-lg p-2"
+              style={{
+                backgroundColor: "white",
+                borderColor: "rgba(148, 204, 230, 0.2)",
+                border: "1px solid",
+              }}
+            >
               <button
                 onClick={() => setCurrentPage(0)}
                 disabled={currentPage === 0}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 Đầu
               </button>
@@ -574,7 +710,7 @@ const MySessions: React.FC = () => {
               <button
                 onClick={() => setCurrentPage(currentPage - 1)}
                 disabled={currentPage === 0}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 Trước
               </button>
@@ -596,11 +732,17 @@ const MySessions: React.FC = () => {
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+                      className={`px-3 py-2 text-sm font-medium rounded-xl transition-colors duration-200 ${
                         currentPage === pageNum
-                          ? "bg-blue-600 text-white"
+                          ? "text-white"
                           : "text-gray-700 bg-white hover:bg-gray-50"
                       }`}
+                      style={{
+                        backgroundColor:
+                          currentPage === pageNum
+                            ? "rgb(148, 204, 230)"
+                            : "white",
+                      }}
                     >
                       {pageNum + 1}
                     </button>
@@ -611,7 +753,7 @@ const MySessions: React.FC = () => {
               <button
                 onClick={() => setCurrentPage(currentPage + 1)}
                 disabled={currentPage >= totalPages - 1}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 Sau
               </button>
@@ -619,7 +761,7 @@ const MySessions: React.FC = () => {
               <button
                 onClick={() => setCurrentPage(totalPages - 1)}
                 disabled={currentPage >= totalPages - 1}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 Cuối
               </button>

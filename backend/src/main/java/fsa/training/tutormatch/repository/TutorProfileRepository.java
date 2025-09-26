@@ -18,10 +18,13 @@ public interface TutorProfileRepository extends JpaRepository<TutorProfile, Inte
     // Find by user ID
     Optional<TutorProfile> findByUserId(Integer userId);
     Optional<TutorProfile> findByUser_Username(String username);
-    Optional<TutorProfile> findByUser(User user);    
+    Optional<TutorProfile> findByUser(User user);
     // Query to find enabled tutors
     @Query("SELECT p FROM TutorProfile p WHERE p.enable = true")
     List<TutorProfile> findApprovedTutors();
+    
+    @Query("SELECT p FROM TutorProfile p WHERE p.enable = true")
+    List<TutorProfile> findEnabledTutors();
     
     // Find tutors by subject
     @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.subject.name = :subjectName AND p.enable = true")

@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 13
-Issued by: Issuer 13
-Description: Description 13
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:00.807089

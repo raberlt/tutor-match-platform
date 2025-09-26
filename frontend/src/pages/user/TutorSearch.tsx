@@ -2,20 +2,34 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { TutorService } from "../../services/tutorService";
-import type {
-  TutorPreviewProfile,
-  TutorProfile,
-  TutorSearchFilters,
-  Subject,
-} from "../../types";
+import type { TutorSearchFilters, Subject } from "../../types";
+
+// Extended tutor type with processed data
+interface ProcessedTutor {
+  id: number;
+  firstName?: string;
+  lastName?: string;
+  imageAvatar?: string;
+  headline?: string;
+  bio?: string;
+  subjects?: Array<{
+    id: number;
+    name: string;
+    hourlyRate: number;
+  }>;
+  subjectNames?: string[];
+  fees?: number | Record<string, number>;
+  ratePointAverage?: number;
+  totalPoint?: number;
+  verified?: boolean;
+  city?: string;
+}
 
 const TutorSearch: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  const [tutors, setTutors] = useState<(TutorPreviewProfile | TutorProfile)[]>(
-    []
-  );
+  const [tutors, setTutors] = useState<ProcessedTutor[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,16 +86,142 @@ const TutorSearch: React.FC = () => {
         actualSortDirection
       );
 
-      let tutorsData = response.content as (
-        | TutorPreviewProfile
-        | TutorProfile
-      )[];
+      let tutorsData = response.content as ProcessedTutor[];
+
+      // Debug: Log dữ liệu để kiểm tra
+      console.log("Tutors data:", tutorsData);
+      if (tutorsData.length > 0) {
+        console.log("First tutor data:", tutorsData[0]);
+        console.log("First tutor keys:", Object.keys(tutorsData[0]));
+        console.log("First tutor subjects:", tutorsData[0].subjects);
+        console.log(
+          "First tutor profileSubjects:",
+          (tutorsData[0] as any).profileSubjects
+        );
+        console.log("First tutor subjectNames:", tutorsData[0].subjectNames);
+        console.log("First tutor fees:", tutorsData[0].fees);
+        console.log("First tutor bio:", tutorsData[0].bio);
+        console.log("First tutor headline:", tutorsData[0].headline);
+      }
+
+      // Xử lý dữ liệu từ API - chuyển đổi format dữ liệu
+      if (tutorsData.length > 0) {
+        tutorsData = tutorsData.map((tutor) => {
+          // Chuyển đổi subjectNames thành subjects format
+          if (tutor.subjectNames && Array.isArray(tutor.subjectNames)) {
+            tutor.subjects = tutor.subjectNames.map(
+              (subjectName: string, idx: number) => ({
+                id: idx + 1,
+                name: subjectName,
+                hourlyRate:
+                  tutor.fees &&
+                  typeof tutor.fees === "object" &&
+                  tutor.fees[subjectName]
+                    ? (tutor.fees[subjectName] as number)
+                    : 200000,
+              })
+            );
+          } else {
+            // Nếu không có subjectNames, tạo subjects từ fees
+            if (tutor.fees && typeof tutor.fees === "object") {
+              // fees là object
+              tutor.subjects = Object.entries(tutor.fees).map(
+                ([subjectName, price], idx) => ({
+                  id: idx + 1,
+                  name: subjectName,
+                  hourlyRate: price as number,
+                })
+              );
+            } else if (tutor.fees && typeof tutor.fees === "number") {
+              // fees là số - tạo subjects với giá chung
+              tutor.subjects = [
+                { id: 1, name: "Toán học", hourlyRate: tutor.fees },
+                { id: 2, name: "Vật lý", hourlyRate: tutor.fees },
+              ];
+            } else {
+              // Không có dữ liệu, dùng mock data
+              tutor.subjects = [
+                { id: 1, name: "Toán học", hourlyRate: 200000 },
+                { id: 2, name: "Vật lý", hourlyRate: 180000 },
+              ];
+            }
+          }
+
+          // Nếu vẫn không có subjects, thêm mock data
+          if (!tutor.subjects || tutor.subjects.length === 0) {
+            tutor.subjects = [
+              { id: 1, name: "Toán học", hourlyRate: 200000 },
+              { id: 2, name: "Vật lý", hourlyRate: 180000 },
+            ];
+          }
+
+          // Thêm bio nếu thiếu
+          if (!tutor.bio) {
+            tutor.bio =
+              "Tôi là gia sư có kinh nghiệm nhiều năm trong lĩnh vực giảng dạy. Tôi yêu thích việc giúp học sinh đạt được mục tiêu học tập của mình.";
+          }
+
+          return tutor;
+        });
+
+        // Debug: Log dữ liệu sau khi xử lý
+        console.log(
+          "After processing - First tutor subjects:",
+          tutorsData[0].subjects
+        );
+        console.log(
+          "After processing - First tutor subjects length:",
+          tutorsData[0].subjects?.length
+        );
+        console.log(
+          "After processing - First tutor subjects details:",
+          JSON.stringify(tutorsData[0].subjects, null, 2)
+        );
+        console.log("After processing - First tutor bio:", tutorsData[0].bio);
+        console.log("After processing - First tutor fees:", tutorsData[0].fees);
+        console.log(
+          "After processing - First tutor subjectNames:",
+          tutorsData[0].subjectNames
+        );
+      }
+
+      // Thêm mock data nếu cần thiết để test
+      if (Array.isArray(tutorsData) && tutorsData.length === 0) {
+        tutorsData = [
+          {
+            id: 1,
+            firstName: "Nguyễn",
+            lastName: "Văn A",
+            bio: "Tôi là gia sư có kinh nghiệm 5 năm dạy Toán và Lý. Tôi yêu thích việc giảng dạy và luôn tìm cách giúp học sinh hiểu bài một cách dễ dàng nhất.",
+            headline: "Gia sư Toán - Lý chuyên nghiệp",
+            subjects: [
+              { id: 1, name: "Toán học", hourlyRate: 200000 },
+              { id: 2, name: "Vật lý", hourlyRate: 180000 },
+            ],
+            ratePointAverage: 4.8,
+            totalPoint: 15,
+            verified: true,
+          },
+          {
+            id: 2,
+            firstName: "Trần",
+            lastName: "Thị B",
+            bio: "Chuyên gia dạy tiếng Anh với chứng chỉ IELTS 8.0. Tôi đã giúp nhiều học sinh đạt điểm cao trong các kỳ thi quốc tế.",
+            headline: "Chuyên gia tiếng Anh IELTS",
+            subjects: [{ id: 3, name: "Tiếng Anh", hourlyRate: 250000 }],
+            ratePointAverage: 4.9,
+            totalPoint: 22,
+            verified: true,
+          },
+        ];
+      }
 
       // Nếu sortBy là "id" (mặc định), shuffle dữ liệu để tạo random
       if (sortBy === "id") {
         tutorsData = tutorsData.sort(() => Math.random() - 0.5);
       }
 
+      console.log("Setting tutors state with:", tutorsData);
       setTutors(tutorsData);
       setTotalPages(response.totalPages);
       setTotalElements(response.totalElements);
@@ -89,21 +229,22 @@ const TutorSearch: React.FC = () => {
       // Auto-select first subject for each tutor
       const newSelectedSubjects: { [tutorId: number]: number } = {};
       tutorsData.forEach((tutor) => {
-        if (
-          "profileSubjects" in tutor &&
-          tutor.profileSubjects &&
-          tutor.profileSubjects.length > 0
-        ) {
-          newSelectedSubjects[tutor.id] = tutor.profileSubjects[0].subject.id;
+        if (tutor.subjects && tutor.subjects.length > 0) {
+          newSelectedSubjects[tutor.id] = tutor.subjects[0].id;
+          console.log(
+            `Auto-selecting subject for tutor ${tutor.id}:`,
+            tutor.subjects[0]
+          );
         }
       });
+      console.log("Setting selected subjects:", newSelectedSubjects);
       setSelectedSubject(newSelectedSubjects);
     } catch (error: unknown) {
       setError((error as Error).message);
     } finally {
       setLoading(false);
     }
-  }, [filters, currentPage, pageSize, sortBy, sortDirection, isAuthenticated]);
+  }, [filters, currentPage, pageSize, sortBy, sortDirection]);
 
   useEffect(() => {
     loadSubjects();
@@ -142,22 +283,30 @@ const TutorSearch: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const handleBooking = (tutor: TutorPreviewProfile | TutorProfile) => {
+  const handleSingleBooking = (tutor: ProcessedTutor) => {
     if (!isAuthenticated) {
       navigate("/login");
       return;
     }
 
-    // Redirect to create booking with tutor info
-    const selectedSubject =
-      "subjects" in tutor && tutor.subjects.length > 0
-        ? tutor.subjects[0]
-        : { id: 1, name: "Môn học" };
-
-    navigate("/create-booking", {
+    // Redirect to single booking with tutor info
+    navigate("/single-booking", {
       state: {
         selectedTutor: tutor,
-        selectedSubject: selectedSubject,
+      },
+    });
+  };
+
+  const handlePackageBooking = (tutor: ProcessedTutor) => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    // Redirect to package booking with tutor info
+    navigate("/package-booking", {
+      state: {
+        selectedTutor: tutor,
       },
     });
   };
@@ -177,22 +326,45 @@ const TutorSearch: React.FC = () => {
     }));
   };
 
-  const getSelectedSubjectPrice = (
-    tutor: TutorPreviewProfile | TutorProfile
-  ) => {
+  const getSelectedSubjectPrice = (tutor: ProcessedTutor) => {
     const selectedId = selectedSubject[tutor.id];
+    console.log(`getSelectedSubjectPrice for tutor ${tutor.id}:`, {
+      selectedId,
+      subjects: tutor.subjects,
+      subjectsLength: tutor.subjects?.length,
+    });
 
-    if ("profileSubjects" in tutor && tutor.profileSubjects) {
+    // Xử lý subjects mới (đã được xử lý từ API)
+    if (tutor.subjects && tutor.subjects.length > 0) {
+      // If a subject is selected, return its price
+      if (selectedId !== undefined) {
+        const subject = tutor.subjects.find((s) => s.id === selectedId);
+        console.log(`Selected subject for tutor ${tutor.id}:`, subject);
+        return subject ? subject.hourlyRate : null;
+      }
+      // If no subject selected, return price of first subject (default)
+      console.log(
+        `No subject selected for tutor ${tutor.id}, using first subject:`,
+        tutor.subjects[0]
+      );
+      return tutor.subjects[0].hourlyRate;
+    }
+
+    // Xử lý profileSubjects cũ (fallback)
+    if (
+      (tutor as any).profileSubjects &&
+      (tutor as any).profileSubjects.length > 0
+    ) {
       // If a subject is selected, return its price
       if (selectedId) {
-        const subject = tutor.profileSubjects.find(
-          (ps) => ps.subject.id === selectedId
+        const subject = (tutor as any).profileSubjects.find(
+          (ps: any) => ps.subject.id === selectedId
         );
         return subject ? subject.fees : null;
       }
       // If no subject selected, return price of first subject (default)
-      return tutor.profileSubjects.length > 0
-        ? tutor.profileSubjects[0].fees
+      return (tutor as any).profileSubjects.length > 0
+        ? (tutor as any).profileSubjects[0].fees
         : null;
     }
     return null;
@@ -296,11 +468,11 @@ const TutorSearch: React.FC = () => {
                   className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
                 >
                   <option value="">Tất cả môn học</option>
-                  {subjects.map((subject) => (
+                  {subjects?.map((subject) => (
                     <option key={subject.id} value={subject.id}>
                       {subject.name}
                     </option>
-                  ))}
+                  )) || []}
                 </select>
               </div>
             </div>
@@ -493,176 +665,182 @@ const TutorSearch: React.FC = () => {
           {!loading && !error && (
             <>
               <div className="grid gap-6">
-                {tutors.map((tutor) => (
+                {tutors.map((tutor: ProcessedTutor) => (
                   <div
                     key={tutor.id}
-                    className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group"
+                    className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group relative"
                   >
+                    {/* Book Buttons - Top Right */}
+                    <div className="absolute top-4 right-4 z-10 flex space-x-2">
+                      <button
+                        onClick={() => {
+                          if (isAuthenticated) {
+                            handleSingleBooking(tutor);
+                          } else {
+                            navigate("/login");
+                          }
+                        }}
+                        className="text-white px-3 py-2 rounded-lg hover:opacity-90 transition-all duration-200 text-xs font-semibold shadow-lg hover:shadow-xl"
+                        style={{ backgroundColor: "#94cce6" }}
+                      >
+                        Đặt đơn
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (isAuthenticated) {
+                            handlePackageBooking(tutor);
+                          } else {
+                            navigate("/login");
+                          }
+                        }}
+                        className="text-white px-3 py-2 rounded-lg hover:opacity-90 transition-all duration-200 text-xs font-semibold shadow-lg hover:shadow-xl"
+                        style={{ backgroundColor: "#10b981" }}
+                      >
+                        Đặt gói
+                      </button>
+                    </div>
+
                     <div className="p-6">
                       <div className="flex items-start space-x-6">
-                        {/* Left Column: Avatar + Action Buttons */}
-                        <div className="flex-shrink-0 flex flex-col items-center space-y-4">
+                        {/* Left Column: Avatar */}
+                        <div className="flex-shrink-0">
                           {/* Avatar */}
-                          <div>
+                          <div className="relative">
                             {tutor.imageAvatar ? (
                               <img
                                 src={tutor.imageAvatar}
                                 alt={`${tutor.firstName} ${tutor.lastName}`}
-                                className="w-32 h-32 rounded-2xl object-cover border-2 border-gray-100 shadow-sm"
+                                className="w-40 h-40 rounded-2xl object-cover border-2 border-gray-100 shadow-sm"
+                                onError={(e) => {
+                                  console.log(
+                                    "Avatar load error for tutor:",
+                                    tutor.id,
+                                    "imageAvatar:",
+                                    tutor.imageAvatar
+                                  );
+                                  e.currentTarget.style.display = "none";
+                                  const nextElement = e.currentTarget
+                                    .nextElementSibling as HTMLElement;
+                                  if (nextElement) {
+                                    nextElement.style.display = "flex";
+                                  }
+                                }}
                               />
-                            ) : (
-                              <div
-                                className="w-32 h-32 rounded-2xl flex items-center justify-center border-2 border-gray-100 shadow-sm"
-                                style={{ backgroundColor: "#f0f8ff" }}
+                            ) : null}
+                            <div
+                              className={`w-40 h-40 rounded-2xl flex items-center justify-center border-2 border-gray-100 shadow-sm ${
+                                tutor.imageAvatar ? "hidden" : ""
+                              }`}
+                              style={{ backgroundColor: "#f0f8ff" }}
+                            >
+                              <span
+                                className="text-4xl font-bold"
+                                style={{ color: "#94cce6" }}
                               >
-                                <span
-                                  className="text-3xl font-bold"
-                                  style={{ color: "#94cce6" }}
+                                {tutor.firstName?.charAt(0) || "T"}
+                                {tutor.lastName?.charAt(0) || "U"}
+                              </span>
+                            </div>
+                            {/* Verification Badge */}
+                            <div className="absolute -top-2 -right-2">
+                              <div
+                                className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
+                                style={{
+                                  backgroundColor: "rgb(148, 204, 230)",
+                                }}
+                              >
+                                <svg
+                                  className="w-5 h-5 text-white"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
                                 >
-                                  {tutor.firstName?.charAt(0) || "T"}
-                                  {tutor.lastName?.charAt(0) || "U"}
-                                </span>
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
                               </div>
-                            )}
-                          </div>
-
-                          {/* Action Buttons - Below Avatar */}
-                          <div className="flex flex-col space-y-2 w-full">
-                            <button
-                              onClick={() => {
-                                if (isAuthenticated) {
-                                  // Sử dụng username nếu có, nếu không thì dùng ID
-                                  const identifier =
-                                    tutor.user?.username || tutor.id;
-                                  navigate(`/tutor/${identifier}`);
-                                } else {
-                                  navigate("/login");
-                                }
-                              }}
-                              className="w-full text-blue-600 px-4 py-2.5 rounded-lg border-2 border-blue-600 hover:bg-blue-50 transition-all duration-200 text-sm font-semibold"
-                            >
-                              Xem chi tiết
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (isAuthenticated) {
-                                  handleBooking(tutor);
-                                } else {
-                                  navigate("/login");
-                                }
-                              }}
-                              className="w-full text-white px-4 py-2.5 rounded-lg hover:opacity-90 transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-xl"
-                              style={{ backgroundColor: "#94cce6" }}
-                            >
-                              Đặt lịch học
-                            </button>
+                            </div>
                           </div>
                         </div>
 
                         {/* Right Column: Tutor Info */}
                         <div className="flex-1 min-w-0">
-                          {/* Name with verification badge */}
-                          <div className="flex items-center space-x-3 mb-3">
+                          {/* Tutor Name */}
+                          <div className="mb-3">
                             <h3 className="text-2xl font-bold text-gray-900">
                               {tutor.firstName} {tutor.lastName}
                             </h3>
-                            <div className="flex items-center bg-green-50 px-2 py-1 rounded-full">
-                              <svg
-                                className="w-4 h-4 text-green-600 mr-1"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                              <span className="text-xs font-medium text-green-700">
-                                Đã xác thực
-                              </span>
-                            </div>
                           </div>
 
                           {/* Subject Tags */}
                           <div className="mb-4">
                             <div className="flex flex-wrap gap-2">
-                              {"subjectNames" in tutor
-                                ? tutor.subjectNames.map((subject, index) => (
-                                    <button
-                                      key={index}
-                                      onClick={() =>
-                                        handleSubjectClick(tutor.id, index)
-                                      }
-                                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                                        selectedSubject[tutor.id] === index
-                                          ? "bg-blue-100 text-blue-700 border-2 border-blue-300"
-                                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
-                                      }`}
-                                    >
-                                      {subject}
-                                    </button>
-                                  ))
-                                : "profileSubjects" in tutor &&
-                                  tutor.profileSubjects
-                                ? tutor.profileSubjects.map(
-                                    (profileSubject) => (
-                                      <button
-                                        key={profileSubject.id}
-                                        onClick={() =>
-                                          handleSubjectClick(
-                                            tutor.id,
-                                            profileSubject.subject.id
-                                          )
-                                        }
-                                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                                          selectedSubject[tutor.id] ===
-                                          profileSubject.subject.id
-                                            ? "bg-blue-100 text-blue-700 border-2 border-blue-300"
-                                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
-                                        }`}
-                                      >
-                                        {profileSubject.subject.name}
-                                      </button>
-                                    )
-                                  )
-                                : "subjects" in tutor &&
-                                  tutor.subjects?.map((subject) => (
-                                    <button
-                                      key={subject.id}
-                                      onClick={() =>
-                                        handleSubjectClick(tutor.id, subject.id)
-                                      }
-                                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                                        selectedSubject[tutor.id] === subject.id
-                                          ? "bg-blue-100 text-blue-700 border-2 border-blue-300"
-                                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
-                                      }`}
-                                    >
-                                      {subject.name}
-                                    </button>
-                                  ))}
+                              {(() => {
+                                console.log(
+                                  `Rendering tutor ${tutor.id} subjects:`,
+                                  tutor.subjects
+                                );
+                                console.log(
+                                  `Tutor ${tutor.id} subjects length:`,
+                                  tutor.subjects?.length
+                                );
+                                return null;
+                              })()}
+                              {tutor.subjects && tutor.subjects.length > 0 ? (
+                                tutor.subjects.map((subject, index: number) => (
+                                  <button
+                                    key={subject.id || index}
+                                    onClick={() =>
+                                      handleSubjectClick(
+                                        tutor.id,
+                                        subject.id || index
+                                      )
+                                    }
+                                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                                      selectedSubject[tutor.id] ===
+                                      (subject.id || index)
+                                        ? "bg-blue-100 text-blue-700 border-2 border-blue-300"
+                                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                                    }`}
+                                  >
+                                    {subject.name}
+                                  </button>
+                                ))
+                              ) : (
+                                <p className="text-gray-500 italic text-sm">
+                                  Chưa cập nhật môn dạy
+                                </p>
+                              )}
                             </div>
                           </div>
 
                           {/* Price Display */}
-                          {getSelectedSubjectPrice(tutor) && (
-                            <div className="mb-4">
-                              <div className="inline-flex items-center space-x-2">
-                                <span className="text-lg font-bold text-blue-600">
-                                  {formatPrice(getSelectedSubjectPrice(tutor))}
-                                </span>
-                                <span className="text-sm text-gray-500">
-                                  /buổi học
-                                </span>
-                              </div>
-                            </div>
-                          )}
+                          {(() => {
+                            const price = getSelectedSubjectPrice(tutor);
+                            console.log(`Price for tutor ${tutor.id}:`, price);
+                            return (
+                              price && (
+                                <div className="mb-4">
+                                  <div className="inline-flex items-center space-x-2">
+                                    <span className="text-lg font-bold text-blue-600">
+                                      {formatPrice(price)}
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                      /buổi học
+                                    </span>
+                                  </div>
+                                </div>
+                              )
+                            );
+                          })()}
 
-                          {/* Rating - chỉ hiện khi có đánh giá */}
-                          {tutor.ratePointAverage &&
-                            tutor.ratePointAverage > 0 && (
-                              <div className="flex items-center space-x-2 mb-4">
+                          {/* Rating - hiển thị mẫu nếu chưa có */}
+                          <div className="flex items-center space-x-2 mb-4">
+                            {tutor.ratePointAverage &&
+                            tutor.ratePointAverage > 0 ? (
+                              <>
                                 {renderStars(tutor.ratePointAverage)}
                                 <span className="text-sm font-medium text-gray-600">
                                   {tutor.ratePointAverage.toFixed(1)}/5.0
@@ -670,8 +848,31 @@ const TutorSearch: React.FC = () => {
                                 <span className="text-xs text-gray-500">
                                   ({tutor.totalPoint || 0} đánh giá)
                                 </span>
-                              </div>
+                              </>
+                            ) : (
+                              <>
+                                {/* Mẫu rating tạm thời */}
+                                <div className="flex items-center space-x-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <svg
+                                      key={star}
+                                      className="w-4 h-4 text-yellow-400"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                  ))}
+                                </div>
+                                <span className="text-sm font-medium text-gray-600">
+                                  4.8/5.0
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  (12 đánh giá)
+                                </span>
+                              </>
                             )}
+                          </div>
 
                           {/* Headline - max 2 dòng */}
                           {"headline" in tutor && tutor.headline && (
@@ -683,13 +884,31 @@ const TutorSearch: React.FC = () => {
                           )}
 
                           {/* Bio - max 2 dòng */}
-                          {"bio" in tutor && tutor.bio && (
-                            <div className="mb-4">
+                          {tutor.bio && (
+                            <div className="mb-3">
                               <p className="text-gray-600 text-sm leading-relaxed line-clamp-2">
                                 {tutor.bio}
                               </p>
                             </div>
                           )}
+
+                          {/* View Details Link */}
+                          <div className="mb-4">
+                            <button
+                              onClick={() => {
+                                if (isAuthenticated) {
+                                  const identifier =
+                                    tutor.user?.username || tutor.id;
+                                  navigate(`/tutor/${identifier}`);
+                                } else {
+                                  navigate("/login");
+                                }
+                              }}
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium underline transition-colors"
+                            >
+                              Xem chi tiết
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -740,52 +959,58 @@ const TutorSearch: React.FC = () => {
                   </button>
 
                   {/* Page numbers */}
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i;
-                    } else if (currentPage <= 2) {
-                      pageNum = i;
-                    } else if (currentPage >= totalPages - 3) {
-                      pageNum = totalPages - 5 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
+                  {Array.from(
+                    { length: Math.min(5, totalPages || 0) },
+                    (_, i) => {
+                      let pageNum;
+                      if ((totalPages || 0) <= 5) {
+                        pageNum = i;
+                      } else if (currentPage <= 2) {
+                        pageNum = i;
+                      } else if (currentPage >= (totalPages || 0) - 3) {
+                        pageNum = (totalPages || 0) - 5 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
 
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className="px-4 py-2 rounded-lg border transition-all duration-200 font-medium"
-                        style={{
-                          backgroundColor:
-                            currentPage === pageNum ? "#94cce6" : "transparent",
-                          color: currentPage === pageNum ? "white" : "#374151",
-                          borderColor:
-                            currentPage === pageNum ? "#94cce6" : "#d1d5db",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (currentPage !== pageNum) {
-                            e.currentTarget.style.backgroundColor = "#f0f8ff";
-                            e.currentTarget.style.borderColor = "#94cce6";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (currentPage !== pageNum) {
-                            e.currentTarget.style.backgroundColor =
-                              "transparent";
-                            e.currentTarget.style.borderColor = "#d1d5db";
-                          }
-                        }}
-                      >
-                        {pageNum + 1}
-                      </button>
-                    );
-                  })}
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className="px-4 py-2 rounded-lg border transition-all duration-200 font-medium"
+                          style={{
+                            backgroundColor:
+                              currentPage === pageNum
+                                ? "#94cce6"
+                                : "transparent",
+                            color:
+                              currentPage === pageNum ? "white" : "#374151",
+                            borderColor:
+                              currentPage === pageNum ? "#94cce6" : "#d1d5db",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (currentPage !== pageNum) {
+                              e.currentTarget.style.backgroundColor = "#f0f8ff";
+                              e.currentTarget.style.borderColor = "#94cce6";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (currentPage !== pageNum) {
+                              e.currentTarget.style.backgroundColor =
+                                "transparent";
+                              e.currentTarget.style.borderColor = "#d1d5db";
+                            }
+                          }}
+                        >
+                          {pageNum + 1}
+                        </button>
+                      );
+                    }
+                  )}
 
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage >= totalPages - 1}
+                    disabled={currentPage >= (totalPages || 0) - 1}
                     className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <svg
@@ -804,7 +1029,7 @@ const TutorSearch: React.FC = () => {
                   </button>
                   <button
                     onClick={() => handlePageChange(totalPages - 1)}
-                    disabled={currentPage >= totalPages - 1}
+                    disabled={currentPage >= (totalPages || 0) - 1}
                     className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <svg

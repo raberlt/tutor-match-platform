@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 72
-Issued by: Issuer 72
-Description: Description 72
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:03.563997

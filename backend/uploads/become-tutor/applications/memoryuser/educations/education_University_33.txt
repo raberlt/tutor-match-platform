@@ -1,8 +1,0 @@
-🏫 EDUCATION RECORD
-==================
-School: University 33
-Degree: Bachelor's Degree
-Major: Major 33
-Period: 2033 - 2037
-Image: https://example.com/degree.jpg
-Processed: 2025-09-08T16:11:00.095837

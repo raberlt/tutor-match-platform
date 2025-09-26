@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface TutorTeachingAudienceRepository extends JpaRepository<TutorTeachingAudience, Long> {
-    List<TutorTeachingAudience> findByTutorProfile(TutorProfile tutorProfile);
+    List<TutorTeachingAudience> findByTutor(TutorProfile tutor);
 }

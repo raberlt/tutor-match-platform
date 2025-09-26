@@ -23,7 +23,7 @@ public class Schedule {
     @JoinColumn(name = "profile_id", nullable = false)
     @JsonIgnore
     @ToString.Exclude
-    private Profile profile;
+    private TutorProfile profile;
 
     @Column(nullable = false, columnDefinition = "NVARCHAR(50)")
     private String dayOfWeek;

@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 99
-Issued by: Issuer 99
-Description: Description 99
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:04.630121

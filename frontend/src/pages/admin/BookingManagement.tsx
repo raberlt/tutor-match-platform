@@ -218,7 +218,12 @@ const BookingManagement: React.FC = () => {
       totalRevenue: 75000000,
     };
 
-    setBookings(mockBookings);
+    // Sắp xếp theo ngày tạo mới nhất
+    const sortedBookings = mockBookings.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    setBookings(sortedBookings);
     setStats(mockStats);
     setLoading(false);
   }, []);
@@ -226,7 +231,7 @@ const BookingManagement: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-yellow-640";
       case "PAYMENT_PENDING":
         return "bg-orange-100 text-orange-800";
       case "PAYMENT_COMPLETED":
@@ -280,7 +285,7 @@ const BookingManagement: React.FC = () => {
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case "PENDING":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-yellow-640";
       case "COMPLETED":
         return "bg-green-100 text-green-800";
       case "FAILED":
@@ -384,7 +389,7 @@ const BookingManagement: React.FC = () => {
             className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
             style={{ borderColor: "rgb(148, 204, 230)" }}
           ></div>
-          <p className="mt-4 text-gray-600">Đang tải dữ liệu...</p>
+          <p className="mt-3 text-gray-600">Đang tải dữ liệu...</p>
         </div>
       </div>
     );
@@ -392,48 +397,43 @@ const BookingManagement: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto p-6">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-4">
+          <div className="flex items-center space-x-3">
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: "rgb(148, 204, 230)" }}
+            >
+              <svg
+                className="w-5 h-5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Quản lý đặt lịch
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-gray-600 mt-1">
                 Quản lý và theo dõi tất cả các buổi học đã đặt
               </p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                style={{ backgroundColor: "rgb(148, 204, 230)" }}
-              >
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
             </div>
           </div>
         </div>
 
         {/* Statistics Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div
-              className="bg-white rounded-2xl p-6 shadow-lg border"
-              style={{ borderColor: "rgba(148, 204, 230, 0.2)" }}
-            >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
@@ -448,7 +448,7 @@ const BookingManagement: React.FC = () => {
                   style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
                 >
                   <svg
-                    className="w-6 h-6"
+                    className="w-5 h-5"
                     style={{ color: "rgb(148, 204, 230)" }}
                     fill="none"
                     stroke="currentColor"
@@ -458,17 +458,14 @@ const BookingManagement: React.FC = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-1.5M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                     />
                   </svg>
                 </div>
               </div>
             </div>
 
-            <div
-              className="bg-white rounded-2xl p-6 shadow-lg border"
-              style={{ borderColor: "rgba(148, 204, 230, 0.2)" }}
-            >
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Chờ xử lý</p>
@@ -481,7 +478,7 @@ const BookingManagement: React.FC = () => {
                   style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
                 >
                   <svg
-                    className="w-6 h-6"
+                    className="w-5 h-5"
                     style={{ color: "rgb(148, 204, 230)" }}
                     fill="none"
                     stroke="currentColor"
@@ -498,10 +495,7 @@ const BookingManagement: React.FC = () => {
               </div>
             </div>
 
-            <div
-              className="bg-white rounded-2xl p-6 shadow-lg border"
-              style={{ borderColor: "rgba(148, 204, 230, 0.2)" }}
-            >
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
@@ -516,7 +510,7 @@ const BookingManagement: React.FC = () => {
                   style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
                 >
                   <svg
-                    className="w-6 h-6"
+                    className="w-5 h-5"
                     style={{ color: "rgb(148, 204, 230)" }}
                     fill="none"
                     stroke="currentColor"
@@ -533,10 +527,7 @@ const BookingManagement: React.FC = () => {
               </div>
             </div>
 
-            <div
-              className="bg-white rounded-2xl p-6 shadow-lg border"
-              style={{ borderColor: "rgba(148, 204, 230, 0.2)" }}
-            >
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
@@ -551,7 +542,7 @@ const BookingManagement: React.FC = () => {
                   style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
                 >
                   <svg
-                    className="w-6 h-6"
+                    className="w-5 h-5"
                     style={{ color: "rgb(148, 204, 230)" }}
                     fill="none"
                     stroke="currentColor"
@@ -571,14 +562,11 @@ const BookingManagement: React.FC = () => {
         )}
 
         {/* Filters and Search */}
-        <div
-          className="bg-white rounded-2xl p-6 shadow-lg border mb-6"
-          style={{ borderColor: "rgba(148, 204, 230, 0.2)" }}
-        >
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-4">
-            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200 mb-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-3">
+            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-3">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
                   Tìm kiếm
                 </label>
                 <input
@@ -586,23 +574,17 @@ const BookingManagement: React.FC = () => {
                   placeholder="Tìm theo tên học sinh, gia sư hoặc môn học..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-offset-2 focus:outline-none"
-                  style={{
-                    borderColor: "rgba(148, 204, 230, 0.3)",
-                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-offset-2 focus:outline-none focus:ring-blue-500"
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
                   Trạng thái
                 </label>
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-offset-2 focus:outline-none"
-                  style={{
-                    borderColor: "rgba(148, 204, 230, 0.3)",
-                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-offset-2 focus:outline-none focus:ring-blue-500"
                 >
                   <option value="">Tất cả trạng thái</option>
                   <option value="PENDING">Chờ xử lý</option>
@@ -642,10 +624,7 @@ const BookingManagement: React.FC = () => {
         </div>
 
         {/* Bookings Table */}
-        <div
-          className="bg-white rounded-2xl shadow-lg border overflow-hidden"
-          style={{ borderColor: "rgba(148, 204, 230, 0.2)" }}
-        >
+        <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead
@@ -653,34 +632,34 @@ const BookingManagement: React.FC = () => {
                 style={{ backgroundColor: "rgba(148, 204, 230, 0.05)" }}
               >
                 <tr>
-                  <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider">
                     ID
                   </th>
-                  <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Học sinh
                   </th>
-                  <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Gia sư
                   </th>
-                  <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Môn học
                   </th>
-                  <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Ngày/Thời gian
                   </th>
-                  <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Loại
                   </th>
-                  <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Trạng thái
                   </th>
-                  <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Thanh toán
                   </th>
-                  <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Số tiền
                   </th>
-                  <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Thao tác
                   </th>
                 </tr>
@@ -688,10 +667,10 @@ const BookingManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredBookings.map((booking) => (
                   <tr key={booking.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{booking.id}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
                           {booking.student.firstName} {booking.student.lastName}
@@ -701,7 +680,7 @@ const BookingManagement: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
                           {booking.tutor.user.firstName}{" "}
@@ -715,7 +694,7 @@ const BookingManagement: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {booking.subject.name}
                       </div>
@@ -723,7 +702,7 @@ const BookingManagement: React.FC = () => {
                         {booking.subject.description}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {formatDate(booking.date)}
                       </div>
@@ -731,9 +710,9 @@ const BookingManagement: React.FC = () => {
                         {booking.time}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span
-                        className="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                        className="inline-flex px-3 py-2 text-sm font-semibold rounded-full"
                         style={{
                           backgroundColor: "rgba(148, 204, 230, 0.1)",
                           color: "rgb(148, 204, 230)",
@@ -742,36 +721,36 @@ const BookingManagement: React.FC = () => {
                         {getBookingTypeText(booking.bookingType)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                        className={`inline-flex px-3 py-2 text-sm font-semibold rounded-full ${getStatusColor(
                           booking.status
                         )}`}
                       >
                         {getStatusText(booking.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div>
                         <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(
+                          className={`inline-flex px-3 py-2 text-sm font-semibold rounded-full ${getPaymentStatusColor(
                             booking.paymentStatus
                           )}`}
                         >
                           {getPaymentStatusText(booking.paymentStatus)}
                         </span>
                         {booking.paymentReference && (
-                          <div className="text-xs text-gray-500 mt-1">
+                          <div className="text-sm text-gray-500 mt-1">
                             {booking.paymentReference}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
                       {formatCurrency(booking.amount)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-1">
                         <button
                           className="text-indigo-600 hover:text-indigo-900"
                           onClick={() => {
@@ -821,18 +800,18 @@ const BookingManagement: React.FC = () => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-1.5M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 mb-3">
                 Không có đặt lịch nào
               </h3>
               <p className="text-gray-500 mb-4">
                 Chưa có đặt lịch nào phù hợp với bộ lọc hiện tại.
               </p>
               <button
-                className="px-4 py-2 rounded-xl font-medium text-white transition-colors duration-200"
+                className="px-3 py-2 rounded-xl font-medium text-white transition-colors duration-200"
                 style={{ backgroundColor: "rgb(148, 204, 230)" }}
               >
                 Tạo đặt lịch mới
@@ -843,17 +822,14 @@ const BookingManagement: React.FC = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div
-            className="bg-white rounded-2xl p-4 shadow-lg border mt-6"
-            style={{ borderColor: "rgba(148, 204, 230, 0.2)" }}
-          >
+          <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200 mt-3">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
+              <div className="text-xs text-gray-700">
                 Hiển thị <span className="font-medium">1</span> đến{" "}
                 <span className="font-medium">10</span> của{" "}
                 <span className="font-medium">97</span> kết quả
               </div>
-              <div className="flex space-x-2">
+              <div className="flex space-x-1">
                 <button
                   className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-xl hover:bg-gray-50"
                   disabled

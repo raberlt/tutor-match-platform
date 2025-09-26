@@ -1,7 +1,7 @@
 package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.dto.BecomeTutorRequest;
-import fsa.training.tutormatch.dto.TutorDraftRequest;
+import fsa.training.tutormatch.dto.BecomeTutorDraftRequest;
 import fsa.training.tutormatch.entity.*;
 import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.repository.*;
@@ -257,14 +257,14 @@ public class TutorProfileDraftService {
     }
 
     // Helper methods
-    private void syncUserInfoToTutorProfile(User user, TutorProfile tutorProfile) {
+    private void syncUserInfoToTutorProfile(User user, TutorProfile tutor) {
         // Đồng bộ thông tin cơ bản từ User sang TutorProfile
         // Các thông tin này sẽ được hiển thị trong hồ sơ công khai
-        tutorProfile.setUser(user);
+        tutor.setUser(user);
         
         // Các thông tin khác như bio, headline, experience đã được set từ form
         // Chỉ cần đảm bảo enable = true cho hồ sơ công khai
-        tutorProfile.setEnable(true);
+        tutor.setEnable(true);
     }
     
     private TutorProfile findOrCreateDraftProfile(User user) {
@@ -366,10 +366,10 @@ public class TutorProfileDraftService {
     }
 
     /**
-     * Save draft using TutorDraftRequest
+     * Save draft using BecomeTutorDraftRequest
      */
     @Transactional
-    public Map<String, Object> saveDraftRequest(String username, TutorDraftRequest request) {
+    public Map<String, Object> saveDraftRequest(String username, BecomeTutorDraftRequest request) {
         log.info("Saving draft request for user: {}", username);
         
         User user = userRepository.findByUsername(username)
@@ -389,7 +389,7 @@ public class TutorProfileDraftService {
      * Save draft for STUDENT (creates new tutor profile draft for student becoming tutor)
      */
     @Transactional 
-    public Map<String, Object> saveDraftForStudent(String username, TutorDraftRequest request) {
+    public Map<String, Object> saveDraftForStudent(String username, BecomeTutorDraftRequest request) {
         log.info("Saving tutor profile draft for student: {}", username);
         
         User user = userRepository.findByUsername(username)
@@ -442,7 +442,7 @@ public class TutorProfileDraftService {
      * Save draft for TUTOR (updates existing draft profile)
      */
     @Transactional
-    public Map<String, Object> saveDraftForTutor(String username, TutorDraftRequest request) {
+    public Map<String, Object> saveDraftForTutor(String username, BecomeTutorDraftRequest request) {
         log.info("Saving draft for tutor: {}", username);
         
         User user = userRepository.findByUsername(username)
@@ -493,7 +493,7 @@ public class TutorProfileDraftService {
     /**
      * Update basic profile fields (excluding related entities)
      */
-    private void updateProfileBasicFields(TutorProfile profile, TutorDraftRequest request) {
+    private void updateProfileBasicFields(TutorProfile profile, BecomeTutorDraftRequest request) {
         // Update tutor-specific fields in profile
         if (request.getBio() != null) profile.setBio(request.getBio());
         if (request.getHeadline() != null) profile.setHeadline(request.getHeadline());
@@ -534,7 +534,7 @@ public class TutorProfileDraftService {
     /**
      * Update related entities (must be called after profile is saved)
      */
-    private void updateRelatedEntities(TutorProfile profile, TutorDraftRequest request) {
+    private void updateRelatedEntities(TutorProfile profile, BecomeTutorDraftRequest request) {
         // Handle related entities
         updateEducations(profile, request.getEducations());
         updateCertificates(profile, request.getCertificates());
@@ -545,7 +545,7 @@ public class TutorProfileDraftService {
     /**
      * Auto-update public profile for certain fields (tutor only)
      */
-    private void autoUpdatePublicProfileFromDraft(TutorProfile publicProfile, TutorProfile draftProfile, TutorDraftRequest request) {
+    private void autoUpdatePublicProfileFromDraft(TutorProfile publicProfile, TutorProfile draftProfile, BecomeTutorDraftRequest request) {
         // Auto-update fields that don't need admin approval
         if (request.getAddress() != null) {
             publicProfile.getUser().setAddress(request.getAddress());
@@ -559,7 +559,7 @@ public class TutorProfileDraftService {
      * Submit draft for approval/processing 
      */
     @Transactional
-    public Map<String, Object> submitDraftRequest(String username, TutorDraftRequest request) {
+    public Map<String, Object> submitDraftRequest(String username, BecomeTutorDraftRequest request) {
         log.info("Submit draft request for user: {}", username);
         
         User user = userRepository.findByUsername(username)
@@ -579,7 +579,7 @@ public class TutorProfileDraftService {
      * Submit draft for STUDENT (changes status to PENDING_VERIFICATION)
      */
     @Transactional
-    public Map<String, Object> submitDraftForStudent(String username, TutorDraftRequest request) {
+    public Map<String, Object> submitDraftForStudent(String username, BecomeTutorDraftRequest request) {
         log.info("Submitting draft for student: {}", username);
         
         // First save the draft 
@@ -610,7 +610,7 @@ public class TutorProfileDraftService {
      * Submit draft for TUTOR (changes status to PENDING)
      */
     @Transactional
-    public Map<String, Object> submitDraftForTutor(String username, TutorDraftRequest request) {
+    public Map<String, Object> submitDraftForTutor(String username, BecomeTutorDraftRequest request) {
         log.info("Submitting draft for tutor: {}", username);
         
         // First save the draft
@@ -786,7 +786,7 @@ public class TutorProfileDraftService {
     /**
      * Update educations for profile
      */
-    private void updateEducations(TutorProfile profile, List<TutorDraftRequest.EducationRequest> educationRequests) {
+    private void updateEducations(TutorProfile profile, List<BecomeTutorDraftRequest.EducationRequest> educationRequests) {
         if (educationRequests == null) return;
         
         // Ensure profile has an ID (should be saved already)
@@ -801,7 +801,7 @@ public class TutorProfileDraftService {
         profile = tutorProfileRepository.findById(profile.getId()).orElse(profile);
         
         // Add new educations
-        for (TutorDraftRequest.EducationRequest eduRequest : educationRequests) {
+        for (BecomeTutorDraftRequest.EducationRequest eduRequest : educationRequests) {
             Education education = new Education();
             education.setProfile(profile);
             education.setSchoolName(eduRequest.getSchoolName());
@@ -812,6 +812,7 @@ public class TutorProfileDraftService {
             education.setDegreeFileName(eduRequest.getDegreeFileName());
             education.setDegreeFileUrl(eduRequest.getDegreeFileUrl());
             education.setValid(false); // Will be validated by admin
+            education.setVerified(eduRequest.isVerified());
             
             educationRepository.save(education);
         }
@@ -822,7 +823,7 @@ public class TutorProfileDraftService {
     /**
      * Update certificates for profile
      */
-    private void updateCertificates(TutorProfile profile, List<TutorDraftRequest.CertificateRequest> certificateRequests) {
+    private void updateCertificates(TutorProfile profile, List<BecomeTutorDraftRequest.CertificateRequest> certificateRequests) {
         if (certificateRequests == null) return;
         
         // Ensure profile has an ID (should be saved already)
@@ -837,14 +838,16 @@ public class TutorProfileDraftService {
         profile = tutorProfileRepository.findById(profile.getId()).orElse(profile);
         
         // Add new certificates
-        for (TutorDraftRequest.CertificateRequest certRequest : certificateRequests) {
+        for (BecomeTutorDraftRequest.CertificateRequest certRequest : certificateRequests) {
             Certificate certificate = new Certificate();
             certificate.setProfile(profile);
             certificate.setName(certRequest.getName());
             certificate.setIssuedBy(certRequest.getIssuedBy());
             certificate.setDescription(certRequest.getDescription());
             certificate.setCertFileName(certRequest.getCertFileName());
-            certificate.setCertFileUrl(certRequest.getCertFileUrl());            certificate.setValid(false); // Will be validated by admin
+            certificate.setCertFileUrl(certRequest.getCertFileUrl());
+            certificate.setValid(false); // Will be validated by admin
+            certificate.setVerified(certRequest.isVerified());
             
             certificateRepository.save(certificate);
         }
@@ -855,7 +858,7 @@ public class TutorProfileDraftService {
     /**
      * Update schedules for profile
      */
-    private void updateSchedules(TutorProfile profile, List<TutorDraftRequest.ScheduleRequest> scheduleRequests) {
+    private void updateSchedules(TutorProfile profile, List<BecomeTutorDraftRequest.ScheduleRequest> scheduleRequests) {
         if (scheduleRequests == null) return;
         
         // Ensure profile has an ID (should be saved already)
@@ -870,7 +873,7 @@ public class TutorProfileDraftService {
         profile = tutorProfileRepository.findById(profile.getId()).orElse(profile);
         
         // Add new schedules
-        for (TutorDraftRequest.ScheduleRequest schedRequest : scheduleRequests) {
+        for (BecomeTutorDraftRequest.ScheduleRequest schedRequest : scheduleRequests) {
             Schedule schedule = new Schedule();
             schedule.setProfile(profile);
             schedule.setDayOfWeek(schedRequest.getDayOfWeek());
@@ -895,7 +898,7 @@ public class TutorProfileDraftService {
     /**
      * Update subject fees for profile
      */
-    private void updateSubjectFees(TutorProfile profile, List<TutorDraftRequest.SubjectFeeRequest> subjectFeeRequests) {
+    private void updateSubjectFees(TutorProfile profile, List<BecomeTutorDraftRequest.SubjectFeeRequest> subjectFeeRequests) {
         if (subjectFeeRequests == null) return;
         
         // Ensure profile has an ID (should be saved already)
@@ -910,7 +913,7 @@ public class TutorProfileDraftService {
         profile = tutorProfileRepository.findById(profile.getId()).orElse(profile);
         
         // Add new subject fees
-        for (TutorDraftRequest.SubjectFeeRequest feeRequest : subjectFeeRequests) {
+        for (BecomeTutorDraftRequest.SubjectFeeRequest feeRequest : subjectFeeRequests) {
             // Find subject by ID
             Subject subject = subjectRepository.findById(feeRequest.getSubjectId()).orElse(null);
             if (subject == null) {
@@ -1015,7 +1018,9 @@ public class TutorProfileDraftService {
             targetEdu.setFromTime(sourceEdu.getFromTime());
             targetEdu.setToTime(sourceEdu.getToTime());
             targetEdu.setDegreeFileName(sourceEdu.getDegreeFileName());
-            targetEdu.setDegreeFileUrl(sourceEdu.getDegreeFileUrl());            targetEdu.setValid(true); // Mark as valid when approved by admin
+            targetEdu.setDegreeFileUrl(sourceEdu.getDegreeFileUrl());
+            targetEdu.setValid(true); // Mark as valid when approved by admin
+            targetEdu.setVerified(sourceEdu.isVerified());
             
             educationRepository.save(targetEdu);
         }
@@ -1029,7 +1034,9 @@ public class TutorProfileDraftService {
             targetCert.setIssuedBy(sourceCert.getIssuedBy());
             targetCert.setDescription(sourceCert.getDescription());
             targetCert.setCertFileName(sourceCert.getCertFileName());
-            targetCert.setCertFileUrl(sourceCert.getCertFileUrl());            targetCert.setValid(true); // Mark as valid when approved by admin
+            targetCert.setCertFileUrl(sourceCert.getCertFileUrl());
+            targetCert.setValid(true); // Mark as valid when approved by admin
+            targetCert.setVerified(sourceCert.isVerified());
             
             certificateRepository.save(targetCert);
         }
@@ -1083,9 +1090,9 @@ public class TutorProfileDraftService {
      * Đồng bộ dữ liệu từ ProfileApplication sang User và TutorProfile
      */
     @Transactional
-    public void syncDataFromProfileApplication(ProfileApplication application, User user, TutorProfile tutorProfile) {
+    public void syncDataFromProfileApplication(ProfileApplication application, User user, TutorProfile tutor) {
         log.info("Syncing data from ProfileApplication {} to User {} and TutorProfile {}", 
-                application.getId(), user.getId(), tutorProfile.getId());
+                application.getId(), user.getId(), tutor.getId());
         
         // Đồng bộ dữ liệu cá nhân từ ProfileApplication sang User
         if (application.getFirstName() != null && !application.getFirstName().isEmpty()) {
@@ -1106,44 +1113,44 @@ public class TutorProfileDraftService {
         
         // Đồng bộ dữ liệu tutor-specific từ ProfileApplication sang TutorProfile
         if (application.getBio() != null && !application.getBio().isEmpty()) {
-            tutorProfile.setBio(application.getBio());
+            tutor.setBio(application.getBio());
         }
         if (application.getHeadline() != null && !application.getHeadline().isEmpty()) {
-            tutorProfile.setHeadline(application.getHeadline());
+            tutor.setHeadline(application.getHeadline());
         }
         if (application.getExperience() != null && !application.getExperience().isEmpty()) {
-            tutorProfile.setExperience(application.getExperience());
+            tutor.setExperience(application.getExperience());
         }
         if (application.getCvFileUrl() != null && !application.getCvFileUrl().isEmpty()) {
-            tutorProfile.setCvFileUrl(application.getCvFileUrl());
+            tutor.setCvFileUrl(application.getCvFileUrl());
         }
         if (application.getVideoIntro() != null && !application.getVideoIntro().isEmpty()) {
-            tutorProfile.setVideoIntro(application.getVideoIntro());
+            tutor.setVideoIntro(application.getVideoIntro());
         }
         
         // Đồng bộ teaching audiences
         if (application.getTeachingAudiences() != null && !application.getTeachingAudiences().isEmpty()) {
-            tutorProfile.setTeachingAudiences(new HashSet<>(application.getTeachingAudiences()));
+            tutor.setTeachingAudiences(new HashSet<>(application.getTeachingAudiences()));
         }
         
         // Đồng bộ educations từ ApplicationEducation sang Education
         if (application.getEducations() != null && !application.getEducations().isEmpty()) {
-            syncEducationsFromApplication(application, tutorProfile);
+            syncEducationsFromApplication(application, tutor);
         }
         
         // Đồng bộ certificates từ ApplicationCertificate sang Certificate
         if (application.getCertificates() != null && !application.getCertificates().isEmpty()) {
-            syncCertificatesFromApplication(application, tutorProfile);
+            syncCertificatesFromApplication(application, tutor);
         }
         
         // Đồng bộ schedules từ ApplicationSchedule sang Schedule
         if (application.getSchedules() != null && !application.getSchedules().isEmpty()) {
-            syncSchedulesFromApplication(application, tutorProfile);
+            syncSchedulesFromApplication(application, tutor);
         }
         
         // Đồng bộ subject fees từ ApplicationSubjectFee sang TutorProfileSubject
         if (application.getSubjectFees() != null && !application.getSubjectFees().isEmpty()) {
-            syncSubjectFeesFromApplication(application, tutorProfile);
+            syncSubjectFeesFromApplication(application, tutor);
         }
         
         log.info("Successfully synced data from ProfileApplication to User and TutorProfile");
@@ -1152,15 +1159,15 @@ public class TutorProfileDraftService {
     /**
      * Đồng bộ educations từ ApplicationEducation sang Education
      */
-    private void syncEducationsFromApplication(ProfileApplication application, TutorProfile tutorProfile) {
+    private void syncEducationsFromApplication(ProfileApplication application, TutorProfile tutor) {
         // Xóa educations cũ
-        List<Education> existingEducations = educationRepository.findByProfileId(tutorProfile.getId());
+        List<Education> existingEducations = educationRepository.findByProfileId(tutor.getId());
         educationRepository.deleteAll(existingEducations);
         
         // Tạo educations mới từ application
         for (ApplicationEducation appEdu : application.getEducations()) {
             Education education = new Education();
-            education.setProfile(tutorProfile);
+            education.setProfile(tutor);
             education.setSchoolName(appEdu.getSchoolName());
             education.setMajor(appEdu.getMajor());
             education.setDegree(appEdu.getDegree());
@@ -1168,6 +1175,7 @@ public class TutorProfileDraftService {
             education.setToTime(appEdu.getToTime());
             education.setDegreeFileName(appEdu.getDegreeFileName());
             education.setDegreeFileUrl(appEdu.getDegreeFileUrl());
+            education.setVerified(appEdu.isVerified());
             
             educationRepository.save(education);
         }
@@ -1176,21 +1184,22 @@ public class TutorProfileDraftService {
     /**
      * Đồng bộ certificates từ ApplicationCertificate sang Certificate
      */
-    private void syncCertificatesFromApplication(ProfileApplication application, TutorProfile tutorProfile) {
+    private void syncCertificatesFromApplication(ProfileApplication application, TutorProfile tutor) {
         // Xóa certificates cũ
-        List<Certificate> existingCertificates = certificateRepository.findByProfileId(tutorProfile.getId());
+        List<Certificate> existingCertificates = certificateRepository.findByProfileId(tutor.getId());
         certificateRepository.deleteAll(existingCertificates);
         
         // Tạo certificates mới từ application
         for (ApplicationCertificate appCert : application.getCertificates()) {
             Certificate certificate = new Certificate();
-            certificate.setProfile(tutorProfile);
+            certificate.setProfile(tutor);
             certificate.setName(appCert.getName());
             certificate.setIssuedBy(appCert.getIssuedBy());
             certificate.setDescription(appCert.getDescription());
             certificate.setValid(appCert.getValid());
             certificate.setCertFileName(appCert.getCertFileName());
             certificate.setCertFileUrl(appCert.getCertFileUrl());
+            certificate.setVerified(appCert.isVerified());
             
             certificateRepository.save(certificate);
         }
@@ -1199,15 +1208,15 @@ public class TutorProfileDraftService {
     /**
      * Đồng bộ schedules từ ApplicationSchedule sang Schedule
      */
-    private void syncSchedulesFromApplication(ProfileApplication application, TutorProfile tutorProfile) {
+    private void syncSchedulesFromApplication(ProfileApplication application, TutorProfile tutor) {
         // Xóa schedules cũ
-        List<Schedule> existingSchedules = scheduleRepository.findByProfileId(tutorProfile.getId());
+        List<Schedule> existingSchedules = scheduleRepository.findByProfileId(tutor.getId());
         scheduleRepository.deleteAll(existingSchedules);
         
         // Tạo schedules mới từ application
         for (ApplicationSchedule appSchedule : application.getSchedules()) {
             Schedule schedule = new Schedule();
-            schedule.setProfile(tutorProfile);
+            schedule.setProfile(tutor);
             schedule.setDayOfWeek(appSchedule.getDayOfWeek());
             schedule.setFromTime(appSchedule.getFromTime());
             schedule.setToTime(appSchedule.getToTime());
@@ -1220,15 +1229,15 @@ public class TutorProfileDraftService {
     /**
      * Đồng bộ subject fees từ ApplicationSubjectFee sang TutorProfileSubject
      */
-    private void syncSubjectFeesFromApplication(ProfileApplication application, TutorProfile tutorProfile) {
+    private void syncSubjectFeesFromApplication(ProfileApplication application, TutorProfile tutor) {
         // Xóa subject fees cũ
-        List<TutorProfileSubject> existingSubjectFees = profileSubjectRepository.findByProfileId(tutorProfile.getId());
+        List<TutorProfileSubject> existingSubjectFees = profileSubjectRepository.findByProfileId(tutor.getId());
         profileSubjectRepository.deleteAll(existingSubjectFees);
         
         // Tạo subject fees mới từ application
         for (ApplicationSubjectFee appSubjectFee : application.getSubjectFees()) {
             TutorProfileSubject subjectFee = new TutorProfileSubject();
-            subjectFee.setProfile(tutorProfile);
+            subjectFee.setProfile(tutor);
             subjectFee.setSubject(appSubjectFee.getSubject());
             subjectFee.setFees(appSubjectFee.getFees().intValue());
             

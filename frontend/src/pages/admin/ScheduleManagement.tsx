@@ -153,7 +153,7 @@ const ScheduleManagement: React.FC = () => {
     const colors: { [key: string]: string } = {
       Monday: "bg-blue-100 text-blue-800",
       Tuesday: "bg-green-100 text-green-800",
-      Wednesday: "bg-yellow-100 text-yellow-800",
+      Wednesday: "bg-yellow-100 text-yellow-640",
       Thursday: "bg-purple-100 text-purple-800",
       Friday: "bg-pink-100 text-pink-800",
       Saturday: "bg-orange-100 text-orange-800",
@@ -173,24 +173,24 @@ const ScheduleManagement: React.FC = () => {
             className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
             style={{ borderColor: "rgb(148, 204, 230)" }}
           ></div>
-          <p className="mt-4 text-gray-600">Đang tải...</p>
+          <p className="mt-3 text-gray-600">Đang tải...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-8" style={{ backgroundColor: "#f8fafc" }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-4" style={{ backgroundColor: "#f8fafc" }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
+        <div className="mb-4">
+          <div className="flex items-center space-x-3 mb-3">
             <div
-              className="p-3 rounded-xl"
+              className="p-2 rounded-xl"
               style={{ backgroundColor: "rgb(148, 204, 230)" }}
             >
               <svg
-                className="w-6 h-6 text-white"
+                className="w-5 h-5 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -204,10 +204,10 @@ const ScheduleManagement: React.FC = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Quản lý Lịch học
               </h1>
-              <p className="mt-1 text-gray-600">
+              <p className="text-sm text-gray-600">
                 Quản lý và theo dõi lịch giảng dạy của các gia sư
               </p>
             </div>
@@ -216,9 +216,9 @@ const ScheduleManagement: React.FC = () => {
 
         {/* Statistics */}
         {stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -233,16 +233,16 @@ const ScheduleManagement: React.FC = () => {
                   >
                     Tổng lịch học
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.totalSchedules}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -259,7 +259,7 @@ const ScheduleManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -274,16 +274,16 @@ const ScheduleManagement: React.FC = () => {
                   >
                     Đang hoạt động
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.activeSchedules}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -300,7 +300,7 @@ const ScheduleManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -315,16 +315,16 @@ const ScheduleManagement: React.FC = () => {
                   >
                     Tạm dừng
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.inactiveSchedules}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -341,7 +341,7 @@ const ScheduleManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -356,16 +356,16 @@ const ScheduleManagement: React.FC = () => {
                   >
                     Thứ 7 (nhiều nhất)
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.schedulesByDay.Saturday}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -386,21 +386,21 @@ const ScheduleManagement: React.FC = () => {
         {/* Schedule Distribution Chart */}
         {stats && (
           <div
-            className="p-6 rounded-2xl shadow-lg mb-6"
+            className="p-4 rounded-xl shadow-md mb-4"
             style={{
               backgroundColor: "white",
               borderColor: "rgba(148, 204, 230, 0.2)",
               border: "1px solid",
             }}
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">
               Phân bố lịch học theo ngày
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
               {Object.entries(stats.schedulesByDay).map(([day, count]) => (
                 <div key={day} className="text-center">
                   <div
-                    className="p-4 rounded-xl mb-2"
+                    className="p-4 rounded-xl mb-3"
                     style={{
                       backgroundColor: "rgba(148, 204, 230, 0.1)",
                       borderColor: "rgba(148, 204, 230, 0.2)",
@@ -422,28 +422,28 @@ const ScheduleManagement: React.FC = () => {
 
         {/* Filters and Search */}
         <div
-          className="p-6 rounded-2xl shadow-lg mb-6"
+          className="p-4 rounded-xl shadow-md mb-4"
           style={{
             backgroundColor: "white",
             borderColor: "rgba(148, 204, 230, 0.2)",
             border: "1px solid",
           }}
         >
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Tìm kiếm theo tên gia sư, email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200 w-full sm:w-80"
+                  className="pl-8 pr-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200 w-full sm:w-64"
                   style={{
                     borderColor: "rgba(148, 204, 230, 0.3)",
                     focusRingColor: "rgb(148, 204, 230)",
                   }}
                 />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
                   <svg
                     className="h-5 w-5 text-gray-400"
                     fill="none"
@@ -463,7 +463,7 @@ const ScheduleManagement: React.FC = () => {
               <select
                 value={selectedDay}
                 onChange={(e) => setSelectedDay(e.target.value)}
-                className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
+                className="px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
                 style={{
                   borderColor: "rgba(148, 204, 230, 0.3)",
                   focusRingColor: "rgb(148, 204, 230)",
@@ -482,7 +482,7 @@ const ScheduleManagement: React.FC = () => {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
+                className="px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
                 style={{
                   borderColor: "rgba(148, 204, 230, 0.3)",
                   focusRingColor: "rgb(148, 204, 230)",
@@ -496,7 +496,7 @@ const ScheduleManagement: React.FC = () => {
 
             <div className="flex gap-3">
               <button
-                className="px-4 py-3 rounded-xl transition-colors duration-200 font-medium"
+                className="px-3 py-2 rounded-xl transition-colors duration-200 font-medium"
                 style={{
                   backgroundColor: "rgba(148, 204, 230, 0.1)",
                   color: "rgb(148, 204, 230)",
@@ -505,7 +505,7 @@ const ScheduleManagement: React.FC = () => {
                 Xuất Excel
               </button>
               <button
-                className="px-4 py-3 text-white rounded-xl transition-colors duration-200 font-medium"
+                className="px-3 py-2 text-white rounded-xl transition-colors duration-200 font-medium"
                 style={{ backgroundColor: "rgb(148, 204, 230)" }}
               >
                 Thêm mới
@@ -516,7 +516,7 @@ const ScheduleManagement: React.FC = () => {
 
         {/* Schedules Table */}
         <div
-          className="rounded-2xl shadow-lg overflow-hidden"
+          className="rounded-xl shadow-md overflow-hidden"
           style={{
             backgroundColor: "white",
             borderColor: "rgba(148, 204, 230, 0.2)",
@@ -530,25 +530,25 @@ const ScheduleManagement: React.FC = () => {
                 style={{ backgroundColor: "rgba(148, 204, 230, 0.05)" }}
               >
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     ID
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Gia sư
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Ngày trong tuần
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Thời gian
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Trạng thái
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Ngày tạo
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Hành động
                   </th>
                 </tr>
@@ -556,10 +556,10 @@ const ScheduleManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {schedules.map((schedule) => (
                   <tr key={schedule.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{schedule.id}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
                           {schedule.tutor.firstName} {schedule.tutor.lastName}
@@ -569,16 +569,16 @@ const ScheduleManagement: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDayColor(
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getDayColor(
                           schedule.dayOfWeek
                         )}`}
                       >
                         {getDayText(schedule.dayOfWeek)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {schedule.fromTime} - {schedule.toTime}
                       </div>
@@ -593,20 +593,20 @@ const ScheduleManagement: React.FC = () => {
                         giờ
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusColor(
                           schedule.enable
                         )}`}
                       >
                         {getStatusText(schedule.enable)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {new Date(schedule.createdAt).toLocaleDateString("vi-VN")}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-1">
                         <button
                           className="text-blue-600 hover:text-blue-900"
                           style={{ color: "rgb(148, 204, 230)" }}
@@ -641,9 +641,9 @@ const ScheduleManagement: React.FC = () => {
         </div>
 
         {/* Pagination */}
-        <div className="mt-6 flex justify-center">
+        <div className="mt-3 flex justify-center">
           <nav
-            className="flex items-center space-x-2 rounded-2xl shadow-lg p-2"
+            className="flex items-center space-x-1 rounded-xl shadow-md p-1"
             style={{
               backgroundColor: "white",
               borderColor: "rgba(148, 204, 230, 0.2)",

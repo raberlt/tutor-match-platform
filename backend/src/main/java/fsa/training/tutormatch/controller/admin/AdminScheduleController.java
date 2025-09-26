@@ -1,9 +1,9 @@
 package fsa.training.tutormatch.controller.admin;
 
 import fsa.training.tutormatch.entity.Schedule;
-import fsa.training.tutormatch.entity.Profile;
+import fsa.training.tutormatch.entity.TutorProfile;
 import fsa.training.tutormatch.repository.ScheduleRepository;
-import fsa.training.tutormatch.repository.ProfileRepository;
+import fsa.training.tutormatch.repository.TutorProfileRepository;
 import java.time.LocalTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -14,8 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +27,7 @@ public class AdminScheduleController {
     private ScheduleRepository scheduleRepository;
 
     @Autowired
-    private ProfileRepository profileRepository;
+    private TutorProfileRepository tutorProfileRepository;
 
     /**
      * Lấy danh sách tất cả schedules với phân trang và lọc
@@ -100,7 +98,7 @@ public class AdminScheduleController {
             Schedule schedule = new Schedule();
             
             Integer profileId = (Integer) scheduleData.get("profileId");
-            Optional<Profile> profileOpt = profileRepository.findById(profileId);
+            Optional<TutorProfile> profileOpt = tutorProfileRepository.findById(profileId);
             
             if (profileOpt.isEmpty()) {
                 return ResponseEntity.badRequest().body(

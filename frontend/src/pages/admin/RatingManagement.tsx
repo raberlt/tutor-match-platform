@@ -167,7 +167,7 @@ const RatingManagement: React.FC = () => {
         {[1, 2, 3, 4, 5].map((star) => (
           <svg
             key={star}
-            className={`w-4 h-4 ${
+            className={`w-5 h-5 ${
               star <= rating ? "text-yellow-400" : "text-gray-300"
             }`}
             fill="currentColor"
@@ -202,24 +202,24 @@ const RatingManagement: React.FC = () => {
             className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
             style={{ borderColor: "rgb(148, 204, 230)" }}
           ></div>
-          <p className="mt-4 text-gray-600">Đang tải...</p>
+          <p className="mt-3 text-gray-600">Đang tải...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-8" style={{ backgroundColor: "#f8fafc" }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-4" style={{ backgroundColor: "#f8fafc" }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
+        <div className="mb-4">
+          <div className="flex items-center space-x-3 mb-3">
             <div
-              className="p-3 rounded-xl"
+              className="p-2 rounded-xl"
               style={{ backgroundColor: "rgb(148, 204, 230)" }}
             >
               <svg
-                className="w-6 h-6 text-white"
+                className="w-5 h-5 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -233,10 +233,10 @@ const RatingManagement: React.FC = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Quản lý Đánh giá
               </h1>
-              <p className="mt-1 text-gray-600">
+              <p className="text-sm text-gray-600">
                 Quản lý và theo dõi tất cả các đánh giá của học viên
               </p>
             </div>
@@ -245,9 +245,9 @@ const RatingManagement: React.FC = () => {
 
         {/* Statistics */}
         {stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -262,16 +262,16 @@ const RatingManagement: React.FC = () => {
                   >
                     Tổng đánh giá
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.totalRatings}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -288,7 +288,7 @@ const RatingManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -303,19 +303,19 @@ const RatingManagement: React.FC = () => {
                   >
                     Đánh giá trung bình
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.averageRating.toFixed(1)}
                   </p>
-                  <div className="mt-2">
+                  <div className="mt-3">
                     {renderStars(Math.round(stats.averageRating))}
                   </div>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -324,7 +324,7 @@ const RatingManagement: React.FC = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-1.5a2 2 0 01-2-2z"
                     />
                   </svg>
                 </div>
@@ -332,7 +332,7 @@ const RatingManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -347,16 +347,16 @@ const RatingManagement: React.FC = () => {
                   >
                     Hiển thị
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.visibleRatings}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -379,7 +379,7 @@ const RatingManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -394,16 +394,16 @@ const RatingManagement: React.FC = () => {
                   >
                     Đã ẩn
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.hiddenRatings}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -424,14 +424,14 @@ const RatingManagement: React.FC = () => {
         {/* Rating Distribution Chart */}
         {stats && (
           <div
-            className="p-6 rounded-2xl shadow-lg mb-6"
+            className="p-4 rounded-xl shadow-md mb-4"
             style={{
               backgroundColor: "white",
               borderColor: "rgba(148, 204, 230, 0.2)",
               border: "1px solid",
             }}
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">
               Phân bố đánh giá
             </h3>
             <div className="space-y-3">
@@ -450,9 +450,9 @@ const RatingManagement: React.FC = () => {
                   <span className="text-sm text-gray-600 w-8">
                     {stars} sao:
                   </span>
-                  <div className="flex-1 bg-gray-200 rounded-full h-2 mx-3">
+                  <div className="flex-1 bg-gray-200 rounded-full h-1.5 mx-3">
                     <div
-                      className={`h-2 rounded-full ${color}`}
+                      className={`h-1.5 rounded-full ${color}`}
                       style={{
                         width: `${(count / stats.totalRatings) * 100}%`,
                       }}
@@ -467,28 +467,28 @@ const RatingManagement: React.FC = () => {
 
         {/* Filters and Search */}
         <div
-          className="p-6 rounded-2xl shadow-lg mb-6"
+          className="p-4 rounded-xl shadow-md mb-4"
           style={{
             backgroundColor: "white",
             borderColor: "rgba(148, 204, 230, 0.2)",
             border: "1px solid",
           }}
         >
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Tìm kiếm theo tên, email, nội dung..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200 w-full sm:w-80"
+                  className="pl-8 pr-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200 w-full sm:w-64"
                   style={{
                     borderColor: "rgba(148, 204, 230, 0.3)",
                     focusRingColor: "rgb(148, 204, 230)",
                   }}
                 />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
                   <svg
                     className="h-5 w-5 text-gray-400"
                     fill="none"
@@ -508,7 +508,7 @@ const RatingManagement: React.FC = () => {
               <select
                 value={selectedRating}
                 onChange={(e) => setSelectedRating(e.target.value)}
-                className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
+                className="px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
                 style={{
                   borderColor: "rgba(148, 204, 230, 0.3)",
                   focusRingColor: "rgb(148, 204, 230)",
@@ -525,7 +525,7 @@ const RatingManagement: React.FC = () => {
               <select
                 value={selectedVisibility}
                 onChange={(e) => setSelectedVisibility(e.target.value)}
-                className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
+                className="px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
                 style={{
                   borderColor: "rgba(148, 204, 230, 0.3)",
                   focusRingColor: "rgb(148, 204, 230)",
@@ -539,7 +539,7 @@ const RatingManagement: React.FC = () => {
 
             <div className="flex gap-3">
               <button
-                className="px-4 py-3 rounded-xl transition-colors duration-200 font-medium"
+                className="px-3 py-2 rounded-xl transition-colors duration-200 font-medium"
                 style={{
                   backgroundColor: "rgba(148, 204, 230, 0.1)",
                   color: "rgb(148, 204, 230)",
@@ -548,7 +548,7 @@ const RatingManagement: React.FC = () => {
                 Xuất Excel
               </button>
               <button
-                className="px-4 py-3 text-white rounded-xl transition-colors duration-200 font-medium"
+                className="px-3 py-2 text-white rounded-xl transition-colors duration-200 font-medium"
                 style={{ backgroundColor: "rgb(148, 204, 230)" }}
               >
                 Thống kê
@@ -559,7 +559,7 @@ const RatingManagement: React.FC = () => {
 
         {/* Ratings Table */}
         <div
-          className="rounded-2xl shadow-lg overflow-hidden"
+          className="rounded-xl shadow-md overflow-hidden"
           style={{
             backgroundColor: "white",
             borderColor: "rgba(148, 204, 230, 0.2)",
@@ -573,31 +573,31 @@ const RatingManagement: React.FC = () => {
                 style={{ backgroundColor: "rgba(148, 204, 230, 0.05)" }}
               >
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     ID
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Học viên
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Gia sư
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Môn học
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Đánh giá
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Nội dung
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Trạng thái
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Thời gian
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Hành động
                   </th>
                 </tr>
@@ -605,10 +605,10 @@ const RatingManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {ratings.map((rating) => (
                   <tr key={rating.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{rating.id}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
                           {rating.booking.student.firstName}{" "}
@@ -619,7 +619,7 @@ const RatingManagement: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
                           {rating.booking.tutor.firstName}{" "}
@@ -630,7 +630,7 @@ const RatingManagement: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {rating.booking.subject.name}
                       </div>
@@ -639,28 +639,28 @@ const RatingManagement: React.FC = () => {
                         {rating.booking.toTime}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       {renderStars(rating.ratePoint)}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-2">
                       <div className="text-sm text-gray-900 max-w-xs truncate">
                         {rating.note}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getVisibilityColor(
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getVisibilityColor(
                           rating.visible
                         )}`}
                       >
                         {getVisibilityText(rating.visible)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {new Date(rating.createdAt).toLocaleString("vi-VN")}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-1">
                         <button
                           className="text-blue-600 hover:text-blue-900"
                           style={{ color: "rgb(148, 204, 230)" }}
@@ -689,9 +689,9 @@ const RatingManagement: React.FC = () => {
         </div>
 
         {/* Pagination */}
-        <div className="mt-6 flex justify-center">
+        <div className="mt-3 flex justify-center">
           <nav
-            className="flex items-center space-x-2 rounded-2xl shadow-lg p-2"
+            className="flex items-center space-x-1 rounded-xl shadow-md p-1"
             style={{
               backgroundColor: "white",
               borderColor: "rgba(148, 204, 230, 0.2)",

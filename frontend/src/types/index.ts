@@ -75,6 +75,7 @@ export interface TutorProfile {
   totalPoint?: number;
   cvFileUrl?: string;
   enable?: boolean;
+  isVerified?: boolean;
   createdAt?: string;
   updatedAt?: string;
   profileSubjects?: TutorProfileSubject[];
@@ -320,6 +321,7 @@ export interface TutorPreviewProfile {
   ratePointAverage?: number;
   totalPoint?: number;
   city?: string;
+  isVerified?: boolean;
   subjectNames: string[];
   user?: User;
 }
@@ -337,6 +339,7 @@ export interface TutorProfile {
   ratePointAverage?: number;
   totalPoint?: number;
   city?: string;
+  isVerified?: boolean;
   subjects?: TutorSubjectDetail[];
   schedules?: TutorSchedule[];
   profileSubjects?: TutorProfileSubject[];

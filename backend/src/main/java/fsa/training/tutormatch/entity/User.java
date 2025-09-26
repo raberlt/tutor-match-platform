@@ -22,8 +22,8 @@ import java.time.ZoneId;
 @Data
 @Entity
 @Table(name = "users")
-@EqualsAndHashCode(exclude = {"profiles"})
-@ToString(exclude = {"profiles"})
+@EqualsAndHashCode(exclude = {"tutorProfiles"})
+@ToString(exclude = {"tutorProfiles"})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -90,7 +90,7 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
-    private java.util.List<Profile> profiles;
+    private java.util.List<TutorProfile> tutors;
 
     @NotNull(message = "Role is required")
     @Enumerated(EnumType.STRING)
@@ -105,13 +105,10 @@ public class User {
 
 
     public java.util.Optional<TutorProfile> getTutorProfile() {
-        if (profiles == null) return java.util.Optional.empty();
-        for (Profile profile : profiles) {
-            if (profile instanceof TutorProfile) {
-                return java.util.Optional.of((TutorProfile) profile);
-            }
+        if (tutors == null || tutors.isEmpty()) {
+            return java.util.Optional.empty();
         }
-        return java.util.Optional.empty();
+        return java.util.Optional.of(tutors.get(0));
     }
     
     // Helper methods for timezone handling

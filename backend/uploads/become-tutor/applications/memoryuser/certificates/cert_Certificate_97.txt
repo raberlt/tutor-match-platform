@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 97
-Issued by: Issuer 97
-Description: Description 97
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:04.534917

@@ -1,100 +1,127 @@
 import React, { useState } from "react";
 
-interface Student {
+interface Booking {
   id: string;
-  name: string;
-  email: string;
-  phone: string;
-  avatar?: string;
-  subjects: string[];
-  joinedDate: string;
-  totalSessions: number;
-  completedSessions: number;
-  upcomingSessions: number;
-  totalPaid: number;
-  lastSession?: string;
-  status: "active" | "inactive" | "paused";
+  studentName: string;
+  studentEmail: string;
+  studentPhone: string;
+  subject: string;
+  type: "single" | "package";
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: "pending" | "approved" | "rejected" | "completed" | "cancelled";
+  price: number;
+  totalSessions?: number;
+  completedSessions?: number;
   notes?: string;
-  level: string;
-  goals: string[];
+  createdAt: string;
+  packageId?: string;
+  packageName?: string;
 }
 
 export const StudentManagement: React.FC = () => {
-  const [students] = useState<Student[]>([
+  const [bookings] = useState<Booking[]>([
     {
       id: "1",
-      name: "Nguyễn Minh An",
-      email: "an@example.com",
-      phone: "0901234567",
-      subjects: ["Tiếng Anh", "IELTS"],
-      joinedDate: "2024-11-15",
-      totalSessions: 24,
-      completedSessions: 18,
-      upcomingSessions: 3,
-      totalPaid: 5400000,
-      lastSession: "2025-01-12",
-      status: "active",
-      level: "Intermediate",
-      goals: ["IELTS 7.0", "Giao tiếp tự tin"],
-      notes: "Học viên rất chăm chỉ, cần tập trung vào Speaking",
+      studentName: "Nguyễn Minh An",
+      studentEmail: "an@example.com",
+      studentPhone: "0901234567",
+      subject: "IELTS",
+      type: "package",
+      date: "2025-01-20",
+      startTime: "19:00",
+      endTime: "20:30",
+      status: "pending",
+      price: 300000,
+      totalSessions: 20,
+      completedSessions: 0,
+      notes: "Package IELTS 20 buổi",
+      createdAt: "2025-01-15",
+      packageId: "PKG001",
+      packageName: "IELTS Complete Package",
     },
     {
       id: "2",
-      name: "Trần Thị Bình",
-      email: "binh@example.com",
-      phone: "0987654321",
-      subjects: ["IELTS"],
-      joinedDate: "2024-12-01",
-      totalSessions: 12,
-      completedSessions: 10,
-      upcomingSessions: 2,
-      totalPaid: 3600000,
-      lastSession: "2025-01-10",
-      status: "active",
-      level: "Advanced",
-      goals: ["IELTS 8.0"],
-      notes: "Học viên có nền tảng tốt, tập trung vào Writing Task 2",
+      studentName: "Trần Thị Bình",
+      studentEmail: "binh@example.com",
+      studentPhone: "0987654321",
+      subject: "Tiếng Anh",
+      type: "single",
+      date: "2025-01-18",
+      startTime: "16:00",
+      endTime: "17:30",
+      status: "approved",
+      price: 250000,
+      notes: "Buổi học Speaking",
+      createdAt: "2025-01-10",
     },
     {
       id: "3",
-      name: "Lê Văn Cường",
-      email: "cuong@example.com",
-      phone: "0909123456",
-      subjects: ["Tiếng Anh"],
-      joinedDate: "2024-10-20",
-      totalSessions: 8,
-      completedSessions: 6,
-      upcomingSessions: 0,
-      totalPaid: 1800000,
-      lastSession: "2024-12-20",
-      status: "paused",
-      level: "Beginner",
-      goals: ["Giao tiếp cơ bản"],
-      notes: "Tạm dừng học do bận công việc",
+      studentName: "Lê Văn Cường",
+      studentEmail: "cuong@example.com",
+      studentPhone: "0909123456",
+      subject: "IELTS",
+      type: "package",
+      date: "2025-01-25",
+      startTime: "18:30",
+      endTime: "20:00",
+      status: "completed",
+      price: 400000,
+      totalSessions: 10,
+      completedSessions: 10,
+      notes: "Package IELTS 10 buổi - Hoàn thành",
+      createdAt: "2024-12-01",
+      packageId: "PKG002",
+      packageName: "IELTS Basic Package",
+    },
+    {
+      id: "4",
+      studentName: "Phạm Thị Dung",
+      studentEmail: "dung@example.com",
+      studentPhone: "0912345678",
+      subject: "Tiếng Anh",
+      type: "single",
+      date: "2025-01-22",
+      startTime: "14:00",
+      endTime: "15:30",
+      status: "rejected",
+      price: 200000,
+      notes: "Không phù hợp lịch trình",
+      createdAt: "2025-01-12",
     },
   ]);
 
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredStudents = students.filter((student) => {
-    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === "all" || student.status === filterStatus;
-    
-    return matchesSearch && matchesStatus;
+  const filteredBookings = bookings.filter((booking) => {
+    const matchesSearch =
+      booking.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.studentEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.subject.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      filterStatus === "all" || booking.status === filterStatus;
+    const matchesType = filterType === "all" || booking.type === filterType;
+
+    return matchesSearch && matchesStatus && matchesType;
   });
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800";
-      case "inactive":
-        return "bg-gray-100 text-gray-800";
-      case "paused":
+      case "pending":
         return "bg-yellow-100 text-yellow-800";
+      case "approved":
+        return "bg-green-100 text-green-800";
+      case "rejected":
+        return "bg-red-100 text-red-800";
+      case "completed":
+        return "bg-blue-100 text-blue-800";
+      case "cancelled":
+        return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -102,35 +129,72 @@ export const StudentManagement: React.FC = () => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case "active":
-        return "Đang học";
-      case "inactive":
-        return "Không hoạt động";
-      case "paused":
-        return "Tạm dừng";
+      case "pending":
+        return "Chờ duyệt";
+      case "approved":
+        return "Đã duyệt";
+      case "rejected":
+        return "Từ chối";
+      case "completed":
+        return "Hoàn thành";
+      case "cancelled":
+        return "Đã hủy";
       default:
         return status;
     }
   };
 
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case "single":
+        return "bg-gray-100 text-gray-800";
+      case "package":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getTypeText = (type: string) => {
+    switch (type) {
+      case "single":
+        return "Đơn lẻ";
+      case "package":
+        return "Gói học";
+      default:
+        return type;
+    }
+  };
+
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(price);
   };
 
-  const handleViewDetails = (student: Student) => {
-    setSelectedStudent(student);
+  const handleViewDetails = (booking: Booking) => {
+    setSelectedBooking(booking);
     setShowDetailModal(true);
   };
 
-  const handleSendMessage = (studentId: string) => {
-    console.log("Opening message with student:", studentId);
+  const handleApproveBooking = (bookingId: string) => {
+    console.log("Approving booking:", bookingId);
+    alert("Đã chấp nhận đặt lịch!");
   };
 
-  const handleScheduleSession = (studentId: string) => {
-    console.log("Scheduling session with student:", studentId);
+  const handleRejectBooking = (bookingId: string) => {
+    console.log("Rejecting booking:", bookingId);
+    alert("Đã từ chối đặt lịch!");
+  };
+
+  const handleReportBooking = (bookingId: string) => {
+    console.log("Reporting booking:", bookingId);
+    alert("Đã gửi báo cáo!");
+  };
+
+  const handleSendMessage = (studentEmail: string) => {
+    console.log("Opening message with student:", studentEmail);
   };
 
   const calculateProgress = (completed: number, total: number) => {
@@ -140,63 +204,118 @@ export const StudentManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý học viên</h1>
-        <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-          Thêm học viên
-        </button>
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý đặt lịch</h1>
       </div>
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm">
+        <div
+          className="bg-white p-6 rounded-2xl shadow-lg"
+          style={{
+            borderColor: "rgba(148, 204, 230, 0.2)",
+            borderWidth: "1px",
+          }}
+        >
           <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <span className="text-2xl">👥</span>
+            <div
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+            >
+              <span className="text-2xl">📅</span>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tổng học viên</p>
-              <p className="text-2xl font-bold text-gray-900">{students.length}</p>
+              <p
+                className="text-sm font-medium"
+                style={{ color: "rgb(148, 204, 230)" }}
+              >
+                Tổng đặt lịch
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {bookings.length}
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm">
+        <div
+          className="bg-white p-6 rounded-2xl shadow-lg"
+          style={{
+            borderColor: "rgba(148, 204, 230, 0.2)",
+            borderWidth: "1px",
+          }}
+        >
           <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
+            <div
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+            >
+              <span className="text-2xl">⏳</span>
+            </div>
+            <div className="ml-4">
+              <p
+                className="text-sm font-medium"
+                style={{ color: "rgb(148, 204, 230)" }}
+              >
+                Chờ duyệt
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {bookings.filter((b) => b.status === "pending").length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="bg-white p-6 rounded-2xl shadow-lg"
+          style={{
+            borderColor: "rgba(148, 204, 230, 0.2)",
+            borderWidth: "1px",
+          }}
+        >
+          <div className="flex items-center">
+            <div
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+            >
               <span className="text-2xl">✅</span>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Đang học</p>
+              <p
+                className="text-sm font-medium"
+                style={{ color: "rgb(148, 204, 230)" }}
+              >
+                Đã duyệt
+              </p>
               <p className="text-2xl font-bold text-gray-900">
-                {students.filter(s => s.status === "active").length}
+                {bookings.filter((b) => b.status === "approved").length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm">
+        <div
+          className="bg-white p-6 rounded-2xl shadow-lg"
+          style={{
+            borderColor: "rgba(148, 204, 230, 0.2)",
+            borderWidth: "1px",
+          }}
+        >
           <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <span className="text-2xl">⏸️</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tạm dừng</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {students.filter(s => s.status === "paused").length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
+            <div
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+            >
               <span className="text-2xl">💰</span>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tổng thu nhập</p>
+              <p
+                className="text-sm font-medium"
+                style={{ color: "rgb(148, 204, 230)" }}
+              >
+                Tổng giá trị
+              </p>
               <p className="text-2xl font-bold text-gray-900">
-                {formatPrice(students.reduce((total, s) => total + s.totalPaid, 0))}
+                {formatPrice(bookings.reduce((total, b) => total + b.price, 0))}
               </p>
             </div>
           </div>
@@ -204,18 +323,32 @@ export const StudentManagement: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div
+        className="bg-white p-6 rounded-2xl shadow-lg"
+        style={{ borderColor: "rgba(148, 204, 230, 0.2)", borderWidth: "1px" }}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tìm kiếm
             </label>
             <input
               type="text"
-              placeholder="Tìm theo tên hoặc email..."
+              placeholder="Tìm theo tên, email hoặc môn học..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-xl transition-colors duration-200"
+              style={{
+                borderColor: "rgba(148, 204, 230, 0.3)",
+                borderWidth: "1px",
+                backgroundColor: "rgba(148, 204, 230, 0.05)",
+              }}
+              onFocus={(e) =>
+                (e.target.style.borderColor = "rgb(148, 204, 230)")
+              }
+              onBlur={(e) =>
+                (e.target.style.borderColor = "rgba(148, 204, 230, 0.3)")
+              }
             />
           </div>
 
@@ -226,123 +359,286 @@ export const StudentManagement: React.FC = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-xl transition-colors duration-200"
+              style={{
+                borderColor: "rgba(148, 204, 230, 0.3)",
+                borderWidth: "1px",
+                backgroundColor: "rgba(148, 204, 230, 0.05)",
+              }}
+              onFocus={(e) =>
+                (e.target.style.borderColor = "rgb(148, 204, 230)")
+              }
+              onBlur={(e) =>
+                (e.target.style.borderColor = "rgba(148, 204, 230, 0.3)")
+              }
             >
               <option value="all">Tất cả trạng thái</option>
-              <option value="active">Đang học</option>
-              <option value="paused">Tạm dừng</option>
-              <option value="inactive">Không hoạt động</option>
+              <option value="pending">Chờ duyệt</option>
+              <option value="approved">Đã duyệt</option>
+              <option value="rejected">Từ chối</option>
+              <option value="completed">Hoàn thành</option>
+              <option value="cancelled">Đã hủy</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Loại đặt lịch
+            </label>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl transition-colors duration-200"
+              style={{
+                borderColor: "rgba(148, 204, 230, 0.3)",
+                borderWidth: "1px",
+                backgroundColor: "rgba(148, 204, 230, 0.05)",
+              }}
+              onFocus={(e) =>
+                (e.target.style.borderColor = "rgb(148, 204, 230)")
+              }
+              onBlur={(e) =>
+                (e.target.style.borderColor = "rgba(148, 204, 230, 0.3)")
+              }
+            >
+              <option value="all">Tất cả loại</option>
+              <option value="single">Đơn lẻ</option>
+              <option value="package">Gói học</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Students Grid */}
+      {/* Bookings Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredStudents.map((student) => (
-          <div key={student.id} className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+        {filteredBookings.map((booking) => (
+          <div
+            key={booking.id}
+            className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow"
+            style={{
+              borderColor: "rgba(148, 204, 230, 0.2)",
+              borderWidth: "1px",
+            }}
+          >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-medium text-lg">
-                    {student.name.charAt(0)}
-                  </span>
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-white font-medium text-lg"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                >
+                  {booking.studentName.charAt(0)}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{student.name}</h3>
-                  <p className="text-sm text-gray-500">{student.email}</p>
+                  <h3 className="font-semibold text-gray-900">
+                    {booking.studentName}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {booking.studentEmail}
+                  </p>
                 </div>
               </div>
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(student.status)}`}>
-                {getStatusText(student.status)}
-              </span>
+              <div className="flex flex-col space-y-1">
+                <span
+                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                    booking.status
+                  )}`}
+                >
+                  {getStatusText(booking.status)}
+                </span>
+                <span
+                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(
+                    booking.type
+                  )}`}
+                >
+                  {getTypeText(booking.type)}
+                </span>
+              </div>
             </div>
 
             <div className="space-y-3 mb-4">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Môn học:</span>
-                <span className="font-medium">{student.subjects.join(", ")}</span>
+                <span className="font-medium">{booking.subject}</span>
               </div>
-              
+
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Trình độ:</span>
-                <span className="font-medium">{student.level}</span>
+                <span className="text-gray-600">Ngày học:</span>
+                <span className="font-medium">
+                  {new Date(booking.date).toLocaleDateString("vi-VN")}
+                </span>
               </div>
-              
+
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Buổi học:</span>
-                <span className="font-medium">{student.completedSessions}/{student.totalSessions}</span>
+                <span className="text-gray-600">Thời gian:</span>
+                <span className="font-medium">
+                  {booking.startTime} - {booking.endTime}
+                </span>
               </div>
-              
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-green-600 h-2 rounded-full" 
-                  style={{ width: `${calculateProgress(student.completedSessions, student.totalSessions)}%` }}
-                ></div>
-              </div>
-              
+
+              {booking.type === "package" && booking.totalSessions && (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Tiến độ:</span>
+                    <span className="font-medium">
+                      {booking.completedSessions || 0}/{booking.totalSessions}{" "}
+                      buổi
+                    </span>
+                  </div>
+
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full"
+                      style={{
+                        width: `${calculateProgress(
+                          booking.completedSessions || 0,
+                          booking.totalSessions
+                        )}%`,
+                        backgroundColor: "rgb(148, 204, 230)",
+                      }}
+                    ></div>
+                  </div>
+                </>
+              )}
+
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Sắp tới:</span>
-                <span className="font-medium text-blue-600">{student.upcomingSessions} buổi</span>
+                <span className="text-gray-600">Học phí:</span>
+                <span
+                  className="font-medium"
+                  style={{ color: "rgb(148, 204, 230)" }}
+                >
+                  {formatPrice(booking.price)}
+                </span>
               </div>
-              
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Tổng thu:</span>
-                <span className="font-medium text-green-600">{formatPrice(student.totalPaid)}</span>
-              </div>
-              
-              {student.lastSession && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Học cuối:</span>
-                  <span className="text-gray-900">{new Date(student.lastSession).toLocaleDateString('vi-VN')}</span>
+
+              {booking.notes && (
+                <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded-lg">
+                  <span className="font-medium">Ghi chú:</span> {booking.notes}
                 </div>
               )}
             </div>
 
-            <div className="flex space-x-2">
+            <div className="flex flex-col space-y-2">
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleViewDetails(booking)}
+                  className="flex-1 py-2 text-sm border rounded-xl transition-colors duration-200"
+                  style={{
+                    borderColor: "rgba(148, 204, 230, 0.3)",
+                    color: "rgb(148, 204, 230)",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor =
+                      "rgba(148, 204, 230, 0.1)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "transparent")
+                  }
+                >
+                  Chi tiết
+                </button>
+                <button
+                  onClick={() => handleSendMessage(booking.studentEmail)}
+                  className="flex-1 py-2 text-sm text-white rounded-xl transition-colors duration-200"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor =
+                      "rgba(148, 204, 230, 0.8)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor =
+                      "rgb(148, 204, 230)")
+                  }
+                >
+                  Nhắn tin
+                </button>
+              </div>
+
+              {booking.status === "pending" && (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleApproveBooking(booking.id)}
+                    className="flex-1 py-2 text-sm text-white rounded-xl transition-colors duration-200"
+                    style={{ backgroundColor: "rgb(34, 197, 94)" }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        "rgb(22, 163, 74)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        "rgb(34, 197, 94)")
+                    }
+                  >
+                    Chấp nhận
+                  </button>
+                  <button
+                    onClick={() => handleRejectBooking(booking.id)}
+                    className="flex-1 py-2 text-sm text-white rounded-xl transition-colors duration-200"
+                    style={{ backgroundColor: "rgb(239, 68, 68)" }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        "rgb(220, 38, 38)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        "rgb(239, 68, 68)")
+                    }
+                  >
+                    Từ chối
+                  </button>
+                </div>
+              )}
+
               <button
-                onClick={() => handleViewDetails(student)}
-                className="flex-1 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                onClick={() => handleReportBooking(booking.id)}
+                className="w-full py-2 text-sm border rounded-xl transition-colors duration-200"
+                style={{
+                  borderColor: "rgba(239, 68, 68, 0.3)",
+                  color: "rgb(239, 68, 68)",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor =
+                    "rgba(239, 68, 68, 0.1)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
               >
-                Chi tiết
-              </button>
-              <button
-                onClick={() => handleSendMessage(student.id)}
-                className="flex-1 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Nhắn tin
-              </button>
-              <button
-                onClick={() => handleScheduleSession(student.id)}
-                className="flex-1 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                Đặt lịch
+                Báo cáo
               </button>
             </div>
           </div>
         ))}
       </div>
 
-      {filteredStudents.length === 0 && (
-        <div className="bg-white p-12 rounded-lg shadow-sm text-center">
-          <div className="text-6xl mb-4">👥</div>
+      {filteredBookings.length === 0 && (
+        <div
+          className="bg-white p-12 rounded-2xl shadow-lg text-center"
+          style={{
+            borderColor: "rgba(148, 204, 230, 0.2)",
+            borderWidth: "1px",
+          }}
+        >
+          <div className="text-6xl mb-4">📅</div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            Không tìm thấy học viên
+            Không có đặt lịch nào
           </h3>
           <p className="text-gray-600 mb-4">
-            Hãy thử điều chỉnh bộ lọc hoặc thêm học viên mới
+            Hãy thử điều chỉnh bộ lọc để xem các đặt lịch khác
           </p>
         </div>
       )}
 
-      {/* Student Detail Modal */}
-      {showDetailModal && selectedStudent && (
+      {/* Booking Detail Modal */}
+      {showDetailModal && selectedBooking && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+          <div
+            className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-2xl bg-white"
+            style={{ borderColor: "rgba(148, 204, 230, 0.2)" }}
+          >
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  Chi tiết học viên - {selectedStudent.name}
+                  Chi tiết đặt lịch - {selectedBooking.studentName}
                 </h3>
                 <button
                   onClick={() => setShowDetailModal(false)}
@@ -351,136 +647,247 @@ export const StudentManagement: React.FC = () => {
                   ✕
                 </button>
               </div>
-              
+
               <div className="space-y-6">
                 {/* Basic Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Họ tên</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedStudent.name}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Email</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedStudent.email}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Số điện thoại</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedStudent.phone}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Ngày tham gia</label>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Học viên
+                    </label>
                     <p className="mt-1 text-sm text-gray-900">
-                      {new Date(selectedStudent.joinedDate).toLocaleDateString('vi-VN')}
+                      {selectedBooking.studentName}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Email
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {selectedBooking.studentEmail}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Số điện thoại
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {selectedBooking.studentPhone}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Ngày đặt lịch
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {new Date(selectedBooking.createdAt).toLocaleDateString(
+                        "vi-VN"
+                      )}
                     </p>
                   </div>
                 </div>
 
-                {/* Learning Info */}
+                {/* Booking Info */}
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Thông tin học tập</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">
+                    Thông tin đặt lịch
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Môn học</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedStudent.subjects.join(", ")}</p>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Môn học
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {selectedBooking.subject}
+                      </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Trình độ</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedStudent.level}</p>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Loại đặt lịch
+                      </label>
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(
+                          selectedBooking.type
+                        )}`}
+                      >
+                        {getTypeText(selectedBooking.type)}
+                      </span>
                     </div>
-                  </div>
-                  
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700">Mục tiêu</label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {selectedStudent.goals.map((goal, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                        >
-                          {goal}
-                        </span>
-                      ))}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Ngày học
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {new Date(selectedBooking.date).toLocaleDateString(
+                          "vi-VN"
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Thời gian
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {selectedBooking.startTime} - {selectedBooking.endTime}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Trạng thái
+                      </label>
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                          selectedBooking.status
+                        )}`}
+                      >
+                        {getStatusText(selectedBooking.status)}
+                      </span>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Học phí
+                      </label>
+                      <p
+                        className="mt-1 text-sm font-medium"
+                        style={{ color: "rgb(148, 204, 230)" }}
+                      >
+                        {formatPrice(selectedBooking.price)}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Progress */}
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Tiến độ học tập</h4>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-blue-600">{selectedStudent.totalSessions}</p>
-                      <p className="text-sm text-gray-600">Tổng buổi</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-green-600">{selectedStudent.completedSessions}</p>
-                      <p className="text-sm text-gray-600">Hoàn thành</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-yellow-600">{selectedStudent.upcomingSessions}</p>
-                      <p className="text-sm text-gray-600">Sắp tới</p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Tỷ lệ hoàn thành</span>
-                      <span>{calculateProgress(selectedStudent.completedSessions, selectedStudent.totalSessions)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-green-600 h-2 rounded-full" 
-                        style={{ width: `${calculateProgress(selectedStudent.completedSessions, selectedStudent.totalSessions)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
+                {/* Package Progress */}
+                {selectedBooking.type === "package" &&
+                  selectedBooking.totalSessions && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-3">
+                        Tiến độ gói học
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center">
+                          <p
+                            className="text-2xl font-bold"
+                            style={{ color: "rgb(148, 204, 230)" }}
+                          >
+                            {selectedBooking.totalSessions}
+                          </p>
+                          <p className="text-sm text-gray-600">Tổng buổi</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-green-600">
+                            {selectedBooking.completedSessions || 0}
+                          </p>
+                          <p className="text-sm text-gray-600">Hoàn thành</p>
+                        </div>
+                      </div>
 
-                {/* Financial */}
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Thông tin tài chính</h4>
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <p className="text-lg font-semibold text-green-800">
-                      Tổng thu nhập: {formatPrice(selectedStudent.totalPaid)}
-                    </p>
-                  </div>
-                </div>
+                      <div className="mt-4">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span>Tỷ lệ hoàn thành</span>
+                          <span>
+                            {calculateProgress(
+                              selectedBooking.completedSessions || 0,
+                              selectedBooking.totalSessions
+                            )}
+                            %
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="h-2 rounded-full"
+                            style={{
+                              width: `${calculateProgress(
+                                selectedBooking.completedSessions || 0,
+                                selectedBooking.totalSessions
+                              )}%`,
+                              backgroundColor: "rgb(148, 204, 230)",
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                 {/* Notes */}
-                {selectedStudent.notes && (
+                {selectedBooking.notes && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Ghi chú</label>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Ghi chú
+                    </label>
                     <p className="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">
-                      {selectedStudent.notes}
+                      {selectedBooking.notes}
                     </p>
                   </div>
                 )}
               </div>
-              
+
               <div className="flex justify-end space-x-3 mt-6">
                 <button
                   onClick={() => setShowDetailModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-xl hover:bg-gray-300 transition-colors duration-200"
                 >
                   Đóng
                 </button>
                 <button
                   onClick={() => {
-                    handleSendMessage(selectedStudent.id);
+                    handleSendMessage(selectedBooking.studentEmail);
                     setShowDetailModal(false);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 text-sm font-medium text-white rounded-xl transition-colors duration-200"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor =
+                      "rgba(148, 204, 230, 0.8)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor =
+                      "rgb(148, 204, 230)")
+                  }
                 >
                   Nhắn tin
                 </button>
+                {selectedBooking.status === "pending" && (
+                  <>
+                    <button
+                      onClick={() => {
+                        handleApproveBooking(selectedBooking.id);
+                        setShowDetailModal(false);
+                      }}
+                      className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors duration-200"
+                    >
+                      Chấp nhận
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleRejectBooking(selectedBooking.id);
+                        setShowDetailModal(false);
+                      }}
+                      className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors duration-200"
+                    >
+                      Từ chối
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => {
-                    handleScheduleSession(selectedStudent.id);
+                    handleReportBooking(selectedBooking.id);
                     setShowDetailModal(false);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+                  className="px-4 py-2 text-sm font-medium border rounded-xl transition-colors duration-200"
+                  style={{
+                    borderColor: "rgba(239, 68, 68, 0.3)",
+                    color: "rgb(239, 68, 68)",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor =
+                      "rgba(239, 68, 68, 0.1)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "transparent")
+                  }
                 >
-                  Đặt lịch học
+                  Báo cáo
                 </button>
               </div>
             </div>

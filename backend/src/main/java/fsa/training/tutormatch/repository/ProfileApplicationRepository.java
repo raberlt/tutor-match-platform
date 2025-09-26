@@ -26,7 +26,7 @@ public interface ProfileApplicationRepository extends JpaRepository<ProfileAppli
     Page<ProfileApplication> findByStatusOrderByCreatedAtDesc(ApplicationStatus status, Pageable pageable);
     
     // Check if user has pending applications
-    @Query("SELECT COUNT(a) > 0 FROM ProfileApplication a WHERE a.user = :user AND a.status IN ('SUBMITTED', 'UNDER_REVIEW')")
+    @Query("SELECT COUNT(a) > 0 FROM ProfileApplication a WHERE a.user = :user AND a.status = 'SUBMITTED'")
     boolean hasPendingApplications(@Param("user") User user);
     
     // Get latest application by user

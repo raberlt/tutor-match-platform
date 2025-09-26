@@ -107,7 +107,7 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         Subject subject = findSubjectById(request.getSubjectId());
 
         // StudentProfile removed - use User directly
-        TutorProfile tutorProfile = tutorUser.getTutorProfile()
+        TutorProfile tutor = tutorUser.getTutorProfile()
                 .orElseThrow(() -> new IllegalArgumentException("User không phải là tutor hợp lệ"));
 
         // Parse time
@@ -119,7 +119,7 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         // Create booking
         Booking booking = new Booking();
         booking.setStudent(studentUser);
-        booking.setTutor(tutorProfile);
+        booking.setTutor(tutor);
         booking.setSubject(subject);
         booking.setDate(bookingDate);
         booking.setFromTime(fromLocalTime);

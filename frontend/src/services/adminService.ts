@@ -322,18 +322,6 @@ class AdminService {
     return response.data;
   }
 
-  async getRevenueStatistics(period = null, startDate = null, endDate = null) {
-    const params = new URLSearchParams();
-    if (period) params.append("period", period);
-    if (startDate) params.append("startDate", startDate);
-    if (endDate) params.append("endDate", endDate);
-
-    const response = await api.get(
-      `/admin/financial/revenue/statistics?${params}`
-    );
-    return response.data;
-  }
-
   async getPaymentHistory(
     page = 0,
     size = 20,
@@ -350,16 +338,6 @@ class AdminService {
     if (status) params.append("status", status);
 
     const response = await api.get(`/admin/financial/payments?${params}`);
-    return response.data;
-  }
-
-  async resolvePaymentIssue(paymentId: number, action: string, note = null) {
-    const params = new URLSearchParams({ action });
-    if (note) params.append("note", note);
-
-    const response = await api.put(
-      `/admin/financial/payments/${paymentId}/resolve?${params}`
-    );
     return response.data;
   }
 
@@ -392,11 +370,6 @@ class AdminService {
       `/admin/financial/coupons/${couponId}`,
       couponData
     );
-    return response.data;
-  }
-
-  async getCouponStatistics() {
-    const response = await api.get("/admin/financial/coupons/statistics");
     return response.data;
   }
 
@@ -725,6 +698,25 @@ class AdminService {
 
   async getSubjectStatistics() {
     const response = await api.get("/admin/subjects/statistics");
+    return response.data;
+  }
+
+  // Verify Education
+  async verifyEducation(educationId: number, isVerified: boolean) {
+    const response = await api.put(`/admin/educations/${educationId}/verify`, {
+      isVerified,
+    });
+    return response.data;
+  }
+
+  // Verify Certificate
+  async verifyCertificate(certificateId: number, isVerified: boolean) {
+    const response = await api.put(
+      `/admin/certificates/${certificateId}/verify`,
+      {
+        isVerified,
+      }
+    );
     return response.data;
   }
 }

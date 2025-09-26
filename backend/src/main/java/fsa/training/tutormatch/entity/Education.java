@@ -18,7 +18,7 @@ public class Education {
 
     @ManyToOne
     @JoinColumn(name = "profile_id", nullable = false)
-    private Profile profile;
+    private TutorProfile profile;
 
     @Column(nullable = false, columnDefinition = "NVARCHAR(100)")
     private String schoolName;

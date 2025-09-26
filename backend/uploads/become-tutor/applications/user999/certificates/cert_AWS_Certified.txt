@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: AWS Certified
-Issued by: Amazon
-Description: Cloud computing expertise
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:08.707443

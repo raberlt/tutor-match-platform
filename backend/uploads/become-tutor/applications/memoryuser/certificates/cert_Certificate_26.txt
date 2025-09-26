@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 26
-Issued by: Issuer 26
-Description: Description 26
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:01.410414

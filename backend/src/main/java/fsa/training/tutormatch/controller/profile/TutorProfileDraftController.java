@@ -1,7 +1,7 @@
 package fsa.training.tutormatch.controller.profile;
 
 import fsa.training.tutormatch.dto.BecomeTutorRequest;
-import fsa.training.tutormatch.dto.TutorDraftRequest;
+import fsa.training.tutormatch.dto.BecomeTutorDraftRequest;
 import fsa.training.tutormatch.service.TutorProfileDraftService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ public class TutorProfileDraftController {
      */
     @PostMapping("/save")
     public ResponseEntity<Map<String, Object>> saveDraft(
-            @RequestBody TutorDraftRequest request,
+            @RequestBody BecomeTutorDraftRequest request,
             Authentication authentication) {
         
         try {
@@ -56,7 +56,7 @@ public class TutorProfileDraftController {
      */
     @PostMapping("/submit")
     public ResponseEntity<Map<String, Object>> submitApplication(
-            @RequestBody TutorDraftRequest request,
+            @RequestBody BecomeTutorDraftRequest request,
             Authentication authentication) {
         
         try {

@@ -1,11 +1,10 @@
 package fsa.training.tutormatch.controller.profile;
 
 import fsa.training.tutormatch.dto.ProfileUpdateRequest;
-import fsa.training.tutormatch.entity.Profile;
-import fsa.training.tutormatch.enums.*;
 import fsa.training.tutormatch.entity.TutorProfile;
+import fsa.training.tutormatch.enums.*;
 import fsa.training.tutormatch.entity.User;
-import fsa.training.tutormatch.repository.ProfileRepository;
+import fsa.training.tutormatch.repository.TutorProfileRepository;
 import fsa.training.tutormatch.repository.UserRepository;
 import fsa.training.tutormatch.service.UserService;
 import jakarta.validation.Valid;
@@ -27,7 +26,7 @@ public class ProfileController {
     private UserRepository userRepository;
 
     @Autowired
-    private ProfileRepository profileRepository;
+    private TutorProfileRepository tutorProfileRepository;
 
     @Autowired
     private UserService userService;
@@ -43,7 +42,7 @@ public class ProfileController {
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             //  Đổi từ findByTutorId(...) sang findByUserId(...)
-            Optional<Profile> profileOpt = profileRepository.findByUserId(user.getId());
+            Optional<TutorProfile> profileOpt = tutorProfileRepository.findByUserId(user.getId());
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -57,7 +56,7 @@ public class ProfileController {
             ));
 
             if (profileOpt.isPresent()) {
-                Profile baseProfile = profileOpt.get();
+                TutorProfile baseProfile = profileOpt.get();
                 Map<String, Object> profileData = new HashMap<>();
 
                 // Các field chung cho mọi profile
@@ -77,11 +76,11 @@ public class ProfileController {
                 profileData.put("profileStatus", baseProfile.getEnable() ? "ENABLED" : "DISABLED");
 
                 // Nếu là TutorProfile thì thêm các field đặc thù
-                if (baseProfile instanceof TutorProfile tutorProfile) {
-                    profileData.put("bio", tutorProfile.getBio() != null ? tutorProfile.getBio() : "");
-                    profileData.put("headline", tutorProfile.getHeadline() != null ? tutorProfile.getHeadline() : "");
-                    profileData.put("fees", tutorProfile.getFees() != null ? tutorProfile.getFees() : 0);
-                    profileData.put("experience", tutorProfile.getExperience() != null ? tutorProfile.getExperience() : "");
+                if (baseProfile instanceof TutorProfile tutor) {
+                    profileData.put("bio", tutor.getBio() != null ? tutor.getBio() : "");
+                    profileData.put("headline", tutor.getHeadline() != null ? tutor.getHeadline() : "");
+                    profileData.put("fees", tutor.getFees() != null ? tutor.getFees() : 0);
+                    profileData.put("experience", tutor.getExperience() != null ? tutor.getExperience() : "");
                 }
 
                 response.put("profile", profileData);
@@ -135,13 +134,13 @@ public class ProfileController {
             }
 
             // Load or create BaseProfile
-            Profile profile = profileRepository.findByUserId(user.getId())
+            TutorProfile profile = tutorProfileRepository.findByUserId(user.getId())
                     .orElseGet(() -> {
                         if (user.getRole() == UserRole.TUTOR) {
-                            TutorProfile tutorProfile = new TutorProfile();
-                            tutorProfile.setUser(user);
-                            tutorProfile.setEnable(false);
-                            return tutorProfile;
+                            TutorProfile tutor = new TutorProfile();
+                            tutor.setUser(user);
+                            tutor.setEnable(false);
+                            return tutor;
                         } else {
                             // Student không cần profile riêng, thông tin lưu trong User
                             return null;
@@ -175,14 +174,14 @@ public class ProfileController {
             }
 
             // TUTOR specific fields
-            if (profile instanceof TutorProfile tutorProfile) {
-                if (request.getBio() != null) tutorProfile.setBio(request.getBio().trim());
-                if (request.getHeadline() != null) tutorProfile.setHeadline(request.getHeadline().trim());
-                if (request.getFees() != null && request.getFees() >= 0) tutorProfile.setFees(request.getFees());
-                if (request.getExperience() != null) tutorProfile.setExperience(request.getExperience().trim());
+            if (profile instanceof TutorProfile tutor) {
+                if (request.getBio() != null) tutor.setBio(request.getBio().trim());
+                if (request.getHeadline() != null) tutor.setHeadline(request.getHeadline().trim());
+                if (request.getFees() != null && request.getFees() >= 0) tutor.setFees(request.getFees());
+                if (request.getExperience() != null) tutor.setExperience(request.getExperience().trim());
             }
 
-            profileRepository.save(profile);
+            tutorProfileRepository.save(profile);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

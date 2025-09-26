@@ -18,7 +18,7 @@ public class TutorTeachingAudience {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tutor_profile_id", nullable = false)
-    private TutorProfile tutorProfile;
+    private TutorProfile tutor;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teaching_audience_id", nullable = false)

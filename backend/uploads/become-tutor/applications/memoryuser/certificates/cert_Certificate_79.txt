@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 79
-Issued by: Issuer 79
-Description: Description 79
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:03.841048

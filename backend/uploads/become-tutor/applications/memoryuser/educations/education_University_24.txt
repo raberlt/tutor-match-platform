@@ -1,8 +1,0 @@
-🏫 EDUCATION RECORD
-==================
-School: University 24
-Degree: Bachelor's Degree
-Major: Major 24
-Period: 2024 - 2028
-Image: https://example.com/degree.jpg
-Processed: 2025-09-08T16:11:00.093638

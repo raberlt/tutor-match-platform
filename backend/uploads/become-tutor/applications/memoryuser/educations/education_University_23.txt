@@ -1,8 +1,0 @@
-🏫 EDUCATION RECORD
-==================
-School: University 23
-Degree: Bachelor's Degree
-Major: Major 23
-Period: 2023 - 2027
-Image: https://example.com/degree.jpg
-Processed: 2025-09-08T16:11:00.094127

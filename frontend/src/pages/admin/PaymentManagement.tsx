@@ -190,7 +190,12 @@ const PaymentManagement: React.FC = () => {
       totalDiscount: 5000000,
     };
 
-    setPayments(mockPayments);
+    // Sắp xếp theo ngày tạo mới nhất
+    const sortedPayments = mockPayments.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    setPayments(sortedPayments);
     setStats(mockStats);
     setLoading(false);
   }, []);
@@ -198,7 +203,7 @@ const PaymentManagement: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-yellow-640";
       case "PAID":
         return "bg-green-100 text-green-800";
       case "FAILED":
@@ -266,24 +271,24 @@ const PaymentManagement: React.FC = () => {
             className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
             style={{ borderColor: "rgb(148, 204, 230)" }}
           ></div>
-          <p className="mt-4 text-gray-600">Đang tải...</p>
+          <p className="mt-3 text-gray-600">Đang tải...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-8" style={{ backgroundColor: "#f8fafc" }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-4" style={{ backgroundColor: "#f8fafc" }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
+        <div className="mb-4">
+          <div className="flex items-center space-x-3 mb-3">
             <div
-              className="p-3 rounded-xl"
+              className="p-2 rounded-xl"
               style={{ backgroundColor: "rgb(148, 204, 230)" }}
             >
               <svg
-                className="w-6 h-6 text-white"
+                className="w-5 h-5 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -297,10 +302,10 @@ const PaymentManagement: React.FC = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Quản lý Thanh toán
               </h1>
-              <p className="mt-1 text-gray-600">
+              <p className="text-sm text-gray-600">
                 Quản lý và theo dõi tất cả các giao dịch thanh toán
               </p>
             </div>
@@ -309,9 +314,9 @@ const PaymentManagement: React.FC = () => {
 
         {/* Statistics */}
         {stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -326,16 +331,16 @@ const PaymentManagement: React.FC = () => {
                   >
                     Tổng giao dịch
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.totalPayments}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -344,7 +349,7 @@ const PaymentManagement: React.FC = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-1.5M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                     />
                   </svg>
                 </div>
@@ -352,7 +357,7 @@ const PaymentManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -367,16 +372,16 @@ const PaymentManagement: React.FC = () => {
                   >
                     Tổng doanh thu
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.totalRevenue.toLocaleString("vi-VN")} VNĐ
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -393,7 +398,7 @@ const PaymentManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -408,16 +413,16 @@ const PaymentManagement: React.FC = () => {
                   >
                     Đã thanh toán
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.paidPayments}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -434,7 +439,7 @@ const PaymentManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -449,16 +454,16 @@ const PaymentManagement: React.FC = () => {
                   >
                     Tổng giảm giá
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.totalDiscount.toLocaleString("vi-VN")} VNĐ
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -478,28 +483,28 @@ const PaymentManagement: React.FC = () => {
 
         {/* Filters and Search */}
         <div
-          className="p-6 rounded-2xl shadow-lg mb-6"
+          className="p-4 rounded-xl shadow-md mb-4"
           style={{
             backgroundColor: "white",
             borderColor: "rgba(148, 204, 230, 0.2)",
             border: "1px solid",
           }}
         >
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Tìm kiếm theo tên, email, mã giao dịch..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200 w-full sm:w-80"
+                  className="pl-8 pr-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200 w-full sm:w-64"
                   style={{
                     borderColor: "rgba(148, 204, 230, 0.3)",
                     focusRingColor: "rgb(148, 204, 230)",
                   }}
                 />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
                   <svg
                     className="h-5 w-5 text-gray-400"
                     fill="none"
@@ -519,7 +524,7 @@ const PaymentManagement: React.FC = () => {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
+                className="px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
                 style={{
                   borderColor: "rgba(148, 204, 230, 0.3)",
                   focusRingColor: "rgb(148, 204, 230)",
@@ -535,7 +540,7 @@ const PaymentManagement: React.FC = () => {
               <select
                 value={selectedMethod}
                 onChange={(e) => setSelectedMethod(e.target.value)}
-                className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
+                className="px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
                 style={{
                   borderColor: "rgba(148, 204, 230, 0.3)",
                   focusRingColor: "rgb(148, 204, 230)",
@@ -551,7 +556,7 @@ const PaymentManagement: React.FC = () => {
 
             <div className="flex gap-3">
               <button
-                className="px-4 py-3 rounded-xl transition-colors duration-200 font-medium"
+                className="px-3 py-2 rounded-xl transition-colors duration-200 font-medium"
                 style={{
                   backgroundColor: "rgba(148, 204, 230, 0.1)",
                   color: "rgb(148, 204, 230)",
@@ -560,7 +565,7 @@ const PaymentManagement: React.FC = () => {
                 Xuất Excel
               </button>
               <button
-                className="px-4 py-3 text-white rounded-xl transition-colors duration-200 font-medium"
+                className="px-3 py-2 text-white rounded-xl transition-colors duration-200 font-medium"
                 style={{ backgroundColor: "rgb(148, 204, 230)" }}
               >
                 Thống kê
@@ -571,7 +576,7 @@ const PaymentManagement: React.FC = () => {
 
         {/* Payments Table */}
         <div
-          className="rounded-2xl shadow-lg overflow-hidden"
+          className="rounded-xl shadow-md overflow-hidden"
           style={{
             backgroundColor: "white",
             borderColor: "rgba(148, 204, 230, 0.2)",
@@ -585,31 +590,31 @@ const PaymentManagement: React.FC = () => {
                 style={{ backgroundColor: "rgba(148, 204, 230, 0.05)" }}
               >
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     ID
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Học sinh
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Gia sư
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Môn học
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Số tiền
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Phương thức
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Trạng thái
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Thời gian
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Hành động
                   </th>
                 </tr>
@@ -617,10 +622,10 @@ const PaymentManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {payments.map((payment) => (
                   <tr key={payment.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{payment.id}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
                           {payment.student.firstName} {payment.student.lastName}
@@ -630,7 +635,7 @@ const PaymentManagement: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
                           {payment.tutor.firstName} {payment.tutor.lastName}
@@ -640,7 +645,7 @@ const PaymentManagement: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {payment.booking.subject.name}
                       </div>
@@ -649,12 +654,12 @@ const PaymentManagement: React.FC = () => {
                         {payment.booking.toTime}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {payment.amount.toLocaleString("vi-VN")} VNĐ
                       </div>
                       {payment.discountAmount > 0 && (
-                        <div className="text-sm text-green-600">
+                        <div className="text-xs text-green-600">
                           -{payment.discountAmount.toLocaleString("vi-VN")} VNĐ
                         </div>
                       )}
@@ -664,31 +669,31 @@ const PaymentManagement: React.FC = () => {
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getMethodColor(
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getMethodColor(
                           payment.paymentMethod
                         )}`}
                       >
                         {getMethodText(payment.paymentMethod)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusColor(
                           payment.status
                         )}`}
                       >
                         {getStatusText(payment.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {payment.paidAt
                         ? new Date(payment.paidAt).toLocaleString("vi-VN")
                         : new Date(payment.createdAt).toLocaleString("vi-VN")}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-1">
                         <button
                           className="text-blue-600 hover:text-blue-900"
                           style={{ color: "rgb(148, 204, 230)" }}
@@ -713,9 +718,9 @@ const PaymentManagement: React.FC = () => {
         </div>
 
         {/* Pagination */}
-        <div className="mt-6 flex justify-center">
+        <div className="mt-3 flex justify-center">
           <nav
-            className="flex items-center space-x-2 rounded-2xl shadow-lg p-2"
+            className="flex items-center space-x-1 rounded-xl shadow-md p-1"
             style={{
               backgroundColor: "white",
               borderColor: "rgba(148, 204, 230, 0.2)",

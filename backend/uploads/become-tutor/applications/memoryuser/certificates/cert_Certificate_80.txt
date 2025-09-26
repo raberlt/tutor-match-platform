@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 80
-Issued by: Issuer 80
-Description: Description 80
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:03.946611

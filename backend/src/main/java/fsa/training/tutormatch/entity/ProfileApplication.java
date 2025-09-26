@@ -76,6 +76,9 @@ public class ProfileApplication {
 
     @Column(columnDefinition = "NVARCHAR(1000)")
     private String adminNote;
+    
+    @Column(nullable = false)
+    private boolean isVerified = false;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -111,7 +114,7 @@ public class ProfileApplication {
     }
 
     public boolean isSubmitted() {
-        return status == ApplicationStatus.SUBMITTED || status == ApplicationStatus.UNDER_REVIEW;
+        return status == ApplicationStatus.SUBMITTED;
     }
 
     public boolean isApproved() {

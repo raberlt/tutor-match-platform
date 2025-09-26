@@ -335,37 +335,42 @@ public class ProfileApplicationService {
         user.setRole(UserRole.TUTOR);
         user.setVerified(true);
         userRepository.save(user);
+        
+        // Set application as verified
+        application.setVerified(true);
+        applicationRepository.save(application);
 
         // Create or update TutorProfile
-        TutorProfile tutorProfile = tutorProfileRepository.findByUser(user)
+        TutorProfile tutor = tutorProfileRepository.findByUser(user)
                 .orElse(new TutorProfile());
         
         // Set user relationship
-        tutorProfile.setUser(user);
+        tutor.setUser(user);
         
         // Copy tutor-specific information from ProfileApplication
         if (application.getBio() != null) {
-            tutorProfile.setBio(application.getBio());
+            tutor.setBio(application.getBio());
         }
         if (application.getHeadline() != null) {
-            tutorProfile.setHeadline(application.getHeadline());
+            tutor.setHeadline(application.getHeadline());
         }
         if (application.getExperience() != null) {
-            tutorProfile.setExperience(application.getExperience());
+            tutor.setExperience(application.getExperience());
         }
         if (application.getCvFileUrl() != null) {
-            tutorProfile.setCvFileUrl(application.getCvFileUrl());
+            tutor.setCvFileUrl(application.getCvFileUrl());
         }
         if (application.getVideoIntro() != null) {
-            tutorProfile.setVideoIntro(application.getVideoIntro());
+            tutor.setVideoIntro(application.getVideoIntro());
         }
         
-        // Enable the tutor profile
-        tutorProfile.setEnable(true);
-        tutorProfileRepository.save(tutorProfile);
+        // Enable the tutor profile and set as verified
+        tutor.setEnable(true);
+        tutor.setVerified(true);
+        tutorProfileRepository.save(tutor);
 
         // Copy related data (educations, certificates, etc.)
-        copyApplicationDataToTutorProfile(application, tutorProfile);
+        copyApplicationDataToTutorProfile(application, tutor);
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
@@ -376,12 +381,12 @@ public class ProfileApplicationService {
     /**
      * Copy related data from ProfileApplication to TutorProfile
      */
-    private void copyApplicationDataToTutorProfile(ProfileApplication application, TutorProfile tutorProfile) {
+    private void copyApplicationDataToTutorProfile(ProfileApplication application, TutorProfile tutor) {
         // Copy educations
         if (application.getEducations() != null) {
             for (ApplicationEducation appEdu : application.getEducations()) {
                 Education education = new Education();
-                education.setProfile(tutorProfile);
+                education.setProfile(tutor);
                 education.setSchoolName(appEdu.getSchoolName());
                 education.setDegree(appEdu.getDegree());
                 education.setFromTime(appEdu.getFromTime());
@@ -397,7 +402,7 @@ public class ProfileApplicationService {
         if (application.getCertificates() != null) {
             for (ApplicationCertificate appCert : application.getCertificates()) {
                 Certificate certificate = new Certificate();
-                certificate.setProfile(tutorProfile);
+                certificate.setProfile(tutor);
                 certificate.setName(appCert.getName());
                 certificate.setIssuedBy(appCert.getIssuedBy());
                 certificate.setCertFileUrl(appCert.getCertFileUrl());
@@ -411,7 +416,7 @@ public class ProfileApplicationService {
         if (application.getSchedules() != null) {
             for (ApplicationSchedule appSchedule : application.getSchedules()) {
                 Schedule schedule = new Schedule();
-                schedule.setProfile(tutorProfile);
+                schedule.setProfile(tutor);
                 schedule.setDayOfWeek(appSchedule.getDayOfWeek());
                 schedule.setFromTime(appSchedule.getFromTime());
                 schedule.setToTime(appSchedule.getToTime());
@@ -423,7 +428,7 @@ public class ProfileApplicationService {
         if (application.getSubjectFees() != null) {
             for (ApplicationSubjectFee appSubjectFee : application.getSubjectFees()) {
                 TutorProfileSubject tutorProfileSubject = new TutorProfileSubject();
-                tutorProfileSubject.setProfile(tutorProfile);
+                tutorProfileSubject.setProfile(tutor);
                 tutorProfileSubject.setSubject(appSubjectFee.getSubject());
                 tutorProfileSubject.setFees(appSubjectFee.getFees().intValue());
                 profileSubjectRepository.save(tutorProfileSubject);
@@ -436,7 +441,7 @@ public class ProfileApplicationService {
         if (appTeachingAudiences != null) {
             for (ApplicationTeachingAudience appTeachingAudience : appTeachingAudiences) {
                 TutorTeachingAudience tutorTeachingAudience = new TutorTeachingAudience();
-                tutorTeachingAudience.setTutorProfile(tutorProfile);
+                tutorTeachingAudience.setTutor(tutor);
                 tutorTeachingAudience.setTeachingAudience(appTeachingAudience.getTeachingAudience());
                 tutorTeachingAudienceRepository.save(tutorTeachingAudience);
             }
@@ -884,7 +889,7 @@ public class ProfileApplicationService {
             return response;
         }
 
-        app.setStatus(ApplicationStatus.CANCELLED);
+        app.setStatus(ApplicationStatus.REJECTED);
         applicationRepository.save(app);
 
         Map<String, Object> response = new HashMap<>();

@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 54
-Issued by: Issuer 54
-Description: Description 54
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:02.710461

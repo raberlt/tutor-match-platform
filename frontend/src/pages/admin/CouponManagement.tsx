@@ -127,7 +127,12 @@ const CouponManagement: React.FC = () => {
       },
     };
 
-    setCoupons(mockCoupons);
+    // Sắp xếp theo ngày tạo mới nhất
+    const sortedCoupons = mockCoupons.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    setCoupons(sortedCoupons);
     setStats(mockStats);
     setLoading(false);
   }, []);
@@ -183,24 +188,24 @@ const CouponManagement: React.FC = () => {
             className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
             style={{ borderColor: "rgb(148, 204, 230)" }}
           ></div>
-          <p className="mt-4 text-gray-600">Đang tải...</p>
+          <p className="mt-3 text-gray-600">Đang tải...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-8" style={{ backgroundColor: "#f8fafc" }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-4" style={{ backgroundColor: "#f8fafc" }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
+        <div className="mb-4">
+          <div className="flex items-center space-x-3 mb-3">
             <div
-              className="p-3 rounded-xl"
+              className="p-2 rounded-xl"
               style={{ backgroundColor: "rgb(148, 204, 230)" }}
             >
               <svg
-                className="w-6 h-6 text-white"
+                className="w-5 h-5 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -214,10 +219,10 @@ const CouponManagement: React.FC = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Quản lý Mã giảm giá
               </h1>
-              <p className="mt-1 text-gray-600">
+              <p className="text-sm text-gray-600">
                 Quản lý và theo dõi tất cả các mã giảm giá trong hệ thống
               </p>
             </div>
@@ -226,9 +231,9 @@ const CouponManagement: React.FC = () => {
 
         {/* Statistics */}
         {stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -243,16 +248,16 @@ const CouponManagement: React.FC = () => {
                   >
                     Tổng mã giảm giá
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.totalCoupons}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -269,7 +274,7 @@ const CouponManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -284,16 +289,16 @@ const CouponManagement: React.FC = () => {
                   >
                     Đang hoạt động
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.activeCoupons}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -310,7 +315,7 @@ const CouponManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -325,16 +330,16 @@ const CouponManagement: React.FC = () => {
                   >
                     Tổng sử dụng
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.totalUsage}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -351,7 +356,7 @@ const CouponManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -366,16 +371,16 @@ const CouponManagement: React.FC = () => {
                   >
                     Tổng giảm giá
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.totalDiscountGiven.toLocaleString("vi-VN")} VNĐ
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -396,14 +401,14 @@ const CouponManagement: React.FC = () => {
         {/* Most Used Coupon */}
         {stats && (
           <div
-            className="p-6 rounded-2xl shadow-lg mb-6"
+            className="p-4 rounded-xl shadow-md mb-4"
             style={{
               backgroundColor: "white",
               borderColor: "rgba(148, 204, 230, 0.2)",
               border: "1px solid",
             }}
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">
               Mã giảm giá được sử dụng nhiều nhất
             </h3>
             <div className="flex items-center justify-between">
@@ -416,7 +421,7 @@ const CouponManagement: React.FC = () => {
                 </div>
               </div>
               <div
-                className="p-4 rounded-xl"
+                className="p-3 rounded-xl"
                 style={{
                   backgroundColor: "rgba(148, 204, 230, 0.1)",
                   borderColor: "rgba(148, 204, 230, 0.2)",
@@ -424,7 +429,7 @@ const CouponManagement: React.FC = () => {
                 }}
               >
                 <div
-                  className="text-3xl font-bold"
+                  className="text-lg font-bold"
                   style={{ color: "rgb(148, 204, 230)" }}
                 >
                   {stats.mostUsedCoupon.usageCount}
@@ -437,28 +442,28 @@ const CouponManagement: React.FC = () => {
 
         {/* Filters and Search */}
         <div
-          className="p-6 rounded-2xl shadow-lg mb-6"
+          className="p-4 rounded-xl shadow-md mb-4"
           style={{
             backgroundColor: "white",
             borderColor: "rgba(148, 204, 230, 0.2)",
             border: "1px solid",
           }}
         >
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Tìm kiếm theo mã, tên, mô tả..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200 w-full sm:w-80"
+                  className="pl-8 pr-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 text-xs transition-colors duration-200 w-full sm:w-64"
                   style={{
                     borderColor: "rgba(148, 204, 230, 0.3)",
                     focusRingColor: "rgb(148, 204, 230)",
                   }}
                 />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
                   <svg
                     className="h-5 w-5 text-gray-400"
                     fill="none"
@@ -478,7 +483,7 @@ const CouponManagement: React.FC = () => {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
+                className="px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 text-xs transition-colors duration-200"
                 style={{
                   borderColor: "rgba(148, 204, 230, 0.3)",
                   focusRingColor: "rgb(148, 204, 230)",
@@ -493,7 +498,7 @@ const CouponManagement: React.FC = () => {
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
+                className="px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 text-xs transition-colors duration-200"
                 style={{
                   borderColor: "rgba(148, 204, 230, 0.3)",
                   focusRingColor: "rgb(148, 204, 230)",
@@ -505,9 +510,9 @@ const CouponManagement: React.FC = () => {
               </select>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-1">
               <button
-                className="px-4 py-3 rounded-xl transition-colors duration-200 font-medium"
+                className="px-3 py-2 rounded-xl transition-colors duration-200 text-sm font-medium"
                 style={{
                   backgroundColor: "rgba(148, 204, 230, 0.1)",
                   color: "rgb(148, 204, 230)",
@@ -516,7 +521,7 @@ const CouponManagement: React.FC = () => {
                 Xuất Excel
               </button>
               <button
-                className="px-4 py-3 text-white rounded-xl transition-colors duration-200 font-medium"
+                className="px-3 py-2 text-white rounded-xl transition-colors duration-200 text-sm font-medium"
                 style={{ backgroundColor: "rgb(148, 204, 230)" }}
               >
                 Tạo mới
@@ -527,7 +532,7 @@ const CouponManagement: React.FC = () => {
 
         {/* Coupons Table */}
         <div
-          className="rounded-2xl shadow-lg overflow-hidden"
+          className="rounded-xl shadow-md overflow-hidden"
           style={{
             backgroundColor: "white",
             borderColor: "rgba(148, 204, 230, 0.2)",
@@ -541,28 +546,28 @@ const CouponManagement: React.FC = () => {
                 style={{ backgroundColor: "rgba(148, 204, 230, 0.05)" }}
               >
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Mã
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Tên
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Loại giảm giá
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Giá trị
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Sử dụng
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Thời hạn
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Trạng thái
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Hành động
                   </th>
                 </tr>
@@ -570,12 +575,12 @@ const CouponManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {coupons.map((coupon) => (
                   <tr key={coupon.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {coupon.code}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-2">
                       <div className="text-sm font-medium text-gray-900">
                         {coupon.name}
                       </div>
@@ -583,16 +588,16 @@ const CouponManagement: React.FC = () => {
                         {coupon.description}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium ${getTypeColor(
                           coupon.discountType
                         )}`}
                       >
                         {getTypeText(coupon.discountType)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {formatDiscountValue(coupon)}
                       </div>
@@ -601,13 +606,13 @@ const CouponManagement: React.FC = () => {
                         {coupon.minOrderAmount.toLocaleString("vi-VN")} VNĐ
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {coupon.usedCount} / {coupon.usageLimit}
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                         <div
-                          className="h-2 rounded-full"
+                          className="h-1.5 rounded-full"
                           style={{
                             backgroundColor: "rgb(148, 204, 230)",
                             width: `${getUsagePercentage(
@@ -617,7 +622,7 @@ const CouponManagement: React.FC = () => {
                           }}
                         ></div>
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-sm text-gray-500 mt-1">
                         {getUsagePercentage(
                           coupon.usedCount,
                           coupon.usageLimit
@@ -625,7 +630,7 @@ const CouponManagement: React.FC = () => {
                         %
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {new Date(coupon.startDate).toLocaleDateString("vi-VN")}
                       </div>
@@ -634,9 +639,9 @@ const CouponManagement: React.FC = () => {
                         {new Date(coupon.endDate).toLocaleDateString("vi-VN")}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium ${getStatusColor(
                           coupon.isActive,
                           coupon.endDate
                         )}`}
@@ -644,22 +649,22 @@ const CouponManagement: React.FC = () => {
                         {getStatusText(coupon.isActive, coupon.endDate)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-1">
                         <button
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-blue-600 hover:text-blue-900 text-xs"
                           style={{ color: "rgb(148, 204, 230)" }}
                         >
                           Xem
                         </button>
                         <button
-                          className="text-green-600 hover:text-green-900"
+                          className="text-green-600 hover:text-green-900 text-xs"
                           style={{ color: "rgb(148, 204, 230)" }}
                         >
                           Sửa
                         </button>
                         <button
-                          className={`${
+                          className={`text-xs ${
                             coupon.isActive
                               ? "text-orange-600 hover:text-orange-900"
                               : "text-green-600 hover:text-green-900"
@@ -667,7 +672,7 @@ const CouponManagement: React.FC = () => {
                         >
                           {coupon.isActive ? "Tạm dừng" : "Kích hoạt"}
                         </button>
-                        <button className="text-red-600 hover:text-red-900">
+                        <button className="text-red-600 hover:text-red-900 text-xs">
                           Xóa
                         </button>
                       </div>
@@ -680,31 +685,31 @@ const CouponManagement: React.FC = () => {
         </div>
 
         {/* Pagination */}
-        <div className="mt-6 flex justify-center">
+        <div className="mt-3 flex justify-center">
           <nav
-            className="flex items-center space-x-2 rounded-2xl shadow-lg p-2"
+            className="flex items-center space-x-1 rounded-xl shadow-md p-1"
             style={{
               backgroundColor: "white",
               borderColor: "rgba(148, 204, 230, 0.2)",
               border: "1px solid",
             }}
           >
-            <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+            <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
               Trước
             </button>
             <button
-              className="px-3 py-2 text-sm font-medium text-white rounded-xl transition-colors duration-200"
+              className="px-3 py-2 text-sm font-medium text-white rounded-md transition-colors duration-200"
               style={{ backgroundColor: "rgb(148, 204, 230)" }}
             >
               1
             </button>
-            <button className="px-3 py-2 text-sm font-medium text-gray-700 bg-white rounded-xl hover:bg-gray-50 transition-colors duration-200">
+            <button className="px-3 py-2 text-sm font-medium text-gray-700 bg-white rounded-md hover:bg-gray-50 transition-colors duration-200">
               2
             </button>
-            <button className="px-3 py-2 text-sm font-medium text-gray-700 bg-white rounded-xl hover:bg-gray-50 transition-colors duration-200">
+            <button className="px-3 py-2 text-sm font-medium text-gray-700 bg-white rounded-md hover:bg-gray-50 transition-colors duration-200">
               3
             </button>
-            <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+            <button className="px-3 py-2 text-sm font-medium text-gray-500 bg-white rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
               Sau
             </button>
           </nav>

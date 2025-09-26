@@ -80,6 +80,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/tutor/**").hasRole("TUTOR")
                 .requestMatchers("/api/student/**").hasRole("STUDENT")
                 .requestMatchers("/api/tutors/**").hasRole("STUDENT")
+                .requestMatchers("/api/messages/**").authenticated() // Message endpoints cần đăng nhập
                 
                 // Web pages with role-based access
                 .requestMatchers("/profile-setup").hasAnyRole("STUDENT", "TUTOR")

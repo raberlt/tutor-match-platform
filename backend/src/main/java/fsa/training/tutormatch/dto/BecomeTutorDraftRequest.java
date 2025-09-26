@@ -110,7 +110,8 @@ public class BecomeTutorDraftRequest {
         private Integer toTime;
         
         private String degreeFileName;
-        private String degreeFileUrl;    }
+        private String degreeFileUrl;
+        private boolean isVerified = false;    }
     
     @Data
     public static class CertificateRequest {
@@ -124,11 +125,12 @@ public class BecomeTutorDraftRequest {
         private String description;
         
         private String certFileName;
-        private String certFileUrl;    }
+        private String certFileUrl;
+        private boolean isVerified = false;    }
     
     @Data
     public static class SubjectFeeRequest {
-        private Long subjectId;
+        private Integer subjectId;
         
         @Min(value = 0, message = "Học phí phải lớn hơn hoặc bằng 0")
         private Integer fees;

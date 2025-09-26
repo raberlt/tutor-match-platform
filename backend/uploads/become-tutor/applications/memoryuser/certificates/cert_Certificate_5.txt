@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 5
-Issued by: Issuer 5
-Description: Description 5
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:00.441332

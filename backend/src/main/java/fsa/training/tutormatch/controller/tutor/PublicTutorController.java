@@ -8,11 +8,10 @@ import fsa.training.tutormatch.entity.TeachingAudience;
 import fsa.training.tutormatch.entity.Schedule;
 import fsa.training.tutormatch.entity.Education;
 import fsa.training.tutormatch.entity.Certificate;
-import fsa.training.tutormatch.repository.ProfileRepository;
+import fsa.training.tutormatch.repository.TutorProfileRepository;
 import fsa.training.tutormatch.repository.SubjectRepository;
 import fsa.training.tutormatch.repository.UserRepository;
 import fsa.training.tutormatch.repository.TeachingAudienceRepository;
-import fsa.training.tutormatch.repository.TutorProfileRepository;
 import fsa.training.tutormatch.service.TutorService;
 import fsa.training.tutormatch.service.ProfileApplicationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,9 +43,6 @@ public class PublicTutorController {
     
     @Autowired
     private TeachingAudienceRepository teachingAudienceRepository;
-    
-    @Autowired
-    private ProfileRepository profileRepository;
     
     @Autowired
     private TutorProfileRepository tutorProfileRepository;
@@ -176,7 +172,7 @@ public class PublicTutorController {
             profile.setCreatedAt(ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
             profile.setUpdatedAt(ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
 
-            TutorProfile savedProfile = profileRepository.save(profile);
+            TutorProfile savedProfile = tutorProfileRepository.save(profile);
 
             // Create profile subjects
             TutorProfileSubject mathSubject = new TutorProfileSubject();
@@ -198,7 +194,7 @@ public class PublicTutorController {
             profileSubjects.add(mathSubject);
             profileSubjects.add(physicsSubject);
             savedProfile.setProfileSubjects(profileSubjects);
-            profileRepository.save(savedProfile);
+            tutorProfileRepository.save(savedProfile);
 
             return ResponseEntity.ok(Map.of(
                 "success", true,

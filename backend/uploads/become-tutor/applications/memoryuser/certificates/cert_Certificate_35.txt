@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 35
-Issued by: Issuer 35
-Description: Description 35
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:01.893469

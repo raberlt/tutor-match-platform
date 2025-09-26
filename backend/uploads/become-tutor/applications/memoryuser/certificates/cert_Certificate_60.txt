@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 60
-Issued by: Issuer 60
-Description: Description 60
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:02.977250

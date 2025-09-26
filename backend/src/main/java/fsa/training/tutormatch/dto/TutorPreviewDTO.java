@@ -15,6 +15,7 @@ public class TutorPreviewDTO {
     private Double ratePointAverage;
     private Integer totalPoint;
     private String city;
+    private boolean isVerified;
     
     // Chỉ hiển thị tên môn học, không có chi tiết
     private List<String> subjectNames;

@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 12
-Issued by: Issuer 12
-Description: Description 12
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:00.767515

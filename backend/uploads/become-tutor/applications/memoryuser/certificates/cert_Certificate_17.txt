@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 17
-Issued by: Issuer 17
-Description: Description 17
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:00.993811

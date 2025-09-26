@@ -1,8 +1,0 @@
-🏫 EDUCATION RECORD
-==================
-School: Stanford
-Degree: Bachelor's Degree
-Major: Machine Learning
-Period: 2020 - 2021
-Image: https://example.com/degree.jpg
-Processed: 2025-09-08T16:11:13.052058

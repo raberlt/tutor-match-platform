@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 42
-Issued by: Issuer 42
-Description: Description 42
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:02.180175

@@ -21,11 +21,13 @@ import CloudinaryDemo from "../pages/CloudinaryDemo";
 // User Pages
 import TutorSearch from "../pages/user/TutorSearch";
 import { BecomeTutor } from "../pages/user/BecomeTutor";
-import { Messages } from "../pages/user/Messages";
+import Messages from "../pages/user/Messages";
 import MySessions from "../pages/user/MySessions";
 import { Settings } from "../pages/user/Settings";
 import BookingDetail from "../pages/user/BookingDetail";
 import CreateBooking from "../pages/user/CreateBooking";
+import SingleBooking from "../pages/user/SingleBooking";
+import PackageBooking from "../pages/user/PackageBooking";
 import TutorDetail from "../pages/user/TutorDetail";
 
 // Tutor Pages
@@ -33,14 +35,13 @@ import { TutorDashboard } from "../pages/tutor/TutorDashboard";
 import { Schedule } from "../pages/tutor/Schedule";
 import { StudentManagement } from "../pages/tutor/StudentManagement";
 import { ProfileManagement } from "../pages/tutor/ProfileManagement";
-import { Contracts } from "../pages/tutor/Contracts";
 import TutorBookings from "../pages/tutor/TutorBookings";
 
 // Admin Pages
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import { UserManagement } from "../pages/admin/UserManagement";
 import { AdminProfileManagement } from "../pages/admin/ProfileManagement";
-import { ReportManagement } from "../pages/admin/ReportManagement";
+import { AdminMessages } from "../pages/admin/AdminMessages";
 import CouponManagement from "../pages/admin/CouponManagement";
 import PaymentManagement from "../pages/admin/PaymentManagement";
 import BookingManagement from "../pages/admin/BookingManagement";
@@ -136,6 +137,22 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "single-booking",
+        element: (
+          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
+            <SingleBooking />
+          </BookingProtectedRoute>
+        ),
+      },
+      {
+        path: "package-booking",
+        element: (
+          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
+            <PackageBooking />
+          </BookingProtectedRoute>
+        ),
+      },
+      {
         path: "booking-detail/:id",
         element: (
           <BookingProtectedRoute allowedRoles={["STUDENT"]}>
@@ -183,10 +200,6 @@ const router = createBrowserRouter([
         element: <ProfileManagement />,
       },
       {
-        path: "contracts",
-        element: <Contracts />,
-      },
-      {
         path: "bookings",
         element: (
           <BookingProtectedRoute allowedRoles={["TUTOR"]}>
@@ -226,16 +239,16 @@ const router = createBrowserRouter([
         element: <AdminProfileManagement />,
       },
       {
+        path: "messages",
+        element: <AdminMessages />,
+      },
+      {
         path: "bookings",
         element: (
           <BookingProtectedRoute allowedRoles={["ADMIN"]}>
             <BookingManagement />
           </BookingProtectedRoute>
         ),
-      },
-      {
-        path: "reports",
-        element: <ReportManagement />,
       },
       {
         path: "coupons",

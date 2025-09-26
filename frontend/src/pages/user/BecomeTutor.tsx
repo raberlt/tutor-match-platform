@@ -221,7 +221,7 @@ export const BecomeTutor: React.FC = () => {
       console.log("🔍 Debug: token =", token);
 
       // Check both isAuthenticated and token existence
-      if (isAuthenticated && token) {
+      if (isAuthenticated && token && subjects.length > 0) {
         try {
           console.log("✅ User is authenticated, loading draft data...");
           const draftData = await TutorService.getDraftData();
@@ -480,7 +480,7 @@ export const BecomeTutor: React.FC = () => {
     };
 
     loadDraftData();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, subjects]);
 
   // Load dữ liệu mặc định
   useEffect(() => {
@@ -612,7 +612,7 @@ export const BecomeTutor: React.FC = () => {
 
   // Mapping từ tiếng Anh sang tiếng Việt
   const teachingAudienceMapping: { [key: string]: string } = {
-    INDEPENDENT_LEARNER: "Học tự do",
+    INDEPENDENT_LEARNER: "Tự học",
     MIDDLE_SCHOOL: "Trung học cơ sở",
     HIGH_SCHOOL: "Trung học phổ thông",
     VOCATIONAL_SCHOOL: "Trung cấp nghề",
@@ -630,7 +630,7 @@ export const BecomeTutor: React.FC = () => {
             teachingAudienceMapping[audience.name] || audience.name,
         }))
       : [
-          { englishName: "INDEPENDENT_LEARNER", vietnameseName: "Học tự do" },
+          { englishName: "INDEPENDENT_LEARNER", vietnameseName: "Tự học" },
           { englishName: "MIDDLE_SCHOOL", vietnameseName: "Trung học cơ sở" },
           { englishName: "HIGH_SCHOOL", vietnameseName: "Trung học phổ thông" },
           {
@@ -1185,39 +1185,19 @@ export const BecomeTutor: React.FC = () => {
 
   // Helper functions
   const getSubjectId = (subjectName: string): number => {
-    const subjectMap: { [key: string]: number } = {
-      Toán: 1,
-      "Vật lý": 2,
-      "Hóa học": 3,
-      "Sinh học": 4,
-      "Tiếng Anh": 5,
-      "Văn học": 6,
-      "Lịch sử": 7,
-      "Địa lý": 8,
-      "Tin học": 9,
-      "Âm nhạc": 10,
-      "Mỹ thuật": 11,
-      "Thể dục": 12,
-    };
-    return subjectMap[subjectName] || 1;
+    // Find subject by name in the loaded subjects array
+    const subject = subjects.find((s) => s.name === subjectName);
+    return subject ? subject.id : subjects.length > 0 ? subjects[0].id : 1;
   };
 
   const getSubjectName = (subjectId: number): string => {
-    const subjectMap: { [key: number]: string } = {
-      1: "Toán",
-      2: "Vật lý",
-      3: "Hóa học",
-      4: "Sinh học",
-      5: "Tiếng Anh",
-      6: "Văn học",
-      7: "Lịch sử",
-      8: "Địa lý",
-      9: "Tin học",
-      10: "Âm nhạc",
-      11: "Mỹ thuật",
-      12: "Thể dục",
-    };
-    return subjectMap[subjectId] || "Unknown Subject";
+    // Find subject by ID in the loaded subjects array
+    const subject = subjects.find((s) => s.id === subjectId);
+    return subject
+      ? subject.name
+      : subjects.length > 0
+      ? subjects[0].name
+      : "Unknown Subject";
   };
 
   const mapDayToEnum = (day: string): string => {
@@ -1244,7 +1224,7 @@ export const BecomeTutor: React.FC = () => {
   const convertFormDataToTutorData = (): TutorApplicationData => {
     // Convert Vietnamese teaching methods to English
     const vietnameseToEnglish: { [key: string]: string } = {
-      "Học tự do": "INDEPENDENT_LEARNER",
+      "Tự học": "INDEPENDENT_LEARNER",
       "Trung học cơ sở": "MIDDLE_SCHOOL",
       "Trung học phổ thông": "HIGH_SCHOOL",
       "Trung cấp nghề": "VOCATIONAL_SCHOOL",

@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 11
-Issued by: Issuer 11
-Description: Description 11
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:00.725854

@@ -1,7 +1,9 @@
 package fsa.training.tutormatch.service;
 
+import fsa.training.tutormatch.dto.TutorDTO;
+import fsa.training.tutormatch.dto.TutorPreviewDTO;
 import fsa.training.tutormatch.entity.TutorProfile;
-import fsa.training.tutormatch.repository.ProfileRepository;
+import fsa.training.tutormatch.repository.TutorProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,33 +19,33 @@ import java.util.Map;
 public class TutorSearchService {
     
     @Autowired
-    private ProfileRepository profileRepository;
+    private TutorProfileRepository tutorProfileRepository;
     
     public List<TutorProfile> searchByKeyword(String keyword) {
         // Implementation for keyword search
-        return profileRepository.findTutorsByKeyword(keyword);
+        return tutorProfileRepository.findTutorsByKeyword(keyword);
     }
     
     public List<TutorProfile> searchBySubject(String subject) {
         // Implementation for subject search
-        return profileRepository.findTutorsBySubject(subject);
+        return tutorProfileRepository.findTutorsBySubject(subject);
     }
     
     
     public Page<TutorProfile> searchTutors(String keyword, String subject, String location, Pageable pageable) {
         // Implementation for advanced search
         if (keyword != null && !keyword.isEmpty()) {
-            return profileRepository.findTutorsByKeywordPaged(keyword, pageable);
+            return tutorProfileRepository.findTutorsByKeywordPaged(keyword, pageable);
         }
-        return profileRepository.findAllTutorsPaged(pageable);
+        return tutorProfileRepository.findAllTutorsPaged(pageable);
     }
     
     public List<TutorProfile> findTopRatedTutors(int limit) {
-        return profileRepository.findTopRatedTutors(limit);
+        return tutorProfileRepository.findTopRatedTutors(limit);
     }
     
     public List<TutorProfile> findTutorsByPriceRange(Double minPrice, Double maxPrice) {
-        return profileRepository.findTutorsByPriceRange(minPrice, maxPrice);
+        return tutorProfileRepository.findTutorsByPriceRange(minPrice, maxPrice);
     }
     
     // Methods needed by TutorServiceImpl
@@ -55,13 +57,18 @@ public class TutorSearchService {
         
         // For now, use basic search - can be enhanced later with more complex filtering
         if (keyword != null && !keyword.isEmpty()) {
-            tutors = profileRepository.findTutorsByKeywordPaged(keyword, pageable);
+            tutors = tutorProfileRepository.findTutorsByKeywordPaged(keyword, pageable);
         } else {
-            tutors = profileRepository.findAllTutorsPaged(pageable);
+            tutors = tutorProfileRepository.findAllTutorsPaged(pageable);
         }
         
+        // Convert to DTOs
+        List<TutorDTO> tutorDTOs = tutors.getContent().stream()
+            .map(this::convertToDTO)
+            .toList();
+        
         Map<String, Object> result = new HashMap<>();
-        result.put("content", tutors.getContent());
+        result.put("content", tutorDTOs);
         result.put("totalPages", tutors.getTotalPages());
         result.put("totalElements", tutors.getTotalElements());
         result.put("currentPage", tutors.getNumber());
@@ -73,8 +80,76 @@ public class TutorSearchService {
     public Map<String, Object> searchTutorPreviewsWithFilters(String keyword, Integer subjectId, BigDecimal minFee, 
                                                              BigDecimal maxFee, Double minRating, String city, 
                                                              int page, int size, String sortBy, String sortDirection) {
-        // For preview, we return the same data but could be filtered to show limited info
-        // For now, return the same as full search
-        return searchTutorsWithFilters(keyword, subjectId, minFee, maxFee, minRating, city, page, size, sortBy, sortDirection);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
+        Page<TutorProfile> tutors;
+        
+        // For now, use basic search - can be enhanced later with more complex filtering
+        if (keyword != null && !keyword.isEmpty()) {
+            tutors = tutorProfileRepository.findTutorsByKeywordPaged(keyword, pageable);
+        } else {
+            tutors = tutorProfileRepository.findAllTutorsPaged(pageable);
+        }
+        
+        // Convert to Preview DTOs
+        List<TutorPreviewDTO> tutorPreviewDTOs = tutors.getContent().stream()
+            .map(this::convertToPreviewDTO)
+            .toList();
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("content", tutorPreviewDTOs);
+        result.put("totalPages", tutors.getTotalPages());
+        result.put("totalElements", tutors.getTotalElements());
+        result.put("currentPage", tutors.getNumber());
+        result.put("size", tutors.getSize());
+        
+        return result;
+    }
+    
+    private TutorDTO convertToDTO(TutorProfile tutor) {
+        TutorDTO dto = new TutorDTO();
+        dto.setId(tutor.getId());
+        dto.setFirstName(tutor.getFirstName());
+        dto.setLastName(tutor.getLastName());
+        dto.setImageAvatar(tutor.getImageAvatar());
+        dto.setBio(tutor.getBio());
+        dto.setHeadline(tutor.getHeadline());
+        dto.setExperience(tutor.getExperience());
+        dto.setFees(tutor.getFees());
+        dto.setRatePointAverage(tutor.getRatePointAverage());
+        dto.setTotalPoint(tutor.getTotalPoint());
+        dto.setVerified(tutor.isVerified());
+        
+        // Populate subjects from profileSubjects
+        if (tutor.getProfileSubjects() != null && !tutor.getProfileSubjects().isEmpty()) {
+            List<TutorDTO.SubjectDTO> subjects = tutor.getProfileSubjects().stream()
+                .map(ps -> new TutorDTO.SubjectDTO(ps.getSubject().getId(), ps.getSubject().getName(), ps.getFees()))
+                .toList();
+            dto.setSubjects(subjects);
+        }
+        
+        return dto;
+    }
+    
+    private TutorPreviewDTO convertToPreviewDTO(TutorProfile tutor) {
+        TutorPreviewDTO dto = new TutorPreviewDTO();
+        dto.setId(tutor.getId());
+        dto.setFirstName(tutor.getFirstName());
+        dto.setLastName(tutor.getLastName());
+        dto.setImageAvatar(tutor.getImageAvatar());
+        dto.setHeadline(tutor.getHeadline());
+        dto.setFees(tutor.getFees());
+        dto.setRatePointAverage(tutor.getRatePointAverage());
+        dto.setTotalPoint(tutor.getTotalPoint());
+        dto.setVerified(tutor.isVerified());
+        
+        // Populate subjectNames from profileSubjects
+        if (tutor.getProfileSubjects() != null && !tutor.getProfileSubjects().isEmpty()) {
+            List<String> subjectNames = tutor.getProfileSubjects().stream()
+                .map(ps -> ps.getSubject().getName())
+                .toList();
+            dto.setSubjectNames(subjectNames);
+        }
+        
+        return dto;
     }
 }

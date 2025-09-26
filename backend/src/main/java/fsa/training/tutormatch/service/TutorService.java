@@ -26,8 +26,8 @@ public interface TutorService {
     
     // DTO methods
     List<TutorDTO> findAllTutorDTOs();
-    TutorDTO convertToDTO(TutorProfile tutorProfile);
-    List<TutorPreviewDTO> convertToPreviewDTOs(List<TutorProfile> tutorProfiles);
+    TutorDTO convertToDTO(TutorProfile tutor);
+    List<TutorPreviewDTO> convertToPreviewDTOs(List<TutorProfile> tutors);
     
     // Thêm method mới cho detail
     Optional<TutorDTO> findTutorDetailById(Integer tutorId);

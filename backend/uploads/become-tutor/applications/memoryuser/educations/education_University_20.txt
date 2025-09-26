@@ -1,8 +1,0 @@
-🏫 EDUCATION RECORD
-==================
-School: University 20
-Degree: Bachelor's Degree
-Major: Major 20
-Period: 2020 - 2024
-Image: https://example.com/degree.jpg
-Processed: 2025-09-08T16:11:00.099346

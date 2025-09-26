@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [tailwindcss()],
     server: {
+      hmr: false, // Tắt Hot Module Replacement để tránh auto-reload
       proxy: {
         "/api": {
           // Sử dụng target cố định để đảm bảo ổn định cho các endpoint hiện có

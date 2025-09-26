@@ -1,6 +1,0 @@
-=== TEACHING SCHEDULES ===
-Generated: 2025-09-08T16:11:11.513480
-
-1. MONDAY: 09:00 - 12:00 (Enabled)
-2. WEDNESDAY: 14:00 - 17:00 (Enabled)
-3. FRIDAY: 19:00 - 21:00 (Enabled)

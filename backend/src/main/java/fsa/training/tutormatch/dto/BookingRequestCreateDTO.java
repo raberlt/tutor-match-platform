@@ -18,7 +18,7 @@ public class BookingRequestCreateDTO {
     private String time; // HH:mm-HH:mm
     
     @NotNull
-    private String bookingType; // SINGLE, PACKAGE
+    private String bookingType; // SINGLE, PACKAGE, TRIAL
     
     private String note;
     

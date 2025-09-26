@@ -1,6 +1,6 @@
 package fsa.training.tutormatch.service;
 
-import fsa.training.tutormatch.repository.ProfileRepository;
+import fsa.training.tutormatch.repository.TutorProfileRepository;
 import fsa.training.tutormatch.repository.RateRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,7 +12,7 @@ public class RateService {
     private RateRepository rateRepository;
 
     @Autowired
-    private ProfileRepository profileRepository;
+    private TutorProfileRepository tutorProfileRepository;
 
     // Thêm hoặc cập nhật rate
 //    public void addOrUpdateRate(Rate rate) {
@@ -37,11 +37,11 @@ public class RateService {
 //            averageRate = 0.0;
 //        }
 //
-//        Optional<BaseProfile> profileOpt = profileRepository.findByTutorId(tutorId);
+//        Optional<BaseProfile> profileOpt = tutorProfileRepository.findByTutorId(tutorId);
 //        if (profileOpt.isPresent()) {
 //            BaseProfile profile = profileOpt.get();
 //            profile.setRatePointAverage(averageRate);
-//            profileRepository.save(profile);
+//            tutorProfileRepository.save(profile);
 //        }
 //
 //    }

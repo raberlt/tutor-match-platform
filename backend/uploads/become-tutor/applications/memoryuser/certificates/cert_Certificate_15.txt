@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 15
-Issued by: Issuer 15
-Description: Description 15
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:00.984968

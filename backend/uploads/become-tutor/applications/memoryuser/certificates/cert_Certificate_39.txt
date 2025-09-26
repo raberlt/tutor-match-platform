@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 39
-Issued by: Issuer 39
-Description: Description 39
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:02.058195

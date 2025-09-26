@@ -129,7 +129,8 @@ public class BecomeTutorRequest {
         private Integer toTime;
         
         private String degreeFileName;
-        private String degreeFileUrl;    }
+        private String degreeFileUrl;
+        private boolean isVerified = false;    }
     
     @Data
     public static class CertificateRequest {
@@ -145,7 +146,8 @@ public class BecomeTutorRequest {
         private String description;
         
         private String certFileName;
-        private String certFileUrl;    }
+        private String certFileUrl;
+        private boolean isVerified = false;    }
     
     @Data
     public static class SubjectFeeRequest {

@@ -37,4 +37,7 @@ public class ApplicationEducation {
     private String degreeFileName;
     @Column(columnDefinition = "NVARCHAR(500)")
     private String degreeFileUrl;
+    
+    @Column(nullable = false)
+    private boolean isVerified = false;
 }

@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 7
-Issued by: Issuer 7
-Description: Description 7
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:00.549940

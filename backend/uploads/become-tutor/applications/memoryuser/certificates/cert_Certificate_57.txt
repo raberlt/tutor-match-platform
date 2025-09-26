@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 57
-Issued by: Issuer 57
-Description: Description 57
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:02.829945

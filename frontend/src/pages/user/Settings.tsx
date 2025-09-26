@@ -528,9 +528,7 @@ export const Settings: React.FC = () => {
                       }
                       className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="INDEPENDENT_LEARNER">
-                        Người học tự do
-                      </option>
+                      <option value="INDEPENDENT_LEARNER">Tự học</option>
                       <option value="MIDDLE_SCHOOL">Trung học cơ sở</option>
                       <option value="HIGH_SCHOOL">Trung học phổ thông</option>
                       <option value="VOCATIONAL_SCHOOL">Trung cấp nghề</option>

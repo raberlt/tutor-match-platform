@@ -1,8 +1,0 @@
-🏫 EDUCATION RECORD
-==================
-School: University 35
-Degree: Bachelor's Degree
-Major: Major 35
-Period: 2035 - 2039
-Image: https://example.com/degree.jpg
-Processed: 2025-09-08T16:10:59.852072

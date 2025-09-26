@@ -243,24 +243,24 @@ const AdminDashboard: React.FC = () => {
             className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
             style={{ borderColor: "rgb(148, 204, 230)" }}
           ></div>
-          <p className="mt-4 text-gray-600">Đang tải...</p>
+          <p className="mt-3 text-gray-600">Đang tải...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-8" style={{ backgroundColor: "#f8fafc" }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-4" style={{ backgroundColor: "#f8fafc" }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
+        <div className="mb-4">
+          <div className="flex items-center space-x-3 mb-3">
             <div
-              className="p-3 rounded-xl"
+              className="p-2 rounded-xl"
               style={{ backgroundColor: "rgb(148, 204, 230)" }}
             >
               <svg
-                className="w-6 h-6 text-white"
+                className="w-5 h-5 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -269,15 +269,13 @@ const AdminDashboard: React.FC = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-1.5a2 2 0 01-2-2z"
                 />
               </svg>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Dashboard Tổng quan
-              </h1>
-              <p className="mt-1 text-gray-600">
+              <h1 className="text-2xl font-bold text-gray-900">Tổng quan</h1>
+              <p className="text-sm text-gray-600">
                 Tổng quan về hoạt động và hiệu suất của hệ thống
               </p>
             </div>
@@ -286,9 +284,9 @@ const AdminDashboard: React.FC = () => {
 
         {/* Main Statistics */}
         {stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -303,19 +301,19 @@ const AdminDashboard: React.FC = () => {
                   >
                     Tổng người dùng
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {stats.totalUsers.toLocaleString("vi-VN")}
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats?.totalUsers?.toLocaleString("vi-VN") || 0}
                   </p>
-                  <p className="text-sm text-green-600 mt-1">
-                    +{stats.monthlyGrowth.users}% so với tháng trước
+                  <p className="text-xs text-green-600 mt-1">
+                    +{stats?.monthlyGrowth?.users || 0}% so với tháng trước
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -332,7 +330,7 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -347,19 +345,19 @@ const AdminDashboard: React.FC = () => {
                   >
                     Tổng gia sư
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {stats.totalTutors}
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats?.totalTutors || 0}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    {stats.pendingApplications} đơn chờ duyệt
+                    {stats?.pendingApplications || 0} đơn chờ duyệt
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -376,7 +374,7 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -391,19 +389,19 @@ const AdminDashboard: React.FC = () => {
                   >
                     Tổng buổi học
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {stats.totalBookings.toLocaleString("vi-VN")}
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats?.totalBookings?.toLocaleString("vi-VN") || 0}
                   </p>
-                  <p className="text-sm text-green-600 mt-1">
-                    +{stats.monthlyGrowth.bookings}% so với tháng trước
+                  <p className="text-xs text-green-600 mt-1">
+                    +{stats?.monthlyGrowth?.bookings || 0}% so với tháng trước
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -420,7 +418,7 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -435,19 +433,19 @@ const AdminDashboard: React.FC = () => {
                   >
                     Tổng doanh thu
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {stats.totalRevenue.toLocaleString("vi-VN")} VNĐ
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats?.totalRevenue?.toLocaleString("vi-VN") || 0} VNĐ
                   </p>
-                  <p className="text-sm text-green-600 mt-1">
-                    +{stats.monthlyGrowth.revenue}% so với tháng trước
+                  <p className="text-xs text-green-600 mt-1">
+                    +{stats?.monthlyGrowth?.revenue || 0}% so với tháng trước
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -467,9 +465,9 @@ const AdminDashboard: React.FC = () => {
 
         {/* Secondary Statistics */}
         {stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
             <div
-              className="p-6 rounded-2xl shadow-lg"
+              className="p-4 rounded-xl shadow-md"
               style={{
                 backgroundColor: "white",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -477,11 +475,11 @@ const AdminDashboard: React.FC = () => {
               }}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-sm font-semibold text-gray-900">
                   Đánh giá trung bình
                 </h3>
                 <div
-                  className="p-2 rounded-lg"
+                  className="p-2 rounded-xl"
                   style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
                 >
                   <svg
@@ -500,7 +498,7 @@ const AdminDashboard: React.FC = () => {
                   </svg>
                 </div>
               </div>
-              <div className="text-3xl font-bold text-gray-900 mb-2">
+              <div className="text-2xl font-bold text-gray-900 mb-3">
                 {stats.averageRating}
               </div>
               <div className="flex items-center">
@@ -525,7 +523,7 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg"
+              className="p-4 rounded-xl shadow-md"
               style={{
                 backgroundColor: "white",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -533,11 +531,11 @@ const AdminDashboard: React.FC = () => {
               }}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-sm font-semibold text-gray-900">
                   Mã giảm giá hoạt động
                 </h3>
                 <div
-                  className="p-2 rounded-lg"
+                  className="p-2 rounded-xl"
                   style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
                 >
                   <svg
@@ -556,7 +554,7 @@ const AdminDashboard: React.FC = () => {
                   </svg>
                 </div>
               </div>
-              <div className="text-3xl font-bold text-gray-900 mb-2">
+              <div className="text-2xl font-bold text-gray-900 mb-3">
                 {stats.activeCoupons}
               </div>
               <div className="text-sm text-gray-600">
@@ -565,7 +563,7 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg"
+              className="p-4 rounded-xl shadow-md"
               style={{
                 backgroundColor: "white",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -573,11 +571,11 @@ const AdminDashboard: React.FC = () => {
               }}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-sm font-semibold text-gray-900">
                   Đơn chờ duyệt
                 </h3>
                 <div
-                  className="p-2 rounded-lg"
+                  className="p-2 rounded-xl"
                   style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
                 >
                   <svg
@@ -596,7 +594,7 @@ const AdminDashboard: React.FC = () => {
                   </svg>
                 </div>
               </div>
-              <div className="text-3xl font-bold text-gray-900 mb-2">
+              <div className="text-2xl font-bold text-gray-900 mb-3">
                 {stats.pendingApplications}
               </div>
               <div className="text-sm text-gray-600">
@@ -610,15 +608,15 @@ const AdminDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Recent Activities */}
           <div
-            className="p-6 rounded-2xl shadow-lg"
+            className="p-4 rounded-xl shadow-md"
             style={{
               backgroundColor: "white",
               borderColor: "rgba(148, 204, 230, 0.2)",
               border: "1px solid",
             }}
           >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-900">
                 Hoạt động gần đây
               </h3>
               <Link
@@ -633,7 +631,7 @@ const AdminDashboard: React.FC = () => {
               {recentActivities.map((activity) => (
                 <div key={activity.id} className="flex items-start space-x-3">
                   <div
-                    className={`p-2 rounded-lg ${getStatusColor(
+                    className={`p-2 rounded-xl ${getStatusColor(
                       activity.status
                     )}`}
                     style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
@@ -644,7 +642,7 @@ const AdminDashboard: React.FC = () => {
                     <p className="text-sm text-gray-900">
                       {activity.description}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-sm text-gray-500 mt-1">
                       {formatTimeAgo(activity.timestamp)}
                     </p>
                   </div>
@@ -655,15 +653,15 @@ const AdminDashboard: React.FC = () => {
 
           {/* Top Tutors */}
           <div
-            className="p-6 rounded-2xl shadow-lg"
+            className="p-4 rounded-xl shadow-md"
             style={{
               backgroundColor: "white",
               borderColor: "rgba(148, 204, 230, 0.2)",
               border: "1px solid",
             }}
           >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-900">
                 Gia sư hàng đầu
               </h3>
               <Link
@@ -682,7 +680,7 @@ const AdminDashboard: React.FC = () => {
                 >
                   <div className="flex items-center space-x-3">
                     <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
                       style={{ backgroundColor: "rgb(148, 204, 230)" }}
                     >
                       {index + 1}
@@ -691,13 +689,13 @@ const AdminDashboard: React.FC = () => {
                       <p className="text-sm font-medium text-gray-900">
                         {tutor.name}
                       </p>
-                      <p className="text-xs text-gray-500">{tutor.subject}</p>
+                      <p className="text-sm text-gray-500">{tutor.subject}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="flex items-center space-x-1">
                       <svg
-                        className="w-4 h-4 text-yellow-400"
+                        className="w-5 h-5 text-yellow-400"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -707,7 +705,7 @@ const AdminDashboard: React.FC = () => {
                         {tutor.rating}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm text-gray-500">
                       {tutor.totalBookings} buổi học
                     </p>
                   </div>
@@ -718,14 +716,14 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="mt-4">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">
             Thao tác nhanh
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
             <Link
               to="/admin/bookings"
-              className="p-4 rounded-xl text-center hover:shadow-lg transition-all duration-200"
+              className="p-4 rounded-xl text-center hover:shadow-md transition-all duration-200"
               style={{
                 backgroundColor: "white",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -733,11 +731,11 @@ const AdminDashboard: React.FC = () => {
               }}
             >
               <div
-                className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
+                className="w-8 h-8 mx-auto mb-3 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
               >
                 <svg
-                  className="w-4 h-4"
+                  className="w-5 h-5"
                   style={{ color: "rgb(148, 204, 230)" }}
                   fill="none"
                   stroke="currentColor"
@@ -756,7 +754,7 @@ const AdminDashboard: React.FC = () => {
 
             <Link
               to="/admin/payments"
-              className="p-4 rounded-xl text-center hover:shadow-lg transition-all duration-200"
+              className="p-4 rounded-xl text-center hover:shadow-md transition-all duration-200"
               style={{
                 backgroundColor: "white",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -764,11 +762,11 @@ const AdminDashboard: React.FC = () => {
               }}
             >
               <div
-                className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
+                className="w-8 h-8 mx-auto mb-3 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
               >
                 <svg
-                  className="w-4 h-4"
+                  className="w-5 h-5"
                   style={{ color: "rgb(148, 204, 230)" }}
                   fill="none"
                   stroke="currentColor"
@@ -787,7 +785,7 @@ const AdminDashboard: React.FC = () => {
 
             <Link
               to="/admin/tutor-applications"
-              className="p-4 rounded-xl text-center hover:shadow-lg transition-all duration-200"
+              className="p-4 rounded-xl text-center hover:shadow-md transition-all duration-200"
               style={{
                 backgroundColor: "white",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -795,11 +793,11 @@ const AdminDashboard: React.FC = () => {
               }}
             >
               <div
-                className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
+                className="w-8 h-8 mx-auto mb-3 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
               >
                 <svg
-                  className="w-4 h-4"
+                  className="w-5 h-5"
                   style={{ color: "rgb(148, 204, 230)" }}
                   fill="none"
                   stroke="currentColor"
@@ -818,7 +816,7 @@ const AdminDashboard: React.FC = () => {
 
             <Link
               to="/admin/ratings"
-              className="p-4 rounded-xl text-center hover:shadow-lg transition-all duration-200"
+              className="p-4 rounded-xl text-center hover:shadow-md transition-all duration-200"
               style={{
                 backgroundColor: "white",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -826,11 +824,11 @@ const AdminDashboard: React.FC = () => {
               }}
             >
               <div
-                className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
+                className="w-8 h-8 mx-auto mb-3 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
               >
                 <svg
-                  className="w-4 h-4"
+                  className="w-5 h-5"
                   style={{ color: "rgb(148, 204, 230)" }}
                   fill="none"
                   stroke="currentColor"
@@ -849,7 +847,7 @@ const AdminDashboard: React.FC = () => {
 
             <Link
               to="/admin/schedules"
-              className="p-4 rounded-xl text-center hover:shadow-lg transition-all duration-200"
+              className="p-4 rounded-xl text-center hover:shadow-md transition-all duration-200"
               style={{
                 backgroundColor: "white",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -857,11 +855,11 @@ const AdminDashboard: React.FC = () => {
               }}
             >
               <div
-                className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
+                className="w-8 h-8 mx-auto mb-3 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
               >
                 <svg
-                  className="w-4 h-4"
+                  className="w-5 h-5"
                   style={{ color: "rgb(148, 204, 230)" }}
                   fill="none"
                   stroke="currentColor"
@@ -880,7 +878,7 @@ const AdminDashboard: React.FC = () => {
 
             <Link
               to="/admin/coupons"
-              className="p-4 rounded-xl text-center hover:shadow-lg transition-all duration-200"
+              className="p-4 rounded-xl text-center hover:shadow-md transition-all duration-200"
               style={{
                 backgroundColor: "white",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -888,11 +886,11 @@ const AdminDashboard: React.FC = () => {
               }}
             >
               <div
-                className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
+                className="w-8 h-8 mx-auto mb-3 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
               >
                 <svg
-                  className="w-4 h-4"
+                  className="w-5 h-5"
                   style={{ color: "rgb(148, 204, 230)" }}
                   fill="none"
                   stroke="currentColor"

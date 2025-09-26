@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 64
-Issued by: Issuer 64
-Description: Description 64
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:03.209711

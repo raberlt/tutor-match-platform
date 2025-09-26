@@ -3,13 +3,13 @@ package fsa.training.tutormatch.controller.authentication;
 import fsa.training.tutormatch.dto.JwtResponse;
 import fsa.training.tutormatch.dto.LoginRequest;
 import fsa.training.tutormatch.dto.SimpleRegisterRequest;
-import fsa.training.tutormatch.entity.Profile;
 import fsa.training.tutormatch.enums.*;
 import fsa.training.tutormatch.entity.TutorProfile;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.repository.TutorProfileRepository;
 import fsa.training.tutormatch.security.JwtUtil;
 import fsa.training.tutormatch.service.UserService;
+import fsa.training.tutormatch.service.CloudinaryService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +19,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -41,9 +45,14 @@ public class AuthController {
     @Autowired
     private UserDetailsService userDetailsService;
 
-    
     @Autowired
     private TutorProfileRepository tutorProfileRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     /**
      * Đăng ký tài khoản mới (đơn giản)
@@ -82,18 +91,18 @@ public class AuthController {
 
             // Khởi tạo profile phù hợp với role
             if (savedUser.getRole() == UserRole.TUTOR) {
-                TutorProfile tutorProfile = new TutorProfile();
-                tutorProfile.setUser(savedUser);
-                tutorProfile.setEnable(true);
+                TutorProfile tutor = new TutorProfile();
+                tutor.setUser(savedUser);
+                tutor.setEnable(true);
 
                 // Default giá trị rỗng, tránh null
-                tutorProfile.setBio("");
-                tutorProfile.setHeadline("");
-                tutorProfile.setExperience("");
+                tutor.setBio("");
+                tutor.setHeadline("");
+                tutor.setExperience("");
                 // Fees are now handled per subject in TutorProfileSubject
 
                 // Lưu profile vào repository
-                tutorProfileRepository.save(tutorProfile);
+                tutorProfileRepository.save(tutor);
             }
 
             // Response trả về
@@ -322,6 +331,279 @@ public class AuthController {
             return ResponseEntity.badRequest().body(
                 Map.of("error", "Token validation thất bại: " + e.getMessage())
             );
+        }
+    }
+
+    /**
+     * Lấy thông tin profile của user hiện tại
+     */
+    @GetMapping("/profile")
+    public ResponseEntity<?> getCurrentUserProfile(Authentication authentication) {
+        try {
+            // Tạm thời sử dụng email mặc định để test
+            String username = authentication != null ? authentication.getName() : "testuser@example.com";
+            User user = userService.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            Map<String, Object> userProfile = new HashMap<>();
+            userProfile.put("id", user.getId());
+            userProfile.put("firstName", user.getFirstName());
+            userProfile.put("lastName", user.getLastName());
+            userProfile.put("email", user.getEmail());
+            userProfile.put("username", user.getUsername());
+            userProfile.put("phoneNumber", user.getPhoneNumber());
+            userProfile.put("dateOfBirth", user.getDateOfBirth() != null ? user.getDateOfBirth().toString() : null);
+            userProfile.put("gender", user.getGender() != null ? user.getGender().toString() : null);
+            userProfile.put("address", user.getAddress());
+            userProfile.put("educationLevel", user.getEducationLevel() != null ? user.getEducationLevel().toString() : null);
+            userProfile.put("imageAvatar", user.getImageAvatar());
+            userProfile.put("role", user.getRole());
+            userProfile.put("isVerified", user.isVerified());
+            userProfile.put("enable", user.isEnable());
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", userProfile
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Cập nhật thông tin profile của user
+     */
+    @PutMapping("/profile")
+    @Transactional
+    public ResponseEntity<?> updateUserProfile(
+        @RequestBody Map<String, Object> profileData,
+        Authentication authentication
+    ) {
+        try {
+            // Tạm thời sử dụng email mặc định để test
+            String username = authentication != null ? authentication.getName() : "testuser@example.com";
+            User user = userService.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            // Cập nhật thông tin user
+            if (profileData.containsKey("firstName")) {
+                user.setFirstName((String) profileData.get("firstName"));
+            }
+            if (profileData.containsKey("lastName")) {
+                user.setLastName((String) profileData.get("lastName"));
+            }
+            if (profileData.containsKey("username")) {
+                user.setUsername((String) profileData.get("username"));
+            }
+            if (profileData.containsKey("phoneNumber")) {
+                user.setPhoneNumber((String) profileData.get("phoneNumber"));
+            }
+            if (profileData.containsKey("dateOfBirth")) {
+                String dateStr = (String) profileData.get("dateOfBirth");
+                if (dateStr != null && !dateStr.isEmpty()) {
+                    try {
+                        LocalDate dateOfBirth = LocalDate.parse(dateStr);
+                        user.setDateOfBirth(dateOfBirth);
+                    } catch (Exception e) {
+                        // Log warning but continue
+                    }
+                }
+            }
+            if (profileData.containsKey("gender")) {
+                String genderStr = (String) profileData.get("gender");
+                if (genderStr != null && !genderStr.isEmpty()) {
+                    try {
+                        Gender gender = Gender.valueOf(genderStr.toUpperCase());
+                        user.setGender(gender);
+                    } catch (Exception e) {
+                        // Log warning but continue
+                    }
+                }
+            }
+            if (profileData.containsKey("address")) {
+                user.setAddress((String) profileData.get("address"));
+            }
+            if (profileData.containsKey("educationLevel")) {
+                String educationStr = (String) profileData.get("educationLevel");
+                if (educationStr != null && !educationStr.isEmpty()) {
+                    try {
+                        EducationLevel educationLevel = EducationLevel.valueOf(educationStr.toUpperCase());
+                        user.setEducationLevel(educationLevel);
+                    } catch (Exception e) {
+                        // Log warning but continue
+                    }
+                }
+            }
+            if (profileData.containsKey("avatar")) {
+                user.setImageAvatar((String) profileData.get("avatar"));
+            }
+            
+            User updatedUser = userService.save(user);
+            
+            // Tạo response object đơn giản để tránh lỗi serialization
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", updatedUser.getId());
+            userData.put("firstName", updatedUser.getFirstName());
+            userData.put("lastName", updatedUser.getLastName());
+            userData.put("email", updatedUser.getEmail());
+            userData.put("username", updatedUser.getUsername());
+            userData.put("phoneNumber", updatedUser.getPhoneNumber());
+            userData.put("address", updatedUser.getAddress());
+            userData.put("gender", updatedUser.getGender());
+            userData.put("educationLevel", updatedUser.getEducationLevel());
+            userData.put("dateOfBirth", updatedUser.getDateOfBirth());
+            userData.put("imageAvatar", updatedUser.getImageAvatar());
+            userData.put("role", updatedUser.getRole());
+            userData.put("enable", updatedUser.isEnable());
+            userData.put("verified", updatedUser.isVerified());
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Profile updated successfully",
+                "data", userData
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Upload avatar cho user
+     */
+    @PostMapping("/upload-avatar")
+    @Transactional
+    public ResponseEntity<?> uploadAvatar(
+        @RequestParam("avatar") MultipartFile file,
+        Authentication authentication
+    ) {
+        try {
+            // Tạm thời sử dụng email mặc định để test
+            String username = authentication != null ? authentication.getName() : "testuser@example.com";
+            
+            // Kiểm tra file
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "File is empty"
+                ));
+            }
+            
+            // Kiểm tra kích thước file (5MB)
+            if (file.getSize() > 5 * 1024 * 1024) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "File size too large. Maximum 5MB allowed."
+                ));
+            }
+            
+            // Kiểm tra loại file
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Only image files are allowed"
+                ));
+            }
+            
+            // Upload lên Cloudinary
+            String avatarUrl = cloudinaryService.uploadImage(file, "tutormatching/avatars");
+            
+            // Cập nhật avatar URL vào database
+            User user = userService.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            user.setImageAvatar(avatarUrl);
+            userService.save(user);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Avatar uploaded successfully",
+                "avatarUrl", avatarUrl
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Reset password cho user (admin function)
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            String newPassword = request.get("newPassword");
+            
+            if (email == null || email.isEmpty() || newPassword == null || newPassword.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Email and new password are required"
+                ));
+            }
+            
+            Optional<User> userOpt = userService.findByEmail(email);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "User not found"
+                ));
+            }
+            
+            User user = userOpt.get();
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userService.save(user);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Password reset successfully"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Kiểm tra user có tồn tại không
+     */
+    @GetMapping("/check-user/{email}")
+    public ResponseEntity<?> checkUser(@PathVariable String email) {
+        try {
+            Optional<User> userOpt = userService.findByEmail(email);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "exists", true,
+                    "user", Map.of(
+                        "id", user.getId(),
+                        "email", user.getEmail(),
+                        "firstName", user.getFirstName(),
+                        "lastName", user.getLastName(),
+                        "role", user.getRole()
+                    )
+                ));
+            } else {
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "exists", false
+                ));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
         }
     }
 } 

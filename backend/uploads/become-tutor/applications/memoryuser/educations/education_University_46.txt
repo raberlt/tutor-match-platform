@@ -1,8 +1,0 @@
-🏫 EDUCATION RECORD
-==================
-School: University 46
-Degree: Bachelor's Degree
-Major: Major 46
-Period: 2046 - 2050
-Image: https://example.com/degree.jpg
-Processed: 2025-09-08T16:10:59.835034

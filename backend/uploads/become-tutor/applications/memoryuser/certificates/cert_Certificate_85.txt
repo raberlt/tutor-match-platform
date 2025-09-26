@@ -1,7 +1,0 @@
-🏆 CERTIFICATE RECORD
-====================
-Name: Certificate 85
-Issued by: Issuer 85
-Description: Description 85
-Image: https://example.com/cert.jpg
-Processed: 2025-09-08T16:11:04.077098

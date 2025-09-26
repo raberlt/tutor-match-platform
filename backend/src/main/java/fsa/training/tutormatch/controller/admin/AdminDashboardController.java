@@ -40,7 +40,7 @@ public class AdminDashboardController {
     private CouponRepository couponRepository;
 
     @Autowired
-    private ProfileRepository profileRepository;
+    private TutorProfileRepository tutorProfileRepository;
 
     /**
      * Lấy tổng quan thống kê cho dashboard

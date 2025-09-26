@@ -4,7 +4,7 @@ import fsa.training.tutormatch.dto.TutorDTO;
 import fsa.training.tutormatch.dto.TutorPreviewDTO;
 import fsa.training.tutormatch.entity.TutorProfile;
 import fsa.training.tutormatch.repository.BookingRepository;
-import fsa.training.tutormatch.repository.ProfileRepository;
+import fsa.training.tutormatch.repository.TutorProfileRepository;
 import fsa.training.tutormatch.repository.UserRepository;
 import fsa.training.tutormatch.service.DtoConverterService;
 import fsa.training.tutormatch.service.TutorSearchService;
@@ -23,7 +23,7 @@ import java.util.Optional;
 public class TutorServiceImpl implements TutorService {
 
     @Autowired
-    private ProfileRepository profileRepository;
+    private TutorProfileRepository tutorProfileRepository;
 
     @Autowired
     private BookingRepository bookingRepository;
@@ -79,7 +79,7 @@ public class TutorServiceImpl implements TutorService {
 
     @Override
     public List<TutorDTO> findAllTutorDTOs() {
-        List<TutorProfile> tutors = profileRepository.findEnabledTutors();
+        List<TutorProfile> tutors = tutorProfileRepository.findEnabledTutors();
         return tutors.stream()
                 .map(this::convertToDTO)
                 .toList();
@@ -90,7 +90,7 @@ public class TutorServiceImpl implements TutorService {
      */
     @Override
     public List<TutorPreviewDTO> findAllTutorPreviews() {
-        List<TutorProfile> tutors = profileRepository.findEnabledTutors();
+        List<TutorProfile> tutors = tutorProfileRepository.findEnabledTutors();
         return convertToPreviewDTOs(tutors);
     }
 
@@ -99,7 +99,7 @@ public class TutorServiceImpl implements TutorService {
      */
     @Override
     public Optional<TutorDTO> findTutorDetailById(Integer tutorId) {
-        return profileRepository.findById(tutorId)
+        return tutorProfileRepository.findById(tutorId)
             .filter(profile -> profile instanceof TutorProfile)
             .map(profile -> convertToDTO((TutorProfile) profile));
     }
@@ -107,54 +107,82 @@ public class TutorServiceImpl implements TutorService {
     // Missing methods from interface
     @Override
     public List<TutorProfile> findAll() {
-        return profileRepository.findEnabledTutors();
+        return tutorProfileRepository.findEnabledTutors();
     }
     
     @Override
     public List<TutorProfile> findAllApprovedTutors() {
-        return profileRepository.findEnabledTutors();
+        return tutorProfileRepository.findEnabledTutors();
     }
     
     @Override
     public Optional<TutorProfile> findById(Integer id) {
-        return profileRepository.findById(id)
+        return tutorProfileRepository.findById(id)
             .filter(profile -> profile instanceof TutorProfile)
             .map(profile -> (TutorProfile) profile);
     }
     
     @Override
     public Page<TutorProfile> findAllWithPagination(Pageable pageable) {
-        return profileRepository.findAllTutorsPaged(pageable);
+        return tutorProfileRepository.findAllTutorsPaged(pageable);
     }
     
     @Override
-    public TutorDTO convertToDTO(TutorProfile tutorProfile) {
+    public TutorDTO convertToDTO(TutorProfile tutor) {
         TutorDTO dto = new TutorDTO();
-        dto.setId(tutorProfile.getId());
-        dto.setBio(tutorProfile.getBio());
-        dto.setHeadline(tutorProfile.getHeadline());
-        dto.setExperience(tutorProfile.getExperience());
+        dto.setId(tutor.getId());
+        dto.setFirstName(tutor.getFirstName());
+        dto.setLastName(tutor.getLastName());
+        dto.setImageAvatar(tutor.getImageAvatar());
+        dto.setBio(tutor.getBio());
+        dto.setHeadline(tutor.getHeadline());
+        dto.setExperience(tutor.getExperience());
         // teachingLevel field removed from TutorProfile
-        dto.setFees(tutorProfile.getFees());
+        dto.setFees(tutor.getFees());
         // dto.setCity(tutorProfile.getCity()); // city field removed
-        dto.setRatePointAverage(tutorProfile.getRatePointAverage());
+        dto.setRatePointAverage(tutor.getRatePointAverage());
+        dto.setTotalPoint(tutor.getTotalPoint());
+        dto.setVerified(tutor.isVerified());
+        
+        // Populate subjects from profileSubjects
+        if (tutor.getProfileSubjects() != null && !tutor.getProfileSubjects().isEmpty()) {
+            List<TutorDTO.SubjectDTO> subjects = tutor.getProfileSubjects().stream()
+                .map(ps -> new TutorDTO.SubjectDTO(ps.getSubject().getId(), ps.getSubject().getName(), ps.getFees()))
+                .toList();
+            dto.setSubjects(subjects);
+        }
+        
         return dto;
     }
     
     @Override
-    public List<TutorPreviewDTO> convertToPreviewDTOs(List<TutorProfile> tutorProfiles) {
-        return tutorProfiles.stream()
+    public List<TutorPreviewDTO> convertToPreviewDTOs(List<TutorProfile> tutors) {
+        return tutors.stream()
             .map(this::convertToPreviewDTO)
             .toList();
     }
     
-    private TutorPreviewDTO convertToPreviewDTO(TutorProfile tutorProfile) {
+    private TutorPreviewDTO convertToPreviewDTO(TutorProfile tutor) {
         TutorPreviewDTO dto = new TutorPreviewDTO();
-        dto.setId(tutorProfile.getId());
-        dto.setHeadline(tutorProfile.getHeadline());
-        dto.setFees(tutorProfile.getFees());
+        dto.setId(tutor.getId());
+        dto.setFirstName(tutor.getFirstName());
+        dto.setLastName(tutor.getLastName());
+        dto.setImageAvatar(tutor.getImageAvatar());
+        dto.setHeadline(tutor.getHeadline());
+        dto.setFees(tutor.getFees());
         // dto.setCity(tutorProfile.getCity()); // city field removed
-        dto.setRatePointAverage(tutorProfile.getRatePointAverage());
+        dto.setRatePointAverage(tutor.getRatePointAverage());
+        dto.setTotalPoint(tutor.getTotalPoint());
+        dto.setVerified(tutor.isVerified());
+        
+        // Populate subjectNames from profileSubjects
+        if (tutor.getProfileSubjects() != null && !tutor.getProfileSubjects().isEmpty()) {
+            List<String> subjectNames = tutor.getProfileSubjects().stream()
+                .map(ps -> ps.getSubject().getName())
+                .toList();
+            dto.setSubjectNames(subjectNames);
+        }
+        
         return dto;
     }
 

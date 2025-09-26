@@ -22,7 +22,7 @@ public class TutorProfileSubject {
     @JoinColumn(name = "profile_id", nullable = false)
     @JsonIgnore
     @ToString.Exclude
-    private Profile profile;
+    private TutorProfile profile;
 
     @ManyToOne
     @JoinColumn(name = "subject_id", nullable = false)

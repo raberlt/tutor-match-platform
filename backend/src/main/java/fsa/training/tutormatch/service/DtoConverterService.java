@@ -3,8 +3,6 @@ package fsa.training.tutormatch.service;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.entity.TutorProfile;
-import fsa.training.tutormatch.enums.UserRole;
-import fsa.training.tutormatch.enums.UserRole;
 import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;

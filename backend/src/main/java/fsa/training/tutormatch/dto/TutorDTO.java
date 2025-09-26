@@ -18,6 +18,7 @@ public class TutorDTO {
     private Double ratePointAverage;
     private Integer totalPoint;
     private String city;
+    private boolean isVerified;
     private List<SubjectDTO> subjects;
     private List<ScheduleDTO> schedules;
 
@@ -25,10 +26,17 @@ public class TutorDTO {
     public static class SubjectDTO {
         private Integer id;
         private String name;
+        private Integer hourlyRate;
 
         public SubjectDTO(Integer id, String name) {
             this.id = id;
             this.name = name;
+        }
+        
+        public SubjectDTO(Integer id, String name, Integer hourlyRate) {
+            this.id = id;
+            this.name = name;
+            this.hourlyRate = hourlyRate;
         }
     }
 

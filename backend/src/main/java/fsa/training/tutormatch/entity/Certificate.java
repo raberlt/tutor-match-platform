@@ -16,10 +16,10 @@ public class Certificate {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // Trỏ đến BaseProfile thay vì Profile
+    // Trỏ đến TutorProfile thay vì Profile
     @ManyToOne
     @JoinColumn(name = "profile_id", nullable = false)
-    private Profile profile;
+    private TutorProfile profile;
 
     @Column(nullable = false, columnDefinition = "NVARCHAR(255)")
     private String name;

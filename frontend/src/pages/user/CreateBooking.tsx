@@ -23,14 +23,14 @@ const CreateBooking: React.FC = () => {
   );
 
   // Get tutor info from navigation state
-  const selectedTutor = location.state?.selectedTutor as
-    | TutorPreviewProfile
-    | TutorProfile
-    | null;
-  const selectedSubject = location.state?.selectedSubject as
-    | Subject
-    | TutorSubjectDetail
-    | null;
+  const selectedTutor =
+    (location.state?.selectedTutor as
+      | TutorPreviewProfile
+      | TutorProfile
+      | null) || null;
+  const selectedSubject =
+    (location.state?.selectedSubject as Subject | TutorSubjectDetail | null) ||
+    null;
 
   const [formData, setFormData] = useState<BookingRequestCreateDTO>({
     bookingType: "TRIAL",
@@ -128,7 +128,7 @@ const CreateBooking: React.FC = () => {
             </h1>
 
             {/* Selected Tutor Info */}
-            {selectedTutor && (
+            {selectedTutor && selectedTutor.id && (
               <div className="mb-6 p-4 bg-blue-50 rounded-lg">
                 <h3 className="text-lg font-semibold text-blue-900 mb-2">
                   Gia sư đã chọn
@@ -137,20 +137,23 @@ const CreateBooking: React.FC = () => {
                   {selectedTutor.imageAvatar ? (
                     <img
                       src={selectedTutor.imageAvatar}
-                      alt={`${selectedTutor.firstName} ${selectedTutor.lastName}`}
+                      alt={`${selectedTutor.firstName || ""} ${
+                        selectedTutor.lastName || ""
+                      }`}
                       className="w-12 h-12 rounded-lg object-cover"
                     />
                   ) : (
                     <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                       <span className="text-blue-600 font-medium">
-                        {selectedTutor.firstName.charAt(0)}
-                        {selectedTutor.lastName.charAt(0)}
+                        {(selectedTutor.firstName || "").charAt(0)}
+                        {(selectedTutor.lastName || "").charAt(0)}
                       </span>
                     </div>
                   )}
                   <div>
                     <h4 className="font-semibold text-gray-900">
-                      {selectedTutor.firstName} {selectedTutor.lastName}
+                      {selectedTutor.firstName || ""}{" "}
+                      {selectedTutor.lastName || ""}
                     </h4>
                     {selectedTutor.headline && (
                       <p className="text-sm text-gray-600">

@@ -149,7 +149,7 @@ const ContractManagement: React.FC = () => {
       case "CANCELLED":
         return "bg-red-100 text-red-800";
       case "SUSPENDED":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-yellow-640";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -185,24 +185,24 @@ const ContractManagement: React.FC = () => {
             className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
             style={{ borderColor: "rgb(148, 204, 230)" }}
           ></div>
-          <p className="mt-4 text-gray-600">Đang tải...</p>
+          <p className="mt-3 text-gray-600">Đang tải...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-8" style={{ backgroundColor: "#f8fafc" }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-4" style={{ backgroundColor: "#f8fafc" }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
+        <div className="mb-4">
+          <div className="flex items-center space-x-3 mb-3">
             <div
-              className="p-3 rounded-xl"
+              className="p-2 rounded-xl"
               style={{ backgroundColor: "rgb(148, 204, 230)" }}
             >
               <svg
-                className="w-6 h-6 text-white"
+                className="w-5 h-5 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -216,10 +216,10 @@ const ContractManagement: React.FC = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Quản lý Hợp đồng
               </h1>
-              <p className="mt-1 text-gray-600">
+              <p className="text-sm text-gray-600">
                 Quản lý và theo dõi tất cả các hợp đồng gia sư trong hệ thống
               </p>
             </div>
@@ -228,9 +228,9 @@ const ContractManagement: React.FC = () => {
 
         {/* Statistics */}
         {stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -245,16 +245,16 @@ const ContractManagement: React.FC = () => {
                   >
                     Tổng hợp đồng
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.totalContracts}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -271,7 +271,7 @@ const ContractManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -286,16 +286,16 @@ const ContractManagement: React.FC = () => {
                   >
                     Đang hoạt động
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.activeContracts}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -312,7 +312,7 @@ const ContractManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -327,16 +327,16 @@ const ContractManagement: React.FC = () => {
                   >
                     Hoàn thành
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.completedContracts}
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -353,7 +353,7 @@ const ContractManagement: React.FC = () => {
             </div>
 
             <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="p-4 rounded-xl shadow-md hover:shadow-md transition-all duration-300"
               style={{
                 backgroundColor: "rgba(148, 204, 230, 0.1)",
                 borderColor: "rgba(148, 204, 230, 0.2)",
@@ -368,16 +368,16 @@ const ContractManagement: React.FC = () => {
                   >
                     Tổng doanh thu
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.totalRevenue.toLocaleString("vi-VN")} VNĐ
                   </p>
                 </div>
                 <div
-                  className="p-3 rounded-full"
+                  className="p-1 rounded-full"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -397,28 +397,28 @@ const ContractManagement: React.FC = () => {
 
         {/* Filters and Search */}
         <div
-          className="p-6 rounded-2xl shadow-lg mb-6"
+          className="p-4 rounded-xl shadow-md mb-4"
           style={{
             backgroundColor: "white",
             borderColor: "rgba(148, 204, 230, 0.2)",
             border: "1px solid",
           }}
         >
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Tìm kiếm theo gia sư, học viên, môn học..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200 w-full sm:w-80"
+                  className="pl-8 pr-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200 w-full sm:w-64"
                   style={{
                     borderColor: "rgba(148, 204, 230, 0.3)",
                     focusRingColor: "rgb(148, 204, 230)",
                   }}
                 />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
                   <svg
                     className="h-5 w-5 text-gray-400"
                     fill="none"
@@ -438,7 +438,7 @@ const ContractManagement: React.FC = () => {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
+                className="px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
                 style={{
                   borderColor: "rgba(148, 204, 230, 0.3)",
                   focusRingColor: "rgb(148, 204, 230)",
@@ -454,7 +454,7 @@ const ContractManagement: React.FC = () => {
 
             <div className="flex gap-3">
               <button
-                className="px-4 py-3 rounded-xl transition-colors duration-200 font-medium"
+                className="px-3 py-2 rounded-xl transition-colors duration-200 font-medium"
                 style={{
                   backgroundColor: "rgba(148, 204, 230, 0.1)",
                   color: "rgb(148, 204, 230)",
@@ -463,7 +463,7 @@ const ContractManagement: React.FC = () => {
                 Xuất Excel
               </button>
               <button
-                className="px-4 py-3 text-white rounded-xl transition-colors duration-200 font-medium"
+                className="px-3 py-2 text-white rounded-xl transition-colors duration-200 font-medium"
                 style={{ backgroundColor: "rgb(148, 204, 230)" }}
               >
                 Tạo hợp đồng mới
@@ -474,7 +474,7 @@ const ContractManagement: React.FC = () => {
 
         {/* Contracts Table */}
         <div
-          className="rounded-2xl shadow-lg overflow-hidden"
+          className="rounded-xl shadow-md overflow-hidden"
           style={{
             backgroundColor: "white",
             borderColor: "rgba(148, 204, 230, 0.2)",
@@ -488,31 +488,31 @@ const ContractManagement: React.FC = () => {
                 style={{ backgroundColor: "rgba(148, 204, 230, 0.05)" }}
               >
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     ID
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Gia sư
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Học viên
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Môn học
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Tiến độ
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Thời hạn
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Giá trị
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Trạng thái
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Hành động
                   </th>
                 </tr>
@@ -520,10 +520,10 @@ const ContractManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {contracts.map((contract) => (
                   <tr key={contract.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{contract.id}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
                           {contract.tutor.firstName} {contract.tutor.lastName}
@@ -533,7 +533,7 @@ const ContractManagement: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
                           {contract.student.firstName}{" "}
@@ -544,9 +544,9 @@ const ContractManagement: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium"
                         style={{
                           backgroundColor: "rgba(148, 204, 230, 0.1)",
                           color: "rgb(148, 204, 230)",
@@ -555,14 +555,14 @@ const ContractManagement: React.FC = () => {
                         {contract.subject}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {contract.completedSessions} / {contract.totalSessions}{" "}
                         buổi
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                         <div
-                          className="h-2 rounded-full"
+                          className="h-1.5 rounded-full"
                           style={{
                             backgroundColor: "rgb(148, 204, 230)",
                             width: `${getProgressPercentage(
@@ -572,7 +572,7 @@ const ContractManagement: React.FC = () => {
                           }}
                         ></div>
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-sm text-gray-500 mt-1">
                         {getProgressPercentage(
                           contract.completedSessions,
                           contract.totalSessions
@@ -580,7 +580,7 @@ const ContractManagement: React.FC = () => {
                         %
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {new Date(contract.startDate).toLocaleDateString(
                           "vi-VN"
@@ -591,7 +591,7 @@ const ContractManagement: React.FC = () => {
                         {new Date(contract.endDate).toLocaleDateString("vi-VN")}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {contract.totalAmount.toLocaleString("vi-VN")} VNĐ
                       </div>
@@ -599,17 +599,17 @@ const ContractManagement: React.FC = () => {
                         {contract.hourlyRate.toLocaleString("vi-VN")} VNĐ/giờ
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusColor(
                           contract.status
                         )}`}
                       >
                         {getStatusText(contract.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-1">
                         <button
                           className="text-blue-600 hover:text-blue-900"
                           style={{ color: "rgb(148, 204, 230)" }}
@@ -646,9 +646,9 @@ const ContractManagement: React.FC = () => {
         </div>
 
         {/* Pagination */}
-        <div className="mt-6 flex justify-center">
+        <div className="mt-3 flex justify-center">
           <nav
-            className="flex items-center space-x-2 rounded-2xl shadow-lg p-2"
+            className="flex items-center space-x-1 rounded-xl shadow-md p-1"
             style={{
               backgroundColor: "white",
               borderColor: "rgba(148, 204, 230, 0.2)",

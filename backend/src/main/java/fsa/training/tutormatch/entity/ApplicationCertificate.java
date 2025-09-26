@@ -37,4 +37,7 @@ public class ApplicationCertificate {
 
     @Column(nullable = false)
     private Boolean valid = true;
+    
+    @Column(nullable = false)
+    private boolean isVerified = false;
 }

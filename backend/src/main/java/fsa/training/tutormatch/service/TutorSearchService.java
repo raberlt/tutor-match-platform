@@ -167,6 +167,7 @@ public class TutorSearchService {
         dto.setLastName(tutor.getLastName());
         dto.setImageAvatar(tutor.getImageAvatar());
         dto.setHeadline(tutor.getHeadline());
+        dto.setExperience(tutor.getExperience());
         dto.setFees(tutor.getFees());
         dto.setRatePointAverage(tutor.getRatePointAverage());
         dto.setTotalPoint(tutor.getTotalPoint());

@@ -238,7 +238,7 @@ const PackageBooking: React.FC = () => {
       };
 
       await bookingService.createBooking(bookingData);
-      navigate("/user/my-sessions");
+      navigate("/my-sessions");
     } catch (error: unknown) {
       setError((error as Error).message);
     } finally {

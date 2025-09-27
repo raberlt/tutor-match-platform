@@ -12,6 +12,7 @@ interface ProcessedTutor {
   imageAvatar?: string;
   headline?: string;
   bio?: string;
+  experience?: string;
   subjects?: Array<{
     id: number;
     name: string;
@@ -94,9 +95,18 @@ const TutorSearch: React.FC = () => {
         console.log("🔍 First tutor data:", tutorsData[0]);
         console.log("🔍 First tutor keys:", Object.keys(tutorsData[0]));
         console.log("🔍 First tutor subjects:", tutorsData[0].subjects);
-        console.log("🔍 First tutor subjects type:", typeof tutorsData[0].subjects);
-        console.log("🔍 First tutor subjects isArray:", Array.isArray(tutorsData[0].subjects));
-        console.log("🔍 First tutor subjects length:", tutorsData[0].subjects?.length);
+        console.log(
+          "🔍 First tutor subjects type:",
+          typeof tutorsData[0].subjects
+        );
+        console.log(
+          "🔍 First tutor subjects isArray:",
+          Array.isArray(tutorsData[0].subjects)
+        );
+        console.log(
+          "🔍 First tutor subjects length:",
+          tutorsData[0].subjects?.length
+        );
         console.log(
           "🔍 First tutor profileSubjects:",
           (tutorsData[0] as any).profileSubjects
@@ -111,13 +121,27 @@ const TutorSearch: React.FC = () => {
       if (tutorsData.length > 0) {
         tutorsData = tutorsData.map((tutor) => {
           // Ưu tiên sử dụng subjects từ API trước
-          if (tutor.subjects && Array.isArray(tutor.subjects) && tutor.subjects.length > 0) {
+          if (
+            tutor.subjects &&
+            Array.isArray(tutor.subjects) &&
+            tutor.subjects.length > 0
+          ) {
             // API đã trả về subjects với đầy đủ thông tin, sử dụng trực tiếp
-            console.log("✅ Using subjects from API for tutor", tutor.id, ":", tutor.subjects);
+            console.log(
+              "✅ Using subjects from API for tutor",
+              tutor.id,
+              ":",
+              tutor.subjects
+            );
             // Không cần làm gì thêm, tutor.subjects đã có sẵn
           } else if (tutor.subjectNames && Array.isArray(tutor.subjectNames)) {
             // Fallback: chuyển đổi subjectNames thành subjects format
-            console.log("⚠️ Fallback: Using subjectNames for tutor", tutor.id, ":", tutor.subjectNames);
+            console.log(
+              "⚠️ Fallback: Using subjectNames for tutor",
+              tutor.id,
+              ":",
+              tutor.subjectNames
+            );
             tutor.subjects = tutor.subjectNames.map(
               (subjectName: string, idx: number) => ({
                 id: idx + 1,
@@ -159,7 +183,10 @@ const TutorSearch: React.FC = () => {
 
           // Nếu vẫn không có subjects, thêm mock data
           if (!tutor.subjects || tutor.subjects.length === 0) {
-            console.log("❌ Final fallback: Using mock data for tutor", tutor.id);
+            console.log(
+              "❌ Final fallback: Using mock data for tutor",
+              tutor.id
+            );
             tutor.subjects = [
               { id: 1, name: "Toán học", hourlyRate: 200000 },
               { id: 2, name: "Vật lý", hourlyRate: 180000 },
@@ -168,8 +195,7 @@ const TutorSearch: React.FC = () => {
 
           // Thêm bio nếu thiếu
           if (!tutor.bio) {
-            tutor.bio =
-              "Tôi là gia sư có kinh nghiệm nhiều năm trong lĩnh vực giảng dạy. Tôi yêu thích việc giúp học sinh đạt được mục tiêu học tập của mình.";
+            tutor.bio = "";
           }
 
           return tutor;
@@ -294,28 +320,14 @@ const TutorSearch: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const handleSingleBooking = (tutor: ProcessedTutor) => {
+  const handleUnifiedBooking = (tutor: ProcessedTutor) => {
     if (!isAuthenticated) {
       navigate("/login");
       return;
     }
 
-    // Redirect to single booking with tutor info
-    navigate("/single-booking", {
-      state: {
-        selectedTutor: tutor,
-      },
-    });
-  };
-
-  const handlePackageBooking = (tutor: ProcessedTutor) => {
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-
-    // Redirect to package booking with tutor info
-    navigate("/package-booking", {
+    // Redirect to unified booking with tutor info
+    navigate("/unified-booking", {
       state: {
         selectedTutor: tutor,
       },
@@ -438,12 +450,8 @@ const TutorSearch: React.FC = () => {
     <div className="bg-gray-50 min-h-screen">
       <div className="flex">
         {/* Left Sidebar - Filters */}
-        <aside className="w-80 bg-white shadow-sm border-r border-gray-200">
+        <aside className="w-80 bg-white shadow-sm border-r border-gray-200 ml-16">
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">
-              Bộ lọc tìm kiếm
-            </h2>
-
             {/* Search Input */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -646,12 +654,9 @@ const TutorSearch: React.FC = () => {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 max-w-6xl p-6 mr-16">
           {/* Search Results Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Danh sách gia sư
-            </h1>
             <p className="text-gray-600">
               Tìm thấy {totalElements} gia sư phù hợp
             </p>
@@ -679,40 +684,27 @@ const TutorSearch: React.FC = () => {
                 {tutors.map((tutor: ProcessedTutor) => (
                   <div
                     key={tutor.id}
-                    className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group relative"
+                    className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 overflow-hidden group relative"
                   >
-                    {/* Book Buttons - Top Right */}
-                    <div className="absolute top-4 right-4 z-10 flex space-x-2">
+                    {/* Book Button - Top Right */}
+                    <div className="absolute top-4 right-4 z-10">
                       <button
                         onClick={() => {
                           if (isAuthenticated) {
-                            handleSingleBooking(tutor);
+                            handleUnifiedBooking(tutor);
                           } else {
                             navigate("/login");
                           }
                         }}
-                        className="text-white px-3 py-2 rounded-lg hover:opacity-90 transition-all duration-200 text-xs font-semibold shadow-lg hover:shadow-xl"
+                        className="text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-xl"
                         style={{ backgroundColor: "#94cce6" }}
                       >
-                        Đặt đơn
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (isAuthenticated) {
-                            handlePackageBooking(tutor);
-                          } else {
-                            navigate("/login");
-                          }
-                        }}
-                        className="text-white px-3 py-2 rounded-lg hover:opacity-90 transition-all duration-200 text-xs font-semibold shadow-lg hover:shadow-xl"
-                        style={{ backgroundColor: "#10b981" }}
-                      >
-                        Đặt gói
+                        Đặt lịch học
                       </button>
                     </div>
 
-                    <div className="p-6">
-                      <div className="flex items-start space-x-6">
+                    <div className="p-4">
+                      <div className="flex items-start space-x-4">
                         {/* Left Column: Avatar */}
                         <div className="flex-shrink-0">
                           {/* Avatar */}
@@ -721,7 +713,7 @@ const TutorSearch: React.FC = () => {
                               <img
                                 src={tutor.imageAvatar}
                                 alt={`${tutor.firstName} ${tutor.lastName}`}
-                                className="w-40 h-40 rounded-2xl object-cover border-2 border-gray-100 shadow-sm"
+                                className="w-28 h-28 rounded-xl object-cover border-2 border-gray-100 shadow-sm"
                                 onError={(e) => {
                                   console.log(
                                     "Avatar load error for tutor:",
@@ -739,54 +731,94 @@ const TutorSearch: React.FC = () => {
                               />
                             ) : null}
                             <div
-                              className={`w-40 h-40 rounded-2xl flex items-center justify-center border-2 border-gray-100 shadow-sm ${
+                              className={`w-28 h-28 rounded-xl flex items-center justify-center border-2 border-gray-100 shadow-sm ${
                                 tutor.imageAvatar ? "hidden" : ""
                               }`}
                               style={{ backgroundColor: "#f0f8ff" }}
                             >
                               <span
-                                className="text-4xl font-bold"
+                                className="text-3xl font-bold"
                                 style={{ color: "#94cce6" }}
                               >
                                 {tutor.firstName?.charAt(0) || "T"}
                                 {tutor.lastName?.charAt(0) || "U"}
                               </span>
                             </div>
-                            {/* Verification Badge */}
-                            <div className="absolute -top-2 -right-2">
-                              <div
-                                className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
-                                style={{
-                                  backgroundColor: "rgb(148, 204, 230)",
-                                }}
-                              >
-                                <svg
-                                  className="w-5 h-5 text-white"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
                           </div>
                         </div>
 
                         {/* Right Column: Tutor Info */}
                         <div className="flex-1 min-w-0">
-                          {/* Tutor Name */}
-                          <div className="mb-3">
-                            <h3 className="text-2xl font-bold text-gray-900">
-                              {tutor.firstName} {tutor.lastName}
-                            </h3>
+                          {/* Tutor Name with Verification Badge */}
+                          <div className="mb-2">
+                            <div className="flex items-center space-x-2">
+                              <h3 className="text-xl font-bold text-gray-900">
+                                {tutor.firstName} {tutor.lastName}
+                              </h3>
+                              {/* Verification Badge - moved next to name */}
+                              <div className="flex items-center">
+                                <div
+                                  className="w-5 h-5 rounded-full flex items-center justify-center shadow-sm"
+                                  style={{
+                                    backgroundColor: "rgb(148, 204, 230)",
+                                  }}
+                                >
+                                  <svg
+                                    className="w-3 h-3 text-white"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Rating - moved up below name */}
+                          <div className="flex items-center space-x-2 mb-3">
+                            {tutor.ratePointAverage &&
+                            tutor.ratePointAverage > 0 ? (
+                              <>
+                                {renderStars(tutor.ratePointAverage)}
+                                <span className="text-sm font-medium text-gray-600">
+                                  {tutor.ratePointAverage.toFixed(1)}/5.0
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  ({tutor.totalPoint || 0} đánh giá)
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                {/* Mẫu rating tạm thời */}
+                                <div className="flex items-center space-x-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <svg
+                                      key={star}
+                                      className="w-4 h-4 text-yellow-400"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                  ))}
+                                </div>
+                                <span className="text-sm font-medium text-gray-600">
+                                  4.8/5.0
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  (12 đánh giá)
+                                </span>
+                              </>
+                            )}
                           </div>
 
                           {/* Subject Tags */}
-                          <div className="mb-4">
+                          <div className="mb-3">
                             <div className="flex flex-wrap gap-2">
                               {(() => {
                                 console.log(
@@ -809,7 +841,7 @@ const TutorSearch: React.FC = () => {
                                         subject.id || index
                                       )
                                     }
-                                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                                    className={`px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
                                       selectedSubject[tutor.id] ===
                                       (subject.id || index)
                                         ? "bg-blue-100 text-blue-700 border-2 border-blue-300"
@@ -820,7 +852,7 @@ const TutorSearch: React.FC = () => {
                                   </button>
                                 ))
                               ) : (
-                                <p className="text-gray-500 italic text-sm">
+                                <p className="text-gray-500 italic text-xs">
                                   Chưa cập nhật môn dạy
                                 </p>
                               )}
@@ -833,12 +865,12 @@ const TutorSearch: React.FC = () => {
                             console.log(`Price for tutor ${tutor.id}:`, price);
                             return (
                               price && (
-                                <div className="mb-4">
+                                <div className="mb-3">
                                   <div className="inline-flex items-center space-x-2">
-                                    <span className="text-lg font-bold text-blue-600">
+                                    <span className="text-sm font-bold text-blue-600">
                                       {formatPrice(price)}
                                     </span>
-                                    <span className="text-sm text-gray-500">
+                                    <span className="text-xs text-gray-500">
                                       /buổi học
                                     </span>
                                   </div>
@@ -847,75 +879,45 @@ const TutorSearch: React.FC = () => {
                             );
                           })()}
 
-                          {/* Rating - hiển thị mẫu nếu chưa có */}
-                          <div className="flex items-center space-x-2 mb-4">
-                            {tutor.ratePointAverage &&
-                            tutor.ratePointAverage > 0 ? (
-                              <>
-                                {renderStars(tutor.ratePointAverage)}
-                                <span className="text-sm font-medium text-gray-600">
-                                  {tutor.ratePointAverage.toFixed(1)}/5.0
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  ({tutor.totalPoint || 0} đánh giá)
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                {/* Mẫu rating tạm thời */}
-                                <div className="flex items-center space-x-1">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <svg
-                                      key={star}
-                                      className="w-4 h-4 text-yellow-400"
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                    </svg>
-                                  ))}
-                                </div>
-                                <span className="text-sm font-medium text-gray-600">
-                                  4.8/5.0
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  (12 đánh giá)
-                                </span>
-                              </>
-                            )}
-                          </div>
-
                           {/* Headline - max 2 dòng */}
                           {"headline" in tutor && tutor.headline && (
-                            <div className="mb-3">
-                              <p className="text-gray-800 font-medium text-sm leading-relaxed line-clamp-2">
+                            <div className="mb-2">
+                              <p className="text-gray-800 font-medium text-xs leading-relaxed line-clamp-1">
                                 {tutor.headline}
                               </p>
                             </div>
                           )}
 
-                          {/* Bio - max 2 dòng */}
+                          {/* Experience - max 1 dòng */}
+                          {tutor.experience && (
+                            <div className="mb-2">
+                              <p className="text-gray-600 text-xs leading-relaxed line-clamp-1">
+                                {tutor.experience}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Bio - max 1 dòng */}
                           {tutor.bio && (
-                            <div className="mb-3">
-                              <p className="text-gray-600 text-sm leading-relaxed line-clamp-2">
+                            <div className="mb-2">
+                              <p className="text-gray-600 text-xs leading-relaxed line-clamp-1">
                                 {tutor.bio}
                               </p>
                             </div>
                           )}
 
                           {/* View Details Link */}
-                          <div className="mb-4">
+                          <div className="mb-2">
                             <button
                               onClick={() => {
                                 if (isAuthenticated) {
-                                  const identifier =
-                                    tutor.user?.username || tutor.id;
+                                  const identifier = tutor.id;
                                   navigate(`/tutor/${identifier}`);
                                 } else {
                                   navigate("/login");
                                 }
                               }}
-                              className="text-blue-600 hover:text-blue-800 text-sm font-medium underline transition-colors"
+                              className="text-blue-600 hover:text-blue-800 text-xs font-medium underline transition-colors"
                             >
                               Xem chi tiết
                             </button>

@@ -9,19 +9,36 @@ const TutorDetail: React.FC = () => {
   const [tutor, setTutor] = useState<TutorProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(
+    null
+  );
 
   // Mapping teaching audiences sang tiếng Việt
   const getTeachingAudienceText = (audienceName: string) => {
     const mapping: { [key: string]: string } = {
       INDEPENDENT_LEARNER: "Tự học",
-      MIDDLE_SCHOOL: "THCS",
-      HIGH_SCHOOL: "THPT",
+      MIDDLE_SCHOOL: "Trung học cơ sở",
+      HIGH_SCHOOL: "Trung học phổ thông",
       VOCATIONAL_SCHOOL: "Trung cấp",
       COLLEGE_UNIVERSITY: "Đại học",
       POSTGRADUATE: "Sau đại học",
       WORKING_PROFESSIONAL: "Người đi làm",
     };
     return mapping[audienceName] || audienceName;
+  };
+
+  // Mapping ngày tháng sang tiếng Việt
+  const getDayOfWeekText = (dayOfWeek: string) => {
+    const mapping: { [key: string]: string } = {
+      MONDAY: "Thứ hai",
+      TUESDAY: "Thứ ba",
+      WEDNESDAY: "Thứ tư",
+      THURSDAY: "Thứ năm",
+      FRIDAY: "Thứ sáu",
+      SATURDAY: "Thứ bảy",
+      SUNDAY: "Chủ nhật",
+    };
+    return mapping[dayOfWeek] || dayOfWeek;
   };
 
   useEffect(() => {
@@ -55,7 +72,7 @@ const TutorDetail: React.FC = () => {
           tutorData.subjects = tutorData.profileSubjects.map((subject) => ({
             id: subject.id,
             name: subject.name,
-            hourlyRate: subject.fees, // fees từ API là BigDecimal, sẽ được hiển thị đúng
+            fees: subject.fees, // fees từ API là BigDecimal, sẽ được hiển thị đúng
           }));
           console.log("✅ Using profileSubjects from API:", tutorData.subjects);
         } else {
@@ -65,7 +82,7 @@ const TutorDetail: React.FC = () => {
               (subjectName, idx) => ({
                 id: idx + 1,
                 name: subjectName,
-                hourlyRate:
+                fees:
                   tutorData.fees && tutorData.fees[subjectName]
                     ? tutorData.fees[subjectName]
                     : 200000,
@@ -75,8 +92,8 @@ const TutorDetail: React.FC = () => {
           } else {
             // Không có dữ liệu, dùng mock data
             tutorData.subjects = [
-              { id: 1, name: "Toán học", hourlyRate: 200000 },
-              { id: 2, name: "Vật lý", hourlyRate: 180000 },
+              { id: 1, name: "Toán học", fees: 200000 },
+              { id: 2, name: "Vật lý", fees: 180000 },
             ];
             console.log("❌ Using mock data:", tutorData.subjects);
           }
@@ -84,6 +101,11 @@ const TutorDetail: React.FC = () => {
 
         console.log("Final subjects:", tutorData.subjects);
         setTutor(tutorData);
+
+        // Set mặc định môn đầu tiên được chọn
+        if (tutorData.subjects && tutorData.subjects.length > 0) {
+          setSelectedSubjectId(tutorData.subjects[0].id);
+        }
       } catch (err) {
         setError("Không thể tải thông tin gia sư");
         console.error("Error loading tutor detail:", err);
@@ -97,7 +119,11 @@ const TutorDetail: React.FC = () => {
 
   const handleBookSession = () => {
     if (tutor) {
-      navigate(`/user/create-booking?tutorId=${tutor.id}`);
+      navigate("/unified-booking", {
+        state: {
+          selectedTutor: tutor,
+        },
+      });
     }
   };
 
@@ -148,67 +174,153 @@ const TutorDetail: React.FC = () => {
               className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6"
               style={{ borderColor: "rgba(148, 204, 230, 0.2)" }}
             >
-              <div className="text-center">
-                {/* Avatar */}
-                <div className="relative inline-block mb-4">
-                  {tutor.imageAvatar ? (
-                    <img
-                      src={tutor.imageAvatar}
-                      alt={`${tutor.firstName} ${tutor.lastName}`}
-                      className="w-32 h-32 rounded-2xl object-cover border-4 border-white shadow-lg"
-                      style={{ borderColor: "rgb(148, 204, 230)" }}
-                    />
-                  ) : (
-                    <div
-                      className="w-32 h-32 rounded-2xl flex items-center justify-center text-white text-4xl font-bold shadow-lg"
-                      style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                    >
-                      {tutor.firstName?.charAt(0)}
-                      {tutor.lastName?.charAt(0)}
-                    </div>
-                  )}
-                </div>
-
-                {/* Name and Verification */}
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {tutor.firstName} {tutor.lastName}
-                  </h1>
-                  {tutor.user?.isVerified && (
-                    <div className="flex items-center bg-green-50 px-2 py-1 rounded-full">
-                      <svg
-                        className="w-4 h-4 text-green-600 mr-1"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
+              <div className="flex items-start space-x-6">
+                {/* Left Column: Avatar and Booking Button */}
+                <div className="flex-shrink-0">
+                  {/* Avatar */}
+                  <div className="relative mb-4">
+                    {tutor.imageAvatar ? (
+                      <img
+                        src={tutor.imageAvatar}
+                        alt={`${tutor.firstName} ${tutor.lastName}`}
+                        className="w-32 h-32 rounded-2xl object-cover shadow-lg"
+                      />
+                    ) : (
+                      <div
+                        className="w-32 h-32 rounded-2xl flex items-center justify-center text-white text-4xl font-bold shadow-lg"
+                        style={{ backgroundColor: "rgb(148, 204, 230)" }}
                       >
-                        <path
-                          fillRule="evenodd"
-                          d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <span className="text-xs font-medium text-green-700">
-                        Đã xác thực
-                      </span>
+                        {tutor.firstName?.charAt(0)}
+                        {tutor.lastName?.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Booking Button */}
+                  <button
+                    onClick={handleBookSession}
+                    className="w-32 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg text-sm"
+                    style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                  >
+                    Đặt lịch học
+                  </button>
+
+                  {/* Headline */}
+                  {tutor.headline && (
+                    <div className="mt-4">
+                      <div className="relative">
+                        <p className="text-sm leading-relaxed text-center font-medium bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent animate-pulse">
+                          "{tutor.headline}"
+                        </p>
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-blue-800/20 blur-sm -z-10 rounded-lg"></div>
+                      </div>
                     </div>
                   )}
                 </div>
 
-                {/* Headline */}
-                {tutor.headline && (
-                  <p className="text-lg text-gray-700 mb-4 leading-relaxed">
-                    {tutor.headline}
-                  </p>
-                )}
+                {/* Right Column: Tutor Info */}
+                <div className="flex-1 min-w-0">
+                  {/* Name and Verification */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <h1 className="text-xl font-bold text-gray-900">
+                      {tutor.firstName} {tutor.lastName}
+                    </h1>
+                    {tutor.user?.isVerified && (
+                      <div className="flex items-center">
+                        <div
+                          className="w-5 h-5 rounded-full flex items-center justify-center shadow-sm"
+                          style={{
+                            backgroundColor: "rgb(148, 204, 230)",
+                          }}
+                        >
+                          <svg
+                            className="w-3 h-3 text-white"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Action Button */}
-                <button
-                  onClick={handleBookSession}
-                  className="w-full text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
-                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                >
-                  Đặt lịch học thử
-                </button>
+                  {/* Rating */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-sm font-medium text-gray-700">
+                      {tutor.ratePointAverage?.toFixed(1) || "0.0"}
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      ({tutor.totalPoint || 0} đánh giá)
+                    </span>
+                  </div>
+
+                  {/* Subjects and Fees */}
+                  {tutor.subjects && tutor.subjects.length > 0 && (
+                    <div className="mb-4">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {tutor.subjects.map((subject, index) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              console.log(
+                                "Clicked subject:",
+                                subject.name,
+                                "id:",
+                                subject.id,
+                                "fees:",
+                                subject.fees
+                              );
+                              setSelectedSubjectId(subject.id);
+                            }}
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors cursor-pointer ${
+                              selectedSubjectId === subject.id
+                                ? "text-white shadow-md"
+                                : "text-gray-700 hover:shadow-sm"
+                            }`}
+                            style={{
+                              backgroundColor:
+                                selectedSubjectId === subject.id
+                                  ? "rgb(148, 204, 230)"
+                                  : "rgba(148, 204, 230, 0.1)",
+                            }}
+                          >
+                            {subject.name}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-semibold text-blue-600">
+                          {selectedSubjectId
+                            ? (() => {
+                                const selectedSubject = tutor.subjects.find(
+                                  (s) => s.id === selectedSubjectId
+                                );
+                                return selectedSubject
+                                  ? new Intl.NumberFormat("vi-VN", {
+                                      style: "currency",
+                                      currency: "VND",
+                                    }).format(selectedSubject.fees)
+                                  : "Liên hệ";
+                              })()
+                            : tutor.subjects.length > 0
+                            ? new Intl.NumberFormat("vi-VN", {
+                                style: "currency",
+                                currency: "VND",
+                              }).format(tutor.subjects[0].fees)
+                            : "Liên hệ"}
+                        </span>
+                        <span className="text-gray-500">/buổi học</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Button */}
+                </div>
               </div>
             </div>
 
@@ -332,7 +444,7 @@ const TutorDetail: React.FC = () => {
             </div>
 
             {/* Subjects Taught */}
-            <div
+            {/* <div
               className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6"
               style={{ borderColor: "rgba(148, 204, 230, 0.2)" }}
             >
@@ -374,7 +486,7 @@ const TutorDetail: React.FC = () => {
                   </p>
                 )}
               </div>
-            </div>
+            </div> */}
 
             {/* Teaching Schedule */}
             {tutor.schedules && tutor.schedules.length > 0 && (
@@ -386,20 +498,43 @@ const TutorDetail: React.FC = () => {
                   Lịch giảng dạy
                 </h2>
                 <div className="space-y-3">
-                  {tutor.schedules.map((schedule) => (
-                    <div
-                      key={schedule.id}
-                      className="flex items-center justify-between p-3 rounded-xl"
-                      style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
-                    >
-                      <span className="font-medium text-gray-900">
-                        {schedule.dayOfWeek}
-                      </span>
-                      <span className="text-gray-600">
-                        {schedule.fromTime} - {schedule.toTime}
-                      </span>
-                    </div>
-                  ))}
+                  {(() => {
+                    // Gộp schedules theo dayOfWeek
+                    const groupedSchedules = tutor.schedules.reduce(
+                      (acc, schedule) => {
+                        if (!acc[schedule.dayOfWeek]) {
+                          acc[schedule.dayOfWeek] = [];
+                        }
+                        acc[schedule.dayOfWeek].push(schedule);
+                        return acc;
+                      },
+                      {} as Record<string, typeof tutor.schedules>
+                    );
+
+                    return Object.entries(groupedSchedules).map(
+                      ([dayOfWeek, schedules]) => (
+                        <div
+                          key={dayOfWeek}
+                          className="flex items-center justify-between p-3 rounded-xl"
+                          style={{
+                            backgroundColor: "rgba(148, 204, 230, 0.1)",
+                          }}
+                        >
+                          <span className="font-medium text-gray-900">
+                            {getDayOfWeekText(dayOfWeek)}
+                          </span>
+                          <span className="text-gray-600">
+                            {schedules
+                              .map(
+                                (schedule) =>
+                                  `${schedule.fromTime} - ${schedule.toTime}`
+                              )
+                              .join(", ")}
+                          </span>
+                        </div>
+                      )
+                    );
+                  })()}
                 </div>
               </div>
             )}
@@ -442,7 +577,8 @@ const TutorDetail: React.FC = () => {
                         <div className="text-right ml-4">
                           <div className="flex items-center gap-2 mb-2">
                             <svg
-                              className="w-4 h-4 text-green-500"
+                              className="w-4 h-4"
+                              style={{ color: "rgb(96, 165, 250)" }}
                               fill="currentColor"
                               viewBox="0 0 20 20"
                             >
@@ -452,7 +588,10 @@ const TutorDetail: React.FC = () => {
                                 clipRule="evenodd"
                               />
                             </svg>
-                            <span className="text-green-600 text-xs font-medium">
+                            <span
+                              className="text-xs font-medium"
+                              style={{ color: "rgb(96, 165, 250)" }}
+                            >
                               Đã xác minh
                             </span>
                           </div>
@@ -498,7 +637,8 @@ const TutorDetail: React.FC = () => {
                           </p>
                           <div className="flex items-center gap-2">
                             <svg
-                              className="w-4 h-4 text-green-500"
+                              className="w-4 h-4"
+                              style={{ color: "rgb(96, 165, 250)" }}
                               fill="currentColor"
                               viewBox="0 0 20 20"
                             >
@@ -508,7 +648,10 @@ const TutorDetail: React.FC = () => {
                                 clipRule="evenodd"
                               />
                             </svg>
-                            <span className="text-green-600 text-xs font-medium">
+                            <span
+                              className="text-xs font-medium"
+                              style={{ color: "rgb(96, 165, 250)" }}
+                            >
                               Đã xác minh
                             </span>
                           </div>
@@ -601,7 +744,7 @@ const TutorDetail: React.FC = () => {
 
                   <button
                     className="mt-4 font-medium transition-colors duration-200"
-                    style={{ color: "rgb(148, 204, 230)" }}
+                    style={{ color: "rgb(96, 165, 250)" }}
                   >
                     Xem tất cả
                   </button>
@@ -648,7 +791,7 @@ const TutorDetail: React.FC = () => {
                   <div className="flex justify-center gap-4 mt-6">
                     <button
                       className="p-2 transition-colors duration-200"
-                      style={{ color: "rgb(148, 204, 230)" }}
+                      style={{ color: "rgb(96, 165, 250)" }}
                     >
                       <svg
                         className="w-5 h-5"
@@ -666,7 +809,7 @@ const TutorDetail: React.FC = () => {
                     </button>
                     <button
                       className="p-2 transition-colors duration-200"
-                      style={{ color: "rgb(148, 204, 230)" }}
+                      style={{ color: "rgb(96, 165, 250)" }}
                     >
                       <svg
                         className="w-5 h-5"

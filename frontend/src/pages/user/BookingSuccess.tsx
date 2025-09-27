@@ -21,7 +21,7 @@ const BookingSuccess: React.FC = () => {
   const paymentMethod = location.state?.paymentMethod as string;
 
   const handleGoToMySessions = () => {
-    navigate("/user/my-sessions");
+    navigate("/my-sessions");
   };
 
   const handleGoToFindTutor = () => {

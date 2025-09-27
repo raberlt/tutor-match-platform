@@ -39,7 +39,7 @@ const BookingDetail: React.FC = () => {
     try {
       setCancelling(true);
       await bookingService.cancelBooking(booking.id);
-      navigate("/user/my-sessions");
+      navigate("/my-sessions");
     } catch (error: any) {
       alert(error.message);
     } finally {
@@ -167,7 +167,7 @@ const BookingDetail: React.FC = () => {
               </p>
               <div className="mt-6">
                 <button
-                  onClick={() => navigate("/user/my-sessions")}
+                  onClick={() => navigate("/my-sessions")}
                   className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
                 >
                   Quay lại
@@ -185,7 +185,7 @@ const BookingDetail: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
           <button
-            onClick={() => navigate("/user/my-sessions")}
+            onClick={() => navigate("/my-sessions")}
             className="text-blue-600 hover:text-blue-900 text-sm font-medium"
           >
             ← Quay lại danh sách
@@ -477,7 +477,7 @@ const BookingDetail: React.FC = () => {
                   </button>
                 )}
                 <button
-                  onClick={() => navigate("/user/my-sessions")}
+                  onClick={() => navigate("/my-sessions")}
                   className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   Quay lại

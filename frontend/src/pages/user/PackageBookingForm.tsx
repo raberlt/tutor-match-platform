@@ -278,7 +278,7 @@ const PackageBookingForm: React.FC = () => {
       }
 
       // Navigate to payment page with booking data
-      navigate("/user/package-payment", {
+      navigate("/package-payment", {
         state: {
           tutor: selectedTutor,
           subjectId: parseInt(subjectId),

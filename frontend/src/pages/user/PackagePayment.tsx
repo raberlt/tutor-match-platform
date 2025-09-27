@@ -88,7 +88,7 @@ const PackagePayment: React.FC = () => {
       await bookingService.createPackageBooking(bookingData);
 
       // Navigate to success page
-      navigate("/user/booking-success", {
+      navigate("/booking-success", {
         state: {
           tutor,
           packageInfo,

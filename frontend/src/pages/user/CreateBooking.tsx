@@ -102,7 +102,7 @@ const CreateBooking: React.FC = () => {
 
     try {
       await bookingService.createBooking(formData);
-      navigate("/user/my-sessions");
+      navigate("/my-sessions");
     } catch (error: unknown) {
       setError((error as Error).message);
     } finally {
@@ -116,7 +116,7 @@ const CreateBooking: React.FC = () => {
       setFormData((prev) => ({ ...prev, bookingType: "SINGLE_SESSION" }));
     } else {
       // Navigate to package booking form
-      navigate("/user/package-booking", {
+      navigate("/package-booking", {
         state: {
           selectedTutor,
           selectedSubject,
@@ -413,7 +413,7 @@ const CreateBooking: React.FC = () => {
                 <div className="flex justify-end space-x-4">
                   <button
                     type="button"
-                    onClick={() => navigate("/user/my-sessions")}
+                    onClick={() => navigate("/my-sessions")}
                     className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     Hủy

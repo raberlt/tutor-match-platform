@@ -25,9 +25,8 @@ import Messages from "../pages/user/Messages";
 import MySessions from "../pages/user/MySessions";
 import { Settings } from "../pages/user/Settings";
 import BookingDetail from "../pages/user/BookingDetail";
-import CreateBooking from "../pages/user/CreateBooking";
-import SingleBooking from "../pages/user/SingleBooking";
-import PackageBookingForm from "../pages/user/PackageBookingForm";
+import UnifiedBooking from "../pages/user/UnifiedBooking";
+import PackageBooking from "../pages/user/PackageBooking";
 import PackagePayment from "../pages/user/PackagePayment";
 import BookingSuccess from "../pages/user/BookingSuccess";
 import TutorDetail from "../pages/user/TutorDetail";
@@ -131,18 +130,10 @@ const router = createBrowserRouter([
         element: <Settings />,
       },
       {
-        path: "create-booking",
+        path: "unified-booking",
         element: (
           <BookingProtectedRoute allowedRoles={["STUDENT"]}>
-            <CreateBooking />
-          </BookingProtectedRoute>
-        ),
-      },
-      {
-        path: "single-booking",
-        element: (
-          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
-            <SingleBooking />
+            <UnifiedBooking />
           </BookingProtectedRoute>
         ),
       },
@@ -150,7 +141,7 @@ const router = createBrowserRouter([
         path: "package-booking",
         element: (
           <BookingProtectedRoute allowedRoles={["STUDENT"]}>
-            <PackageBookingForm />
+            <PackageBooking />
           </BookingProtectedRoute>
         ),
       },

@@ -12,6 +12,7 @@ public class TutorPreviewDTO {
     private String lastName;
     private String imageAvatar;
     private String headline;
+    private String experience;
     private Integer fees;
     private Double ratePointAverage;
     private Integer totalPoint;
@@ -24,6 +25,6 @@ public class TutorPreviewDTO {
     // Subjects với thông tin chi tiết (id, name, hourlyRate)
     private List<Map<String, Object>> subjects;
     
-    // Không có: bio, experience, teachingLevel, schedules, certificates
+    // Không có: bio, teachingLevel, schedules, certificates
     // Guest không thể xem những thông tin này
 } 

@@ -119,7 +119,7 @@ const TutorSearch: React.FC = () => {
 
       // Xử lý dữ liệu từ API - sử dụng subjects trực tiếp từ API
       if (tutorsData.length > 0) {
-        tutorsData = tutorsData.map((tutor) => {
+        tutorsData = tutorsData.map((tutor: any) => {
           // Ưu tiên sử dụng subjects từ API trước
           if (
             tutor.subjects &&
@@ -320,14 +320,28 @@ const TutorSearch: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const handleUnifiedBooking = (tutor: ProcessedTutor) => {
+  const handleSingleBooking = (tutor: ProcessedTutor) => {
     if (!isAuthenticated) {
       navigate("/login");
       return;
     }
 
-    // Redirect to unified booking with tutor info
-    navigate("/unified-booking", {
+    // Redirect to single booking with tutor info
+    navigate("/single-booking-new", {
+      state: {
+        selectedTutor: tutor,
+      },
+    });
+  };
+
+  const handlePackageBooking = (tutor: ProcessedTutor) => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    // Redirect to package booking with tutor info
+    navigate("/package-booking-new", {
       state: {
         selectedTutor: tutor,
       },
@@ -688,19 +702,33 @@ const TutorSearch: React.FC = () => {
                   >
                     {/* Book Button - Top Right */}
                     <div className="absolute top-4 right-4 z-10">
-                      <button
-                        onClick={() => {
-                          if (isAuthenticated) {
-                            handleUnifiedBooking(tutor);
-                          } else {
-                            navigate("/login");
-                          }
-                        }}
-                        className="text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-xl"
-                        style={{ backgroundColor: "#94cce6" }}
-                      >
-                        Đặt lịch học
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => {
+                            if (isAuthenticated) {
+                              handleSingleBooking(tutor);
+                            } else {
+                              navigate("/login");
+                            }
+                          }}
+                          className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-xs font-medium"
+                        >
+                          Học đơn
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (isAuthenticated) {
+                              handlePackageBooking(tutor);
+                            } else {
+                              navigate("/login");
+                            }
+                          }}
+                          className="text-white px-3 py-2 rounded-lg hover:opacity-90 transition-all duration-200 text-xs font-semibold shadow-lg hover:shadow-xl"
+                          style={{ backgroundColor: "#94cce6" }}
+                        >
+                          Đặt gói
+                        </button>
+                      </div>
                     </div>
 
                     <div className="p-4">

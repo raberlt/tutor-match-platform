@@ -117,9 +117,19 @@ const TutorDetail: React.FC = () => {
     loadTutorDetail();
   }, [username]);
 
-  const handleBookSession = () => {
+  const handleSingleBooking = () => {
     if (tutor) {
-      navigate("/unified-booking", {
+      navigate("/single-booking-new", {
+        state: {
+          selectedTutor: tutor,
+        },
+      });
+    }
+  };
+
+  const handlePackageBooking = () => {
+    if (tutor) {
+      navigate("/package-booking-new", {
         state: {
           selectedTutor: tutor,
         },
@@ -197,13 +207,21 @@ const TutorDetail: React.FC = () => {
                   </div>
 
                   {/* Booking Button */}
-                  <button
-                    onClick={handleBookSession}
-                    className="w-32 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg text-sm"
-                    style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                  >
-                    Đặt lịch học
-                  </button>
+                  <div className="flex flex-col space-y-2">
+                    <button
+                      onClick={handleSingleBooking}
+                      className="w-32 bg-green-600 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg text-sm hover:bg-green-700"
+                    >
+                      Học đơn
+                    </button>
+                    <button
+                      onClick={handlePackageBooking}
+                      className="w-32 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg text-sm"
+                      style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                    >
+                      Đặt gói
+                    </button>
+                  </div>
 
                   {/* Headline */}
                   {tutor.headline && (

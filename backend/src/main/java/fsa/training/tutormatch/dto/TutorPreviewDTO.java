@@ -3,6 +3,7 @@ package fsa.training.tutormatch.dto;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class TutorPreviewDTO {
@@ -19,6 +20,9 @@ public class TutorPreviewDTO {
     
     // Chỉ hiển thị tên môn học, không có chi tiết
     private List<String> subjectNames;
+    
+    // Subjects với thông tin chi tiết (id, name, hourlyRate)
+    private List<Map<String, Object>> subjects;
     
     // Không có: bio, experience, teachingLevel, schedules, certificates
     // Guest không thể xem những thông tin này

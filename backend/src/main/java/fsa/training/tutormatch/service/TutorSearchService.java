@@ -140,11 +140,22 @@ public class TutorSearchService {
         dto.setTotalPoint(tutor.getTotalPoint());
         dto.setVerified(tutor.isVerified());
         
-        // TODO: Load subjects, schedules, teachingAudiences from Application entities
-        // For now, return empty lists to avoid compilation errors
-        dto.setSubjects(new ArrayList<>());
-        // dto.setSchedules(new ArrayList<>());
-        // dto.setTeachingAudiences(new ArrayList<>());
+        // Load subjects from ApplicationSubjectFee linked to this TutorProfile
+        List<Map<String, Object>> subjects = new ArrayList<>();
+        List<ApplicationSubjectFee> subjectFees = applicationSubjectFeeRepository.findByTutorProfile(tutor);
+        System.out.println("DEBUG: TutorProfile ID=" + tutor.getId() + ", found " + subjectFees.size() + " subjectFees");
+        for (ApplicationSubjectFee subjectFee : subjectFees) {
+            if (subjectFee.getSubject() != null) {
+                Map<String, Object> subjectData = new HashMap<>();
+                subjectData.put("id", subjectFee.getSubject().getId());
+                subjectData.put("name", subjectFee.getSubject().getName());
+                subjectData.put("hourlyRate", subjectFee.getFees().intValue());
+                subjects.add(subjectData);
+                System.out.println("DEBUG: Added subject: " + subjectFee.getSubject().getName() + " with fee: " + subjectFee.getFees());
+            }
+        }
+        System.out.println("DEBUG: Total subjects added: " + subjects.size());
+        dto.setSubjects(subjects);
         
         return dto;
     }
@@ -161,11 +172,31 @@ public class TutorSearchService {
         dto.setTotalPoint(tutor.getTotalPoint());
         dto.setVerified(tutor.isVerified());
         
-        // TODO: Load subjects, schedules, teachingAudiences from Application entities
-        // For now, return empty lists to avoid compilation errors
-        dto.setSubjectNames(new ArrayList<>());
-        // dto.setSchedules(new ArrayList<>());
-        // dto.setTeachingAudiences(new ArrayList<>());
+        // Load subject names from ApplicationSubjectFee linked to this TutorProfile
+        List<String> subjectNames = new ArrayList<>();
+        List<ApplicationSubjectFee> subjectFees = applicationSubjectFeeRepository.findByTutorProfile(tutor);
+        System.out.println("DEBUG PREVIEW: TutorProfile ID=" + tutor.getId() + ", found " + subjectFees.size() + " subjectFees");
+        for (ApplicationSubjectFee subjectFee : subjectFees) {
+            if (subjectFee.getSubject() != null) {
+                subjectNames.add(subjectFee.getSubject().getName());
+                System.out.println("DEBUG PREVIEW: Added subject name: " + subjectFee.getSubject().getName());
+            }
+        }
+        System.out.println("DEBUG PREVIEW: Total subject names added: " + subjectNames.size());
+        dto.setSubjectNames(subjectNames);
+        
+        // Also set subjects with detailed info
+        List<Map<String, Object>> subjects = new ArrayList<>();
+        for (ApplicationSubjectFee subjectFee : subjectFees) {
+            if (subjectFee.getSubject() != null) {
+                Map<String, Object> subjectData = new HashMap<>();
+                subjectData.put("id", subjectFee.getSubject().getId());
+                subjectData.put("name", subjectFee.getSubject().getName());
+                subjectData.put("hourlyRate", subjectFee.getFees().intValue());
+                subjects.add(subjectData);
+            }
+        }
+        dto.setSubjects(subjects);
         
         return dto;
     }

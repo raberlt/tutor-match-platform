@@ -43,57 +43,46 @@ const TutorDetail: React.FC = () => {
         }
 
         console.log("Tutor detail data:", tutorData);
-        console.log("Tutor subjects:", tutorData.subjects);
-        console.log("Tutor fees:", tutorData.fees);
-        console.log("Tutor subjectNames:", tutorData.subjectNames);
+        console.log("Tutor profileSubjects:", tutorData.profileSubjects);
 
-        // Xử lý dữ liệu - chuyển đổi subjectNames thành subjects format
-        if (tutorData.subjectNames && Array.isArray(tutorData.subjectNames)) {
-          tutorData.subjects = tutorData.subjectNames.map(
-            (subjectName, idx) => ({
-              id: idx + 1,
-              name: subjectName,
-              hourlyRate:
-                tutorData.fees && tutorData.fees[subjectName]
-                  ? tutorData.fees[subjectName]
-                  : 200000,
-            })
-          );
+        // Sử dụng profileSubjects từ API trực tiếp
+        if (
+          tutorData.profileSubjects &&
+          Array.isArray(tutorData.profileSubjects) &&
+          tutorData.profileSubjects.length > 0
+        ) {
+          // Chuyển đổi profileSubjects thành subjects format với hourlyRate
+          tutorData.subjects = tutorData.profileSubjects.map((subject) => ({
+            id: subject.id,
+            name: subject.name,
+            hourlyRate: subject.fees, // fees từ API là BigDecimal, sẽ được hiển thị đúng
+          }));
+          console.log("✅ Using profileSubjects from API:", tutorData.subjects);
         } else {
-          // Nếu không có subjectNames, tạo subjects từ fees
-          if (tutorData.fees && typeof tutorData.fees === "object") {
-            // fees là object
-            tutorData.subjects = Object.entries(tutorData.fees).map(
-              ([subjectName, price], idx) => ({
+          // Fallback: nếu không có profileSubjects, thử tạo từ subjectNames
+          if (tutorData.subjectNames && Array.isArray(tutorData.subjectNames)) {
+            tutorData.subjects = tutorData.subjectNames.map(
+              (subjectName, idx) => ({
                 id: idx + 1,
                 name: subjectName,
-                hourlyRate: price,
+                hourlyRate:
+                  tutorData.fees && tutorData.fees[subjectName]
+                    ? tutorData.fees[subjectName]
+                    : 200000,
               })
             );
-          } else if (tutorData.fees && typeof tutorData.fees === "number") {
-            // fees là số - tạo subjects với giá chung
-            tutorData.subjects = [
-              { id: 1, name: "Toán học", hourlyRate: tutorData.fees },
-              { id: 2, name: "Vật lý", hourlyRate: tutorData.fees },
-            ];
+            console.log("⚠️ Fallback: Using subjectNames:", tutorData.subjects);
           } else {
             // Không có dữ liệu, dùng mock data
             tutorData.subjects = [
               { id: 1, name: "Toán học", hourlyRate: 200000 },
               { id: 2, name: "Vật lý", hourlyRate: 180000 },
             ];
+            console.log("❌ Using mock data:", tutorData.subjects);
           }
         }
 
-        // Nếu vẫn không có subjects, thêm mock data
-        if (!tutorData.subjects || tutorData.subjects.length === 0) {
-          tutorData.subjects = [
-            { id: 1, name: "Toán học", hourlyRate: 200000 },
-            { id: 2, name: "Vật lý", hourlyRate: 180000 },
-          ];
-        }
-
-        console.log("After processing - Tutor subjects:", tutorData.subjects);
+        console.log("Final subjects:", tutorData.subjects);
         setTutor(tutorData);
       } catch (err) {
         setError("Không thể tải thông tin gia sư");

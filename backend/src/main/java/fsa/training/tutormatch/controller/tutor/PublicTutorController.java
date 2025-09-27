@@ -2,13 +2,19 @@ package fsa.training.tutormatch.controller.tutor;
 
 import fsa.training.tutormatch.entity.Subject;
 import fsa.training.tutormatch.entity.TutorProfile;
+import fsa.training.tutormatch.entity.ProfileApplication;
 import fsa.training.tutormatch.entity.ApplicationSubjectFee;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.entity.TeachingAudience;
 import fsa.training.tutormatch.entity.ApplicationSchedule;
+import fsa.training.tutormatch.entity.ApplicationTeachingAudience;
 import fsa.training.tutormatch.entity.Education;
 import fsa.training.tutormatch.entity.Certificate;
 import fsa.training.tutormatch.repository.TutorProfileRepository;
+import fsa.training.tutormatch.repository.ProfileApplicationRepository;
+import fsa.training.tutormatch.repository.ApplicationSubjectFeeRepository;
+import fsa.training.tutormatch.repository.ApplicationScheduleRepository;
+import fsa.training.tutormatch.repository.ApplicationTeachingAudienceRepository;
 import fsa.training.tutormatch.repository.SubjectRepository;
 import fsa.training.tutormatch.repository.UserRepository;
 import fsa.training.tutormatch.repository.TeachingAudienceRepository;
@@ -52,6 +58,18 @@ public class PublicTutorController {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private ProfileApplicationRepository profileApplicationRepository;
+    
+    @Autowired
+    private ApplicationSubjectFeeRepository applicationSubjectFeeRepository;
+    
+    @Autowired
+    private ApplicationScheduleRepository applicationScheduleRepository;
+    
+    @Autowired
+    private ApplicationTeachingAudienceRepository applicationTeachingAudienceRepository;
 
     /**
      * API công khai cho Guest - Tìm kiếm gia sư với pagination và filters
@@ -78,6 +96,38 @@ public class PublicTutorController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(
                 Map.of("error", "Lỗi khi tìm kiếm gia sư: " + e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * API công khai - Test endpoint để kiểm tra dữ liệu
+     */
+    @GetMapping("/test-data")
+    public ResponseEntity<?> getTestData() {
+        try {
+            Map<String, Object> data = new HashMap<>();
+            
+            // Count TutorProfiles
+            List<TutorProfile> tutorProfiles = tutorProfileRepository.findAll();
+            data.put("tutorProfilesCount", tutorProfiles.size());
+            
+            // Count ProfileApplications
+            List<ProfileApplication> applications = profileApplicationRepository.findAll();
+            data.put("profileApplicationsCount", applications.size());
+            
+            // Check if any TutorProfile has ApplicationSubjectFee
+            if (!tutorProfiles.isEmpty()) {
+                TutorProfile firstTutor = tutorProfiles.get(0);
+                List<ApplicationSubjectFee> subjectFees = applicationSubjectFeeRepository.findByTutorProfile(firstTutor);
+                data.put("firstTutorId", firstTutor.getId());
+                data.put("firstTutorSubjectFeesCount", subjectFees.size());
+            }
+            
+            return ResponseEntity.ok(data);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(
+                Map.of("error", "Lỗi khi lấy test data: " + e.getMessage())
             );
         }
     }
@@ -484,26 +534,49 @@ public class PublicTutorController {
                 response.put("user", userInfo);
             }
             
-            // Profile subjects
-            // Profile subjects - now managed separately
-            response.put("profileSubjects", new ArrayList<>());
-            
-            // Schedules
-            if (tutor.getSchedules() != null) {
-                List<Map<String, Object>> schedules = new ArrayList<>();
-                for (ApplicationSchedule schedule : tutor.getSchedules()) {
-                    Map<String, Object> scheduleData = new HashMap<>();
-                    scheduleData.put("id", schedule.getId());
-                    scheduleData.put("dayOfWeek", schedule.getDayOfWeek());
-                    scheduleData.put("fromTime", schedule.getFromTime());
-                    scheduleData.put("toTime", schedule.getToTime());
-                    scheduleData.put("enable", schedule.getEnable());
-                    scheduleData.put("createdAt", schedule.getCreatedAt());
-                    scheduleData.put("updatedAt", schedule.getUpdatedAt());
-                    schedules.add(scheduleData);
+            // Profile subjects - load from ApplicationSubjectFee linked to ProfileApplication
+            List<Map<String, Object>> profileSubjects = new ArrayList<>();
+            if (tutor.getUser() != null) {
+                // Find the approved ProfileApplication for this user
+                List<ProfileApplication> applications = profileApplicationRepository.findByUserAndStatusOrderByCreatedAtDesc(tutor.getUser(), fsa.training.tutormatch.enums.ApplicationStatus.APPROVED);
+                if (!applications.isEmpty()) {
+                    ProfileApplication application = applications.get(0); // Take the first approved application
+                    List<ApplicationSubjectFee> subjectFees = applicationSubjectFeeRepository.findByApplication(application);
+                    for (ApplicationSubjectFee subjectFee : subjectFees) {
+                        if (subjectFee.getSubject() != null) {
+                            Map<String, Object> subjectData = new HashMap<>();
+                            subjectData.put("id", subjectFee.getSubject().getId());
+                            subjectData.put("name", subjectFee.getSubject().getName());
+                            subjectData.put("fees", subjectFee.getFees());
+                            profileSubjects.add(subjectData);
+                        }
+                    }
                 }
-                response.put("schedules", schedules);
             }
+            response.put("profileSubjects", profileSubjects);
+            
+            // Schedules - load from ApplicationSchedule linked to ProfileApplication
+            List<Map<String, Object>> schedules = new ArrayList<>();
+            if (tutor.getUser() != null) {
+                // Find the approved ProfileApplication for this user
+                List<ProfileApplication> applications = profileApplicationRepository.findByUserAndStatusOrderByCreatedAtDesc(tutor.getUser(), fsa.training.tutormatch.enums.ApplicationStatus.APPROVED);
+                if (!applications.isEmpty()) {
+                    ProfileApplication application = applications.get(0); // Take the first approved application
+                    List<ApplicationSchedule> tutorSchedules = applicationScheduleRepository.findByApplication(application);
+                    for (ApplicationSchedule schedule : tutorSchedules) {
+                        Map<String, Object> scheduleData = new HashMap<>();
+                        scheduleData.put("id", schedule.getId());
+                        scheduleData.put("dayOfWeek", schedule.getDayOfWeek());
+                        scheduleData.put("fromTime", schedule.getFromTime());
+                        scheduleData.put("toTime", schedule.getToTime());
+                        scheduleData.put("enable", schedule.getEnable());
+                        scheduleData.put("createdAt", schedule.getCreatedAt());
+                        scheduleData.put("updatedAt", schedule.getUpdatedAt());
+                        schedules.add(scheduleData);
+                    }
+                }
+            }
+            response.put("schedules", schedules);
             
             // Educations
             if (tutor.getEducations() != null) {
@@ -527,20 +600,27 @@ public class PublicTutorController {
                 response.put("educations", educations);
             }
             
-            // Teaching audiences
-            if (false) { // Teaching audiences are now managed through ProfileApplication
-                List<Map<String, Object>> audiences = new ArrayList<>();
-                for (Object obj : new ArrayList<>()) {
-                    TeachingAudience audience = (TeachingAudience) obj;
-                    Map<String, Object> audienceData = new HashMap<>();
-                    audienceData.put("id", audience.getId());
-                    audienceData.put("name", audience.getName());
-                    audienceData.put("createdAt", audience.getCreatedAt());
-                    audienceData.put("updatedAt", audience.getUpdatedAt());
-                    audiences.add(audienceData);
+            // Teaching audiences - load from ApplicationTeachingAudience linked to ProfileApplication
+            List<Map<String, Object>> audiences = new ArrayList<>();
+            if (tutor.getUser() != null) {
+                // Find the approved ProfileApplication for this user
+                List<ProfileApplication> applications = profileApplicationRepository.findByUserAndStatusOrderByCreatedAtDesc(tutor.getUser(), fsa.training.tutormatch.enums.ApplicationStatus.APPROVED);
+                if (!applications.isEmpty()) {
+                    ProfileApplication application = applications.get(0); // Take the first approved application
+                    List<ApplicationTeachingAudience> tutorAudiences = applicationTeachingAudienceRepository.findByApplication(application);
+                    for (ApplicationTeachingAudience appAudience : tutorAudiences) {
+                        if (appAudience.getTeachingAudience() != null) {
+                            Map<String, Object> audienceData = new HashMap<>();
+                            audienceData.put("id", appAudience.getTeachingAudience().getId());
+                            audienceData.put("name", appAudience.getTeachingAudience().getName());
+                            audienceData.put("createdAt", appAudience.getTeachingAudience().getCreatedAt());
+                            audienceData.put("updatedAt", appAudience.getTeachingAudience().getUpdatedAt());
+                            audiences.add(audienceData);
+                        }
+                    }
                 }
-                response.put("teachingAudiences", audiences);
             }
+            response.put("teachingAudiences", audiences);
             
             // Certificates
             if (tutor.getCertificates() != null) {

@@ -372,10 +372,8 @@ export interface TutorProfile {
 
 export interface TutorProfileSubject {
   id: number;
-  subject: Subject;
+  name: string;
   fees: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface TutorSubjectDetail {

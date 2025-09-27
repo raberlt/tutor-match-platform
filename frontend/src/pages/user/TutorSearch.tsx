@@ -89,26 +89,35 @@ const TutorSearch: React.FC = () => {
       let tutorsData = response.content as ProcessedTutor[];
 
       // Debug: Log dữ liệu để kiểm tra
-      console.log("Tutors data:", tutorsData);
+      console.log("🔍 Raw tutors data from API:", tutorsData);
       if (tutorsData.length > 0) {
-        console.log("First tutor data:", tutorsData[0]);
-        console.log("First tutor keys:", Object.keys(tutorsData[0]));
-        console.log("First tutor subjects:", tutorsData[0].subjects);
+        console.log("🔍 First tutor data:", tutorsData[0]);
+        console.log("🔍 First tutor keys:", Object.keys(tutorsData[0]));
+        console.log("🔍 First tutor subjects:", tutorsData[0].subjects);
+        console.log("🔍 First tutor subjects type:", typeof tutorsData[0].subjects);
+        console.log("🔍 First tutor subjects isArray:", Array.isArray(tutorsData[0].subjects));
+        console.log("🔍 First tutor subjects length:", tutorsData[0].subjects?.length);
         console.log(
-          "First tutor profileSubjects:",
+          "🔍 First tutor profileSubjects:",
           (tutorsData[0] as any).profileSubjects
         );
-        console.log("First tutor subjectNames:", tutorsData[0].subjectNames);
-        console.log("First tutor fees:", tutorsData[0].fees);
-        console.log("First tutor bio:", tutorsData[0].bio);
-        console.log("First tutor headline:", tutorsData[0].headline);
+        console.log("🔍 First tutor subjectNames:", tutorsData[0].subjectNames);
+        console.log("🔍 First tutor fees:", tutorsData[0].fees);
+        console.log("🔍 First tutor bio:", tutorsData[0].bio);
+        console.log("🔍 First tutor headline:", tutorsData[0].headline);
       }
 
-      // Xử lý dữ liệu từ API - chuyển đổi format dữ liệu
+      // Xử lý dữ liệu từ API - sử dụng subjects trực tiếp từ API
       if (tutorsData.length > 0) {
         tutorsData = tutorsData.map((tutor) => {
-          // Chuyển đổi subjectNames thành subjects format
-          if (tutor.subjectNames && Array.isArray(tutor.subjectNames)) {
+          // Ưu tiên sử dụng subjects từ API trước
+          if (tutor.subjects && Array.isArray(tutor.subjects) && tutor.subjects.length > 0) {
+            // API đã trả về subjects với đầy đủ thông tin, sử dụng trực tiếp
+            console.log("✅ Using subjects from API for tutor", tutor.id, ":", tutor.subjects);
+            // Không cần làm gì thêm, tutor.subjects đã có sẵn
+          } else if (tutor.subjectNames && Array.isArray(tutor.subjectNames)) {
+            // Fallback: chuyển đổi subjectNames thành subjects format
+            console.log("⚠️ Fallback: Using subjectNames for tutor", tutor.id, ":", tutor.subjectNames);
             tutor.subjects = tutor.subjectNames.map(
               (subjectName: string, idx: number) => ({
                 id: idx + 1,
@@ -140,6 +149,7 @@ const TutorSearch: React.FC = () => {
               ];
             } else {
               // Không có dữ liệu, dùng mock data
+              console.log("❌ Using mock data for tutor", tutor.id);
               tutor.subjects = [
                 { id: 1, name: "Toán học", hourlyRate: 200000 },
                 { id: 2, name: "Vật lý", hourlyRate: 180000 },
@@ -149,6 +159,7 @@ const TutorSearch: React.FC = () => {
 
           // Nếu vẫn không có subjects, thêm mock data
           if (!tutor.subjects || tutor.subjects.length === 0) {
+            console.log("❌ Final fallback: Using mock data for tutor", tutor.id);
             tutor.subjects = [
               { id: 1, name: "Toán học", hourlyRate: 200000 },
               { id: 2, name: "Vật lý", hourlyRate: 180000 },

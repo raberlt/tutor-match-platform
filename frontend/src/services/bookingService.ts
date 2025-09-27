@@ -380,4 +380,19 @@ export const bookingService = {
       throw new Error(error.response?.data?.message || "Xóa booking thất bại");
     }
   },
+
+  /**
+   * Tạo package booking
+   */
+  async createPackageBooking(
+    bookingData: any
+  ): Promise<{ message: string; bookingId: number }> {
+    try {
+      const response = await api.post("/api/booking/package", bookingData);
+      return response.data;
+    } catch (error: unknown) {
+      console.error("Create package booking error:", error);
+      throw new Error(error.response?.data?.message || "Tạo gói học thất bại");
+    }
+  },
 };

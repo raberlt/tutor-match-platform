@@ -270,7 +270,7 @@ class AdminService {
 
   // Tutor Application APIs
   async getApplicationsForReview() {
-    const response = await api.get("/applications/admin/review");
+    const response = await api.get("/admin/tutor-applications");
     return response.data;
   }
 

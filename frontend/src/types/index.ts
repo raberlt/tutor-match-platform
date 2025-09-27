@@ -45,6 +45,31 @@ export interface BookingRequestCreateDTO {
   note?: string;
   sessionsPerWeek?: number; // chỉ cho PACKAGE
   contractDuration?: number; // chỉ cho PACKAGE (tháng)
+  totalAmount?: number;
+  sessions?: PackageSchedule[];
+  paymentMethod?: string;
+  studentInfo?: {
+    fullName: string;
+    email: string;
+    phone: string;
+    address?: string;
+  };
+  paymentNote?: string;
+}
+
+export interface PackageSchedule {
+  date: string;
+  fromTime: string;
+  toTime: string;
+}
+
+export interface PackageInfo {
+  totalDays: number;
+  packageType: string;
+  pricePerSession: number;
+  totalPrice: number;
+  discount: number;
+  finalPrice: number;
 }
 
 export interface StudentProfile {

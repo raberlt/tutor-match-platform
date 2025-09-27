@@ -3,7 +3,14 @@ package fsa.training.tutormatch.service;
 import fsa.training.tutormatch.dto.TutorDTO;
 import fsa.training.tutormatch.dto.TutorPreviewDTO;
 import fsa.training.tutormatch.entity.TutorProfile;
+import fsa.training.tutormatch.entity.ApplicationSubjectFee;
+import fsa.training.tutormatch.entity.ApplicationSchedule;
+import fsa.training.tutormatch.entity.ApplicationTeachingAudience;
 import fsa.training.tutormatch.repository.TutorProfileRepository;
+import fsa.training.tutormatch.repository.ApplicationSubjectFeeRepository;
+import fsa.training.tutormatch.repository.ApplicationScheduleRepository;
+import fsa.training.tutormatch.repository.ApplicationTeachingAudienceRepository;
+import fsa.training.tutormatch.repository.SubjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,6 +28,18 @@ public class TutorSearchService {
     
     @Autowired
     private TutorProfileRepository tutorProfileRepository;
+    
+    @Autowired
+    private ApplicationSubjectFeeRepository applicationSubjectFeeRepository;
+    
+    @Autowired
+    private ApplicationScheduleRepository applicationScheduleRepository;
+    
+    @Autowired
+    private ApplicationTeachingAudienceRepository applicationTeachingAudienceRepository;
+    
+    @Autowired
+    private SubjectRepository subjectRepository;
     
     public List<TutorProfile> searchByKeyword(String keyword) {
         // Implementation for keyword search
@@ -121,8 +140,11 @@ public class TutorSearchService {
         dto.setTotalPoint(tutor.getTotalPoint());
         dto.setVerified(tutor.isVerified());
         
-        // Subjects are now managed separately - return empty list for now
+        // TODO: Load subjects, schedules, teachingAudiences from Application entities
+        // For now, return empty lists to avoid compilation errors
         dto.setSubjects(new ArrayList<>());
+        // dto.setSchedules(new ArrayList<>());
+        // dto.setTeachingAudiences(new ArrayList<>());
         
         return dto;
     }
@@ -139,8 +161,11 @@ public class TutorSearchService {
         dto.setTotalPoint(tutor.getTotalPoint());
         dto.setVerified(tutor.isVerified());
         
-        // Subject names are now managed separately - return empty list for now
+        // TODO: Load subjects, schedules, teachingAudiences from Application entities
+        // For now, return empty lists to avoid compilation errors
         dto.setSubjectNames(new ArrayList<>());
+        // dto.setSchedules(new ArrayList<>());
+        // dto.setTeachingAudiences(new ArrayList<>());
         
         return dto;
     }

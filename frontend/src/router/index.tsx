@@ -27,7 +27,9 @@ import { Settings } from "../pages/user/Settings";
 import BookingDetail from "../pages/user/BookingDetail";
 import CreateBooking from "../pages/user/CreateBooking";
 import SingleBooking from "../pages/user/SingleBooking";
-import PackageBooking from "../pages/user/PackageBooking";
+import PackageBookingForm from "../pages/user/PackageBookingForm";
+import PackagePayment from "../pages/user/PackagePayment";
+import BookingSuccess from "../pages/user/BookingSuccess";
 import TutorDetail from "../pages/user/TutorDetail";
 
 // Tutor Pages
@@ -148,7 +150,23 @@ const router = createBrowserRouter([
         path: "package-booking",
         element: (
           <BookingProtectedRoute allowedRoles={["STUDENT"]}>
-            <PackageBooking />
+            <PackageBookingForm />
+          </BookingProtectedRoute>
+        ),
+      },
+      {
+        path: "package-payment",
+        element: (
+          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
+            <PackagePayment />
+          </BookingProtectedRoute>
+        ),
+      },
+      {
+        path: "booking-success",
+        element: (
+          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
+            <BookingSuccess />
           </BookingProtectedRoute>
         ),
       },

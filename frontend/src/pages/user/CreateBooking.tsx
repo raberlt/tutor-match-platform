@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { bookingService } from "../../services/bookingService";
 import { TutorService } from "../../services/tutorService";
+import PackageBookingForm from "./PackageBookingForm";
 import type {
   BookingRequestCreateDTO,
   BookingSystemInfo,
@@ -114,7 +115,13 @@ const CreateBooking: React.FC = () => {
     if (mode === "single") {
       setFormData((prev) => ({ ...prev, bookingType: "SINGLE_SESSION" }));
     } else {
-      setFormData((prev) => ({ ...prev, bookingType: "PACKAGE" }));
+      // Navigate to package booking form
+      navigate("/user/package-booking", {
+        state: {
+          selectedTutor,
+          selectedSubject,
+        },
+      });
     }
   };
 

@@ -722,3 +722,25 @@ class AdminService {
 }
 
 export const adminService = new AdminService();
+export { AdminService };
+
+// Application types
+export interface ApplicationForReview {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber?: string;
+  headline?: string;
+  bio?: string;
+  experience?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  submittedAt?: string;
+  educations?: any[];
+  certificates?: any[];
+  schedules?: any[];
+  subjectFees?: any[];
+  teachingAudiences?: string[];
+}

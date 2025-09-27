@@ -30,6 +30,7 @@ import SingleBookingNew from "../pages/user/SingleBookingNew";
 import PackageBooking from "../pages/user/PackageBooking";
 import PackageBookingNew from "../pages/user/PackageBookingNew";
 import PackagePayment from "../pages/user/PackagePayment";
+import PaymentPage from "../pages/user/PaymentPage";
 import BookingSuccess from "../pages/user/BookingSuccess";
 import TutorDetail from "../pages/user/TutorDetail";
 
@@ -168,6 +169,14 @@ const router = createBrowserRouter([
         element: (
           <BookingProtectedRoute allowedRoles={["STUDENT"]}>
             <PackagePayment />
+          </BookingProtectedRoute>
+        ),
+      },
+      {
+        path: "payment",
+        element: (
+          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
+            <PaymentPage />
           </BookingProtectedRoute>
         ),
       },

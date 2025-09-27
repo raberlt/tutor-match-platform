@@ -8,6 +8,7 @@ export interface User {
   email: string;
   role: UserRole;
   imageAvatar?: string;
+  isVerified?: boolean;
 }
 
 export interface AuthContextType {
@@ -163,6 +164,7 @@ export interface Certificate {
   description?: string;
   certFileName?: string;
   certFileUrl?: string;
+  year?: number;
   valid?: boolean;
   isVerified?: boolean;
   createdAt?: string;
@@ -351,7 +353,7 @@ export interface TutorPreviewProfile {
   user?: User;
 }
 
-export interface TutorProfile {
+export interface TutorPreviewProfile {
   id: number;
   firstName: string;
   lastName: string;
@@ -379,6 +381,7 @@ export interface TutorProfileSubject {
 export interface TutorSubjectDetail {
   id: number;
   name: string;
+  fees: number;
 }
 
 export interface TutorSchedule {

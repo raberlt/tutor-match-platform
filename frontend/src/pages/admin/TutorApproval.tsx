@@ -218,12 +218,12 @@ export const TutorApproval: React.FC = () => {
       if (selectedApplication) {
         const updatedApplication = { ...selectedApplication };
         const educationIndex = updatedApplication.educations.findIndex(
-          (edu) => edu.id === educationId
+          (edu) => edu.id === parseInt(educationId)
         );
         if (educationIndex !== -1) {
           updatedApplication.educations[educationIndex] = {
             ...updatedApplication.educations[educationIndex],
-            isVerified: isVerified,
+            verified: isVerified,
           };
           setSelectedApplication(updatedApplication);
         }
@@ -257,12 +257,12 @@ export const TutorApproval: React.FC = () => {
       if (selectedApplication) {
         const updatedApplication = { ...selectedApplication };
         const certificateIndex = updatedApplication.certificates.findIndex(
-          (cert) => cert.id === certificateId
+          (cert) => cert.id === parseInt(certificateId)
         );
         if (certificateIndex !== -1) {
           updatedApplication.certificates[certificateIndex] = {
             ...updatedApplication.certificates[certificateIndex],
-            isVerified: isVerified,
+            verified: isVerified,
           };
           setSelectedApplication(updatedApplication);
         }
@@ -817,12 +817,12 @@ export const TutorApproval: React.FC = () => {
                                 <div className="mt-2 flex items-center space-x-2">
                                   <span
                                     className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                      edu.isVerified
+                                      edu.verified
                                         ? "bg-green-100 text-green-800"
                                         : "bg-yellow-100 text-yellow-800"
                                     }`}
                                   >
-                                    {edu.isVerified
+                                    {edu.verified
                                       ? "Đã xác thực"
                                       : "Chờ xác thực"}
                                   </span>
@@ -834,11 +834,11 @@ export const TutorApproval: React.FC = () => {
                                     handleVerifyEducation(edu.id, true)
                                   }
                                   disabled={
-                                    edu.isVerified ||
+                                    edu.verified ||
                                     verifyingItems.has(`edu-${edu.id}`)
                                   }
                                   className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                                    edu.isVerified ||
+                                    edu.verified ||
                                     verifyingItems.has(`edu-${edu.id}`)
                                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                       : "bg-green-100 text-green-700 hover:bg-green-200"
@@ -853,11 +853,11 @@ export const TutorApproval: React.FC = () => {
                                     handleVerifyEducation(edu.id, false)
                                   }
                                   disabled={
-                                    !edu.isVerified ||
+                                    !edu.verified ||
                                     verifyingItems.has(`edu-${edu.id}`)
                                   }
                                   className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                                    !edu.isVerified ||
+                                    !edu.verified ||
                                     verifyingItems.has(`edu-${edu.id}`)
                                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                       : "bg-red-100 text-red-700 hover:bg-red-200"
@@ -923,12 +923,12 @@ export const TutorApproval: React.FC = () => {
                                 <div className="mt-2 flex items-center space-x-2">
                                   <span
                                     className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                      cert.isVerified
+                                      cert.verified
                                         ? "bg-green-100 text-green-800"
                                         : "bg-yellow-100 text-yellow-800"
                                     }`}
                                   >
-                                    {cert.isVerified
+                                    {cert.verified
                                       ? "Đã xác thực"
                                       : "Chờ xác thực"}
                                   </span>
@@ -940,11 +940,11 @@ export const TutorApproval: React.FC = () => {
                                     handleVerifyCertificate(cert.id, true)
                                   }
                                   disabled={
-                                    cert.isVerified ||
+                                    cert.verified ||
                                     verifyingItems.has(`cert-${cert.id}`)
                                   }
                                   className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                                    cert.isVerified ||
+                                    cert.verified ||
                                     verifyingItems.has(`cert-${cert.id}`)
                                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                       : "bg-green-100 text-green-700 hover:bg-green-200"
@@ -959,11 +959,11 @@ export const TutorApproval: React.FC = () => {
                                     handleVerifyCertificate(cert.id, false)
                                   }
                                   disabled={
-                                    !cert.isVerified ||
+                                    !cert.verified ||
                                     verifyingItems.has(`cert-${cert.id}`)
                                   }
                                   className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                                    !cert.isVerified ||
+                                    !cert.verified ||
                                     verifyingItems.has(`cert-${cert.id}`)
                                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                       : "bg-red-100 text-red-700 hover:bg-red-200"

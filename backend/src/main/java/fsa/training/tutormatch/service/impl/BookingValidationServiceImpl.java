@@ -7,6 +7,7 @@ import fsa.training.tutormatch.enums.BookingType;
 import fsa.training.tutormatch.service.BookingValidationService;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.Objects;
 
@@ -150,7 +151,7 @@ public class BookingValidationServiceImpl implements BookingValidationService {
             throw new IllegalArgumentException("Sessions per week must be positive");
         }
         
-        if (request.getTotalAmount() == null || request.getTotalAmount() <= 0) {
+        if (request.getTotalAmount() == null || request.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Total amount must be positive");
         }
     }

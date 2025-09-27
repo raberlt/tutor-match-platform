@@ -224,13 +224,13 @@ const BookingDemo: React.FC = () => {
                 <div className="flex items-center">
                   <span className="text-green-600 mr-2">GET</span>
                   <code className="bg-gray-100 px-2 py-1 rounded">
-                    /api/booking/student/{id}
+                    /api/booking/student/{"{id}"}
                   </code>
                 </div>
                 <div className="flex items-center">
                   <span className="text-yellow-600 mr-2">PUT</span>
                   <code className="bg-gray-100 px-2 py-1 rounded">
-                    /api/booking/student/{id}/cancel
+                    /api/booking/student/{"{id}"}/cancel
                   </code>
                 </div>
               </div>
@@ -248,13 +248,13 @@ const BookingDemo: React.FC = () => {
                 <div className="flex items-center">
                   <span className="text-yellow-600 mr-2">PUT</span>
                   <code className="bg-gray-100 px-2 py-1 rounded">
-                    /api/booking/tutor/{id}/approve
+                    /api/booking/tutor/{"{id}"}/approve
                   </code>
                 </div>
                 <div className="flex items-center">
                   <span className="text-yellow-600 mr-2">PUT</span>
                   <code className="bg-gray-100 px-2 py-1 rounded">
-                    /api/booking/tutor/{id}/reject
+                    /api/booking/tutor/{"{id}"}/reject
                   </code>
                 </div>
               </div>
@@ -272,19 +272,19 @@ const BookingDemo: React.FC = () => {
                 <div className="flex items-center">
                   <span className="text-green-600 mr-2">GET</span>
                   <code className="bg-gray-100 px-2 py-1 rounded">
-                    /api/booking/admin/{id}
+                    /api/booking/admin/{"{id}"}
                   </code>
                 </div>
                 <div className="flex items-center">
                   <span className="text-yellow-600 mr-2">PUT</span>
                   <code className="bg-gray-100 px-2 py-1 rounded">
-                    /api/booking/admin/{id}/status
+                    /api/booking/admin/{"{id}"}/status
                   </code>
                 </div>
                 <div className="flex items-center">
                   <span className="text-red-600 mr-2">DELETE</span>
                   <code className="bg-gray-100 px-2 py-1 rounded">
-                    /api/booking/admin/{id}
+                    /api/booking/admin/{"{id}"}
                   </code>
                 </div>
               </div>

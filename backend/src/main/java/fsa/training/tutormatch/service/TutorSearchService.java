@@ -155,7 +155,16 @@ public class TutorSearchService {
             }
         }
         System.out.println("DEBUG: Total subjects added: " + subjects.size());
-        dto.setSubjects(subjects);
+        
+        // Convert Map to SubjectDTO
+        List<TutorDTO.SubjectDTO> subjectDTOs = subjects.stream()
+            .map(subjectMap -> new TutorDTO.SubjectDTO(
+                (Integer) subjectMap.get("id"),
+                (String) subjectMap.get("name"),
+                (Integer) subjectMap.get("hourlyRate")
+            ))
+            .toList();
+        dto.setSubjects(subjectDTOs);
         
         return dto;
     }

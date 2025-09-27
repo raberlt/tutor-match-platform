@@ -10,16 +10,18 @@ import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
+import java.util.List;
 
 @Entity
 @Data
 @Table(name = "bookings")
-@EqualsAndHashCode(exclude = {"student", "tutor"})
-@ToString(exclude = {"student", "tutor"})
+@EqualsAndHashCode(exclude = {"student", "tutor", "sessions"})
+@ToString(exclude = {"student", "tutor", "sessions"})
 public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,8 +55,25 @@ public class Booking {
     @Column(columnDefinition = "NVARCHAR(500)")
     private String note;
 
-    @Column(name = "amount", nullable = false)
-    private Double amount;
+    // Financial fields
+    @Column(name = "hourly_rate", nullable = false, precision = 10, scale = 2)
+    private BigDecimal hourlyRate;
+    
+    @Column(name = "session_fee", nullable = false, precision = 10, scale = 2)
+    private BigDecimal sessionFee;
+    
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalAmount;
+    
+    // Package/Trial specific fields
+    @Column(name = "total_sessions")
+    private Integer totalSessions;
+    
+    @Column(name = "sessions_per_week")
+    private Integer sessionsPerWeek;
+    
+    @Column(name = "contract_duration")
+    private Integer contractDuration;
     
     @Column(name = "payment_status")
     @Enumerated(EnumType.STRING)
@@ -69,18 +88,6 @@ public class Booking {
     @Column(name = "payment_date")
     private ZonedDateTime paymentDate;
 
-    // @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private Contract contract;
-    
-    @Column(name = "contract_duration")
-    private Integer contractDuration;
-    
-    @Column(name = "sessions_per_week")
-    private Integer sessionsPerWeek;
-
-    @Column(columnDefinition = "NVARCHAR(1000)")
-    private String adminNote; // Ghi chú của admin
-
     @CreationTimestamp
     @Column(updatable = false)
     private ZonedDateTime createdAt;
@@ -88,13 +95,17 @@ public class Booking {
     @UpdateTimestamp
     private ZonedDateTime updatedAt;
     
+    // One-to-Many relationship with sessions
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Session> sessions;
+    
     // Helper method for backward compatibility
-    public Double getTotalAmount() {
-        return this.amount;
+    public Double getAmount() {
+        return this.totalAmount != null ? this.totalAmount.doubleValue() : null;
     }
     
-    public void setTotalAmount(Double totalAmount) {
-        this.amount = totalAmount;
+    public void setAmount(Double amount) {
+        this.totalAmount = amount != null ? BigDecimal.valueOf(amount) : null;
     }
     
     // Helper methods for timezone handling

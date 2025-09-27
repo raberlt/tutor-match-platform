@@ -3,6 +3,8 @@ package fsa.training.tutormatch.dto;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class BookingRequestCreateDTO {
     @NotNull
@@ -22,8 +24,17 @@ public class BookingRequestCreateDTO {
     
     private String note;
     
-    // Cho contract
-    private Integer contractDuration; // 3 hoặc 6 tháng
+    // Package/Trial specific fields
+    private Integer totalSessions;    // Tổng số buổi học
     private Integer sessionsPerWeek;  // Số buổi/tuần
-    private Double totalAmount;       // Tổng tiền
+    private Integer contractDuration; // 3 hoặc 6 tháng
+    
+    // Financial fields
+    private BigDecimal hourlyRate;    // Phí theo giờ
+    private BigDecimal sessionFee;    // Phí 1 buổi học
+    private BigDecimal totalAmount;   // Tổng tiền
+    
+    // Schedule fields (for PACKAGE)
+    private String scheduleType;      // FIXED, FLEXIBLE
+    private String selectedDays;      // "MONDAY,WEDNESDAY,FRIDAY"
 } 

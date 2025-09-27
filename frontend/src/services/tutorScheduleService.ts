@@ -1,10 +1,5 @@
 import api from "./api";
-
-export interface TutorSchedule {
-  dayOfWeek: string;
-  fromTime: string;
-  toTime: string;
-}
+import type { TutorSchedule } from "../types";
 
 export interface TutorSubject {
   id: number;

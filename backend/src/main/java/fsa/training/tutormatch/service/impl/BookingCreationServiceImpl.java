@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -74,6 +75,9 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         
         booking.setContractDuration(request.getContractDuration());
         booking.setSessionsPerWeek(request.getSessionsPerWeek());
+        booking.setTotalSessions(request.getTotalSessions());
+        booking.setHourlyRate(request.getHourlyRate());
+        booking.setSessionFee(request.getSessionFee());
         booking.setTotalAmount(request.getTotalAmount());
         
         return bookingRepository.save(booking);

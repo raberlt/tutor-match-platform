@@ -150,10 +150,10 @@ export const TutorLayout: React.FC = () => {
                 className="text-xs transition-colors"
                 style={{ color: "rgb(148, 204, 230)" }}
                 onMouseEnter={(e) =>
-                  (e.target.style.color = "rgb(100, 150, 200)")
+                  ((e.target as HTMLElement).style.color = "rgb(100, 150, 200)")
                 }
                 onMouseLeave={(e) =>
-                  (e.target.style.color = "rgb(148, 204, 230)")
+                  ((e.target as HTMLElement).style.color = "rgb(148, 204, 230)")
                 }
               >
                 Đăng xuất

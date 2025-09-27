@@ -455,9 +455,7 @@ public class BookingController {
         dto.setFromTime(booking.getFromTime());
         dto.setToTime(booking.getToTime());
         dto.setNote(booking.getNote());
-        dto.setTotalAmount(booking.getTotalAmount());
-        dto.setContractDuration(booking.getContractDuration());
-        dto.setSessionsPerWeek(booking.getSessionsPerWeek());
+        dto.setTotalAmount(booking.getTotalAmount().doubleValue());
 
         // Student info (minimal)
         if (booking.getStudent() != null) {

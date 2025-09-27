@@ -1,12 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { bookingService } from "../../services/bookingService";
-import type {
-  Booking,
-  BookingListResponse,
-  BookingStats,
-  BookingStatus,
-} from "../../types";
+import type { BookingStats, BookingStatus } from "../../types";
 
 // Icons
 const CalendarIcon = () => (
@@ -89,76 +83,154 @@ const PlusIcon = () => (
   </svg>
 );
 
-const FilterIcon = () => (
-  <svg
-    className="w-5 h-5"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-    />
-  </svg>
-);
-
 const MySessions: React.FC = () => {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [stats, setStats] = useState<BookingStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Mock data for demo
+  const [bookings, setBookings] = useState<any[]>([
+    {
+      id: 1,
+      date: "2024-01-15",
+      fromTime: "14:00",
+      toTime: "15:30",
+      amount: 200000,
+      note: "Học về phương trình bậc 2",
+      status: "CONFIRMED",
+      bookingType: "SINGLE_SESSION",
+      tutor: {
+        id: 1,
+        user: {
+          id: "1",
+          firstName: "Nguyễn",
+          lastName: "Văn A",
+          username: "nguyenvana",
+          email: "nguyenvana@example.com",
+          role: "TUTOR",
+        },
+      },
+      subject: {
+        id: 1,
+        name: "Toán học",
+      },
+    },
+    {
+      id: 2,
+      date: "2024-01-17",
+      fromTime: "16:00",
+      toTime: "17:30",
+      amount: 300000,
+      note: "Học về đạo hàm",
+      status: "PENDING",
+      bookingType: "PACKAGE",
+      tutor: {
+        id: 2,
+        user: {
+          id: "2",
+          firstName: "Trần",
+          lastName: "Thị B",
+          username: "tranthib",
+          email: "tranthib@example.com",
+          role: "TUTOR",
+        },
+      },
+      subject: {
+        id: 1,
+        name: "Toán học",
+      },
+    },
+    {
+      id: 3,
+      date: "2024-01-19",
+      fromTime: "09:00",
+      toTime: "10:30",
+      amount: 250000,
+      note: "Học về từ vựng mới",
+      status: "COMPLETED",
+      bookingType: "SINGLE_SESSION",
+      tutor: {
+        id: 3,
+        user: {
+          id: "3",
+          firstName: "Lê",
+          lastName: "Văn C",
+          username: "levanc",
+          email: "levanc@example.com",
+          role: "TUTOR",
+        },
+      },
+      subject: {
+        id: 2,
+        name: "Tiếng Anh",
+      },
+    },
+  ]);
+
+  const [stats, setStats] = useState<BookingStats | null>({
+    totalBookings: 3,
+    pendingBookings: 1,
+    completedBookings: 1,
+    cancelledBookings: 0,
+  });
   const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+  const [totalPages] = useState(1);
   const [selectedStatus, setSelectedStatus] = useState<
     BookingStatus | undefined
   >();
 
-  useEffect(() => {
-    loadBookings();
-    loadStats();
-  }, [currentPage, selectedStatus]);
+  // Comment out API calls for demo
+  // useEffect(() => {
+  //   loadBookings();
+  //   loadStats();
+  // }, [currentPage, selectedStatus]);
 
-  const loadBookings = async () => {
-    try {
-      setLoading(true);
-      const response = await bookingService.getMyBookings(
-        currentPage,
-        10,
-        selectedStatus
-      );
-      setBookings(response.content);
-      setTotalPages(response.totalPages);
-    } catch (error: any) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const loadBookings = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const response = await bookingService.getMyBookings(
+  //       currentPage,
+  //       10,
+  //       selectedStatus
+  //     );
+  //     setBookings(response.content);
+  //     setTotalPages(response.totalPages);
+  //   } catch (error: unknown) {
+  //     setError((error as Error).message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  const loadStats = async () => {
-    try {
-      const statsData = await bookingService.getStudentBookingStats();
-      setStats(statsData);
-    } catch (error) {
-      console.error("Error loading stats:", error);
-    }
-  };
+  // const loadStats = async () => {
+  //   try {
+  //     const statsData = await bookingService.getStudentBookingStats();
+  //     setStats(statsData);
+  //   } catch (error) {
+  //     console.error("Error loading stats:", error);
+  //   }
+  // };
 
   const handleCancelBooking = async (bookingId: number) => {
     if (!window.confirm("Bạn có chắc chắn muốn hủy booking này?")) {
       return;
     }
 
-    try {
-      await bookingService.cancelBooking(bookingId);
-      loadBookings();
-      loadStats();
-    } catch (error: any) {
-      alert(error.message);
-    }
+    // Mock cancel for demo
+    setBookings((prev) => prev.filter((booking) => booking.id !== bookingId));
+    setStats((prev) =>
+      prev
+        ? {
+            ...prev,
+            totalBookings: prev.totalBookings - 1,
+            cancelledBookings: prev.cancelledBookings + 1,
+          }
+        : null
+    );
+
+    // try {
+    //   await bookingService.cancelBooking(bookingId);
+    //   loadBookings();
+    //   loadStats();
+    // } catch (error: unknown) {
+    //   alert((error as Error).message);
+    // }
   };
 
   const getStatusColor = (status: BookingStatus) => {
@@ -228,63 +300,16 @@ const MySessions: React.FC = () => {
     return status === "PENDING" || status === "PAYMENT_PENDING";
   };
 
-  if (loading && bookings.length === 0) {
-    return (
-      <div className="min-h-screen" style={{ backgroundColor: "#f8fafc" }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <div
-              className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
-              style={{ borderColor: "rgb(148, 204, 230)" }}
-            ></div>
-            <p className="mt-4 text-gray-600">Đang tải...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen py-8" style={{ backgroundColor: "#f8fafc" }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
-            <div
-              className="p-3 rounded-xl"
-              style={{ backgroundColor: "rgb(148, 204, 230)" }}
-            >
-              <BookIcon />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Buổi Học Của Tôi
-              </h1>
-              <p className="mt-1 text-gray-600">
-                Quản lý và theo dõi các buổi học đã đặt
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Thống kê - Thiết kế mới */}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Thống kê */}
         {stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {/* Tổng Booking */}
-            <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
-              style={{
-                backgroundColor: "rgba(148, 204, 230, 0.1)",
-                borderColor: "rgba(148, 204, 230, 0.2)",
-                border: "1px solid",
-              }}
-            >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p
-                    className="text-sm font-medium mb-1"
-                    style={{ color: "rgb(148, 204, 230)" }}
-                  >
+                  <p className="text-sm font-medium text-gray-600 mb-1">
                     Tổng Booking
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
@@ -298,29 +323,12 @@ const MySessions: React.FC = () => {
                   <BookIcon />
                 </div>
               </div>
-              <div
-                className="mt-3 flex items-center text-sm"
-                style={{ color: "rgb(148, 204, 230)" }}
-              >
-                <span className="font-medium">Tất cả buổi học</span>
-              </div>
             </div>
 
-            {/* Chờ xử lý */}
-            <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
-              style={{
-                backgroundColor: "rgba(148, 204, 230, 0.1)",
-                borderColor: "rgba(148, 204, 230, 0.2)",
-                border: "1px solid",
-              }}
-            >
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p
-                    className="text-sm font-medium mb-1"
-                    style={{ color: "rgb(148, 204, 230)" }}
-                  >
+                  <p className="text-sm font-medium text-gray-600 mb-1">
                     Chờ xử lý
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
@@ -334,29 +342,12 @@ const MySessions: React.FC = () => {
                   <ClockIcon />
                 </div>
               </div>
-              <div
-                className="mt-3 flex items-center text-sm"
-                style={{ color: "rgb(148, 204, 230)" }}
-              >
-                <span className="font-medium">Đang chờ phản hồi</span>
-              </div>
             </div>
 
-            {/* Hoàn thành */}
-            <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
-              style={{
-                backgroundColor: "rgba(148, 204, 230, 0.1)",
-                borderColor: "rgba(148, 204, 230, 0.2)",
-                border: "1px solid",
-              }}
-            >
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p
-                    className="text-sm font-medium mb-1"
-                    style={{ color: "rgb(148, 204, 230)" }}
-                  >
+                  <p className="text-sm font-medium text-gray-600 mb-1">
                     Hoàn thành
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
@@ -382,29 +373,12 @@ const MySessions: React.FC = () => {
                   </svg>
                 </div>
               </div>
-              <div
-                className="mt-3 flex items-center text-sm"
-                style={{ color: "rgb(148, 204, 230)" }}
-              >
-                <span className="font-medium">Đã hoàn thành</span>
-              </div>
             </div>
 
-            {/* Đã hủy */}
-            <div
-              className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
-              style={{
-                backgroundColor: "rgba(148, 204, 230, 0.1)",
-                borderColor: "rgba(148, 204, 230, 0.2)",
-                border: "1px solid",
-              }}
-            >
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p
-                    className="text-sm font-medium mb-1"
-                    style={{ color: "rgb(148, 204, 230)" }}
-                  >
+                  <p className="text-sm font-medium text-gray-600 mb-1">
                     Đã hủy
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
@@ -430,30 +404,15 @@ const MySessions: React.FC = () => {
                   </svg>
                 </div>
               </div>
-              <div
-                className="mt-3 flex items-center text-sm"
-                style={{ color: "rgb(148, 204, 230)" }}
-              >
-                <span className="font-medium">Đã hủy bỏ</span>
-              </div>
             </div>
           </div>
         )}
 
-        {/* Bộ lọc và Hành động nhanh */}
-        <div
-          className="p-6 rounded-2xl shadow-lg mb-6"
-          style={{
-            backgroundColor: "white",
-            borderColor: "rgba(148, 204, 230, 0.2)",
-            border: "1px solid",
-          }}
-        >
+        {/* Bộ lọc và Hành động */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            {/* Bộ lọc */}
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative">
-                <FilterIcon />
                 <select
                   value={selectedStatus || ""}
                   onChange={(e) =>
@@ -461,11 +420,7 @@ const MySessions: React.FC = () => {
                       (e.target.value as BookingStatus) || undefined
                     )
                   }
-                  className="pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
-                  style={{
-                    borderColor: "rgba(148, 204, 230, 0.3)",
-                    focusRingColor: "rgb(148, 204, 230)",
-                  }}
+                  className="pl-4 pr-8 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 font-medium"
                 >
                   <option value="">Tất cả trạng thái</option>
                   <option value="PENDING">Chờ xử lý</option>
@@ -483,28 +438,19 @@ const MySessions: React.FC = () => {
               </div>
             </div>
 
-            {/* Hành động nhanh */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
                 to="/find-tutor"
-                className="inline-flex items-center px-4 py-3 rounded-xl focus:outline-none focus:ring-2 transition-colors duration-200 font-medium"
-                style={{
-                  backgroundColor: "rgba(148, 204, 230, 0.1)",
-                  color: "rgb(148, 204, 230)",
-                  focusRingColor: "rgb(148, 204, 230)",
-                }}
+                className="inline-flex items-center px-4 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium"
               >
                 <UserIcon />
                 <span className="ml-2">Tìm gia sư</span>
               </Link>
 
               <Link
-                to="/user/create-booking"
-                className="inline-flex items-center px-6 py-3 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
-                style={{
-                  backgroundColor: "rgb(148, 204, 230)",
-                  focusRingColor: "rgb(148, 204, 230)",
-                }}
+                to="/unified-booking"
+                className="inline-flex items-center px-6 py-3 text-white rounded-xl transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                style={{ backgroundColor: "rgb(148, 204, 230)" }}
               >
                 <PlusIcon />
                 <span className="ml-2">Đặt lịch mới</span>
@@ -513,16 +459,9 @@ const MySessions: React.FC = () => {
           </div>
         </div>
 
-        {/* Danh sách booking - Thiết kế mới */}
+        {/* Danh sách booking */}
         {bookings.length === 0 ? (
-          <div
-            className="rounded-2xl shadow-lg"
-            style={{
-              backgroundColor: "white",
-              borderColor: "rgba(148, 204, 230, 0.2)",
-              border: "1px solid",
-            }}
-          >
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
             <div className="text-center py-16">
               <div
                 className="mx-auto w-24 h-24 rounded-full flex items-center justify-center mb-6"
@@ -540,17 +479,13 @@ const MySessions: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   to="/find-tutor"
-                  className="inline-flex items-center px-6 py-3 rounded-xl transition-colors duration-200 font-medium"
-                  style={{
-                    backgroundColor: "rgba(148, 204, 230, 0.1)",
-                    color: "rgb(148, 204, 230)",
-                  }}
+                  className="inline-flex items-center px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium"
                 >
                   <UserIcon />
                   <span className="ml-2">Tìm gia sư</span>
                 </Link>
                 <Link
-                  to="/user/create-booking"
+                  to="/unified-booking"
                   className="inline-flex items-center px-6 py-3 text-white rounded-xl transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
                   style={{ backgroundColor: "rgb(148, 204, 230)" }}
                 >
@@ -565,18 +500,10 @@ const MySessions: React.FC = () => {
             {bookings.map((booking) => (
               <div
                 key={booking.id}
-                className="rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
-                style={{
-                  backgroundColor: "white",
-                  borderColor: "rgba(148, 204, 230, 0.2)",
-                  border: "1px solid",
-                }}
+                className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden"
               >
                 {/* Header với status */}
-                <div
-                  className="p-6 border-b"
-                  style={{ borderColor: "rgba(148, 204, 230, 0.1)" }}
-                >
+                <div className="p-6 border-b border-gray-100">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <span
@@ -645,20 +572,14 @@ const MySessions: React.FC = () => {
 
                     {/* Ghi chú */}
                     {booking.note && (
-                      <div
-                        className="rounded-lg p-3"
-                        style={{ backgroundColor: "rgba(148, 204, 230, 0.05)" }}
-                      >
+                      <div className="rounded-lg p-3 bg-gray-50">
                         <p className="text-sm text-gray-700">{booking.note}</p>
                       </div>
                     )}
 
                     {/* Giá */}
                     {booking.amount > 0 && (
-                      <div
-                        className="flex items-center justify-between pt-2 border-t"
-                        style={{ borderColor: "rgba(148, 204, 230, 0.1)" }}
-                      >
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                         <span className="text-sm font-medium text-gray-600">
                           Tổng tiền:
                         </span>
@@ -670,12 +591,9 @@ const MySessions: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div
-                    className="mt-6 pt-4 border-t"
-                    style={{ borderColor: "rgba(148, 204, 230, 0.1)" }}
-                  >
+                  <div className="mt-6 pt-4 border-t border-gray-100">
                     <Link
-                      to={`/user/booking-detail/${booking.id}`}
+                      to={`/booking-detail/${booking.id}`}
                       className="w-full inline-flex items-center justify-center px-4 py-2 text-white rounded-xl transition-colors duration-200 font-medium"
                       style={{ backgroundColor: "rgb(148, 204, 230)" }}
                     >
@@ -688,17 +606,10 @@ const MySessions: React.FC = () => {
           </div>
         )}
 
-        {/* Phân trang - Thiết kế mới */}
+        {/* Phân trang */}
         {totalPages > 1 && (
           <div className="mt-8 flex justify-center">
-            <nav
-              className="flex items-center space-x-2 rounded-2xl shadow-lg p-2"
-              style={{
-                backgroundColor: "white",
-                borderColor: "rgba(148, 204, 230, 0.2)",
-                border: "1px solid",
-              }}
-            >
+            <nav className="flex items-center space-x-2 bg-white rounded-2xl shadow-sm border border-gray-200 p-2">
               <button
                 onClick={() => setCurrentPage(0)}
                 disabled={currentPage === 0}
@@ -766,12 +677,6 @@ const MySessions: React.FC = () => {
                 Cuối
               </button>
             </nav>
-          </div>
-        )}
-
-        {error && (
-          <div className="mt-6 bg-red-50 border border-red-200 rounded-md p-4">
-            <p className="text-sm text-red-600">{error}</p>
           </div>
         )}
       </div>

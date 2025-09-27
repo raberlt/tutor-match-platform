@@ -27,154 +27,113 @@ public class TutorServiceImpl implements TutorService {
     private TutorProfileRepository tutorProfileRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private BookingRepository bookingRepository;
 
     @Autowired
-    private UserRepository userRepository;
-    
+    private DtoConverterService dtoConverterService;
+
     @Autowired
-    private DtoConverterService dtoConverter;
-    
-    @Autowired
-    private TutorSearchService searchService;
+    private TutorSearchService tutorSearchService;
 
-    /**
-     * Tìm kiếm giảng viên với pagination và filters
-     */
-    @Override
-    public Map<String, Object> searchTutorsWithFilters(
-            String keyword,
-            Integer subjectId, 
-            BigDecimal minFee,
-            BigDecimal maxFee,
-            Double minRating,
-            String city,
-            int page,
-            int size,
-            String sortBy,
-            String sortDirection) {
-        
-        // Delegate to search service
-        return searchService.searchTutorsWithFilters(keyword, subjectId, minFee, maxFee, minRating, city, page, size, sortBy, sortDirection);
-    }
-
-    /**
-     * Tìm kiếm giảng viên preview cho guest với pagination
-     */
-    @Override
-    public Map<String, Object> searchTutorPreviewsWithFilters(
-            String keyword,
-            Integer subjectId, 
-            BigDecimal minFee,
-            BigDecimal maxFee,
-            Double minRating,
-            String city,
-            int page,
-            int size,
-            String sortBy,
-            String sortDirection) {
-        
-        // Delegate to search service
-        return searchService.searchTutorPreviewsWithFilters(keyword, subjectId, minFee, maxFee, minRating, city, page, size, sortBy, sortDirection);
-    }
-
-    @Override
-    public List<TutorDTO> findAllTutorDTOs() {
-        List<TutorProfile> tutors = tutorProfileRepository.findEnabledTutors();
-        return tutors.stream()
-                .map(this::convertToDTO)
-                .toList();
-    }
-
-    /**
-     * Find all tutor previews (limited info for guests)
-     */
-    @Override
-    public List<TutorPreviewDTO> findAllTutorPreviews() {
-        List<TutorProfile> tutors = tutorProfileRepository.findEnabledTutors();
-        return convertToPreviewDTOs(tutors);
-    }
-
-    /**
-     * Find tutor detail by ID (for registered students)
-     */
-    @Override
-    public Optional<TutorDTO> findTutorDetailById(Integer tutorId) {
-        return tutorProfileRepository.findById(tutorId)
-            .filter(profile -> profile instanceof TutorProfile)
-            .map(profile -> convertToDTO((TutorProfile) profile));
-    }
-    
-    // Missing methods from interface
     @Override
     public List<TutorProfile> findAll() {
-        return tutorProfileRepository.findEnabledTutors();
+        return tutorProfileRepository.findAll();
     }
-    
+
     @Override
     public List<TutorProfile> findAllApprovedTutors() {
         return tutorProfileRepository.findEnabledTutors();
     }
-    
+
     @Override
     public Optional<TutorProfile> findById(Integer id) {
-        return tutorProfileRepository.findById(id)
-            .filter(profile -> profile instanceof TutorProfile)
-            .map(profile -> (TutorProfile) profile);
+        return tutorProfileRepository.findById(id);
     }
-    
+
     @Override
     public Page<TutorProfile> findAllWithPagination(Pageable pageable) {
-        return tutorProfileRepository.findAllTutorsPaged(pageable);
+        return tutorProfileRepository.findAll(pageable);
     }
-    
+
+    @Override
+    public Map<String, Object> searchTutorsWithFilters(String keyword, Integer subjectId, BigDecimal minFee, 
+                                                       BigDecimal maxFee, Double minRating, String city, 
+                                                       int page, int size, String sortBy, String sortDirection) {
+        return tutorSearchService.searchTutorsWithFilters(keyword, subjectId, minFee, maxFee, minRating, city, page, size, sortBy, sortDirection);
+    }
+
+    @Override
+    public Map<String, Object> searchTutorPreviewsWithFilters(String keyword, Integer subjectId, BigDecimal minFee, 
+                                                              BigDecimal maxFee, Double minRating, String city, 
+                                                              int page, int size, String sortBy, String sortDirection) {
+        return tutorSearchService.searchTutorPreviewsWithFilters(keyword, subjectId, minFee, maxFee, minRating, city, page, size, sortBy, sortDirection);
+    }
+
+    @Override
+    public List<TutorDTO> findAllTutorDTOs() {
+        List<TutorProfile> tutors = findAllApprovedTutors();
+        List<TutorDTO> tutorDTOs = new ArrayList<>();
+        for (TutorProfile tutor : tutors) {
+            tutorDTOs.add(convertToDTO(tutor));
+        }
+        return tutorDTOs;
+    }
+
     @Override
     public TutorDTO convertToDTO(TutorProfile tutor) {
+        // Create a simple DTO conversion
         TutorDTO dto = new TutorDTO();
         dto.setId(tutor.getId());
         dto.setFirstName(tutor.getFirstName());
         dto.setLastName(tutor.getLastName());
         dto.setImageAvatar(tutor.getImageAvatar());
+        dto.setHeadline(tutor.getHeadline());
         dto.setBio(tutor.getBio());
-        dto.setHeadline(tutor.getHeadline());
         dto.setExperience(tutor.getExperience());
-        // teachingLevel field removed from TutorProfile
-        dto.setFees(tutor.getFees());
-        // dto.setCity(tutorProfile.getCity()); // city field removed
         dto.setRatePointAverage(tutor.getRatePointAverage());
         dto.setTotalPoint(tutor.getTotalPoint());
         dto.setVerified(tutor.isVerified());
-        
-        // Subjects are now managed separately - return empty list for now
         dto.setSubjects(new ArrayList<>());
-        
-        return dto;
-    }
-    
-    @Override
-    public List<TutorPreviewDTO> convertToPreviewDTOs(List<TutorProfile> tutors) {
-        return tutors.stream()
-            .map(this::convertToPreviewDTO)
-            .toList();
-    }
-    
-    private TutorPreviewDTO convertToPreviewDTO(TutorProfile tutor) {
-        TutorPreviewDTO dto = new TutorPreviewDTO();
-        dto.setId(tutor.getId());
-        dto.setFirstName(tutor.getFirstName());
-        dto.setLastName(tutor.getLastName());
-        dto.setImageAvatar(tutor.getImageAvatar());
-        dto.setHeadline(tutor.getHeadline());
-        dto.setFees(tutor.getFees());
-        // dto.setCity(tutorProfile.getCity()); // city field removed
-        dto.setRatePointAverage(tutor.getRatePointAverage());
-        dto.setTotalPoint(tutor.getTotalPoint());
-        dto.setVerified(tutor.isVerified());
-        
-        // Subject names are now managed separately - return empty list for now
-        dto.setSubjectNames(new ArrayList<>());
-        
+        dto.setSchedules(new ArrayList<>());
         return dto;
     }
 
+    @Override
+    public List<TutorPreviewDTO> convertToPreviewDTOs(List<TutorProfile> tutors) {
+        List<TutorPreviewDTO> previewDTOs = new ArrayList<>();
+        for (TutorProfile tutor : tutors) {
+            TutorPreviewDTO dto = new TutorPreviewDTO();
+            dto.setId(tutor.getId());
+            dto.setFirstName(tutor.getFirstName());
+            dto.setLastName(tutor.getLastName());
+            dto.setImageAvatar(tutor.getImageAvatar());
+            dto.setHeadline(tutor.getHeadline());
+            dto.setExperience(tutor.getExperience());
+            dto.setRatePointAverage(tutor.getRatePointAverage());
+            dto.setTotalPoint(tutor.getTotalPoint());
+            dto.setVerified(tutor.isVerified());
+            dto.setSubjects(new ArrayList<>());
+            previewDTOs.add(dto);
+        }
+        return previewDTOs;
+    }
+
+    @Override
+    public Optional<TutorDTO> findTutorDetailById(Integer tutorId) {
+        Optional<TutorProfile> tutorOpt = findById(tutorId);
+        if (tutorOpt.isPresent()) {
+            TutorDTO dto = convertToDTO(tutorOpt.get());
+            return Optional.of(dto);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public List<TutorPreviewDTO> findAllTutorPreviews() {
+        List<TutorProfile> tutors = findAllApprovedTutors();
+        return convertToPreviewDTOs(tutors);
+    }
 }

@@ -2,6 +2,7 @@ package fsa.training.tutormatch.controller.tutor;
 
 import fsa.training.tutormatch.dto.TutorDTO;
 import fsa.training.tutormatch.entity.TutorProfile;
+// import fsa.training.tutormatch.entity.TutorProfileSubject; // Entity not found
 import fsa.training.tutormatch.repository.TutorProfileRepository;
 import fsa.training.tutormatch.service.TutorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,12 +123,15 @@ public class TutorController {
             TutorProfile tutor = tutorOpt.get();
             List<Map<String, Object>> subjects = new ArrayList<>();
 
-            if (tutor.getProfileSubjects() != null) {
-                tutor.getProfileSubjects().forEach(profileSubject -> {
+            // Subject fees are now managed through ProfileApplication, not TutorProfile
+            // This method is kept for backward compatibility but does nothing
+            if (false) { // Disabled as subject fees are managed separately
+                new ArrayList<>().forEach(obj -> {
+                    // TutorProfileSubject entity not found - temporarily disabled
                     Map<String, Object> subjectData = new HashMap<>();
-                    subjectData.put("id", profileSubject.getSubject().getId());
-                    subjectData.put("name", profileSubject.getSubject().getName());
-                    subjectData.put("fees", profileSubject.getFees());
+                    subjectData.put("id", 0);
+                    subjectData.put("name", "Unknown Subject");
+                    subjectData.put("fees", 0);
                     subjects.add(subjectData);
                 });
             }

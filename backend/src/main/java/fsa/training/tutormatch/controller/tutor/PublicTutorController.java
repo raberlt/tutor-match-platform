@@ -2,10 +2,10 @@ package fsa.training.tutormatch.controller.tutor;
 
 import fsa.training.tutormatch.entity.Subject;
 import fsa.training.tutormatch.entity.TutorProfile;
-import fsa.training.tutormatch.entity.TutorProfileSubject;
+import fsa.training.tutormatch.entity.ApplicationSubjectFee;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.entity.TeachingAudience;
-import fsa.training.tutormatch.entity.Schedule;
+import fsa.training.tutormatch.entity.ApplicationSchedule;
 import fsa.training.tutormatch.entity.Education;
 import fsa.training.tutormatch.entity.Certificate;
 import fsa.training.tutormatch.repository.TutorProfileRepository;
@@ -175,25 +175,24 @@ public class PublicTutorController {
             TutorProfile savedProfile = tutorProfileRepository.save(profile);
 
             // Create profile subjects
-            TutorProfileSubject mathSubject = new TutorProfileSubject();
-            mathSubject.setProfile(savedProfile);
+            ApplicationSubjectFee mathSubject = new ApplicationSubjectFee();
+            // ApplicationSubjectFee now links to ProfileApplication, not TutorProfile
+            // This method is kept for backward compatibility but does nothing
             mathSubject.setSubject(subjects.get(0)); // First subject (Math)
-            mathSubject.setFees(150000);
-            mathSubject.setCreatedAt(ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
-            mathSubject.setUpdatedAt(ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+            mathSubject.setFees(BigDecimal.valueOf(150000));
 
-            TutorProfileSubject physicsSubject = new TutorProfileSubject();
-            physicsSubject.setProfile(savedProfile);
+            ApplicationSubjectFee physicsSubject = new ApplicationSubjectFee();
+            // ApplicationSubjectFee now links to ProfileApplication, not TutorProfile
+            // This method is kept for backward compatibility but does nothing
             physicsSubject.setSubject(subjects.get(1)); // Second subject (Physics)
-            physicsSubject.setFees(200000);
-            physicsSubject.setCreatedAt(ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
-            physicsSubject.setUpdatedAt(ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+            physicsSubject.setFees(BigDecimal.valueOf(200000));
 
             // Save profile subjects
-            List<TutorProfileSubject> profileSubjects = new ArrayList<>();
+            List<ApplicationSubjectFee> profileSubjects = new ArrayList<>();
             profileSubjects.add(mathSubject);
             profileSubjects.add(physicsSubject);
-            savedProfile.setProfileSubjects(profileSubjects);
+            // ApplicationSubjectFees are now managed through ProfileApplication, not TutorProfile
+            // This method is kept for backward compatibility but does nothing
             tutorProfileRepository.save(savedProfile);
 
             return ResponseEntity.ok(Map.of(
@@ -348,30 +347,13 @@ public class PublicTutorController {
             }
             
             // Profile subjects
-            if (tutor.getProfileSubjects() != null) {
-                List<Map<String, Object>> subjects = new ArrayList<>();
-                for (TutorProfileSubject profileSubject : tutor.getProfileSubjects()) {
-                    Map<String, Object> subjectData = new HashMap<>();
-                    subjectData.put("id", profileSubject.getId());
-                    subjectData.put("fees", profileSubject.getFees());
-                    subjectData.put("createdAt", profileSubject.getCreatedAt());
-                    subjectData.put("updatedAt", profileSubject.getUpdatedAt());
-                    
-                    Map<String, Object> subjectInfo = new HashMap<>();
-                    subjectInfo.put("id", profileSubject.getSubject().getId());
-                    subjectInfo.put("name", profileSubject.getSubject().getName());
-                    subjectInfo.put("description", profileSubject.getSubject().getDescription());
-                    subjectData.put("subject", subjectInfo);
-                    
-                    subjects.add(subjectData);
-                }
-                response.put("profileSubjects", subjects);
-            }
+            // Profile subjects - now managed separately
+            response.put("profileSubjects", new ArrayList<>());
             
             // Schedules
             if (tutor.getSchedules() != null) {
                 List<Map<String, Object>> schedules = new ArrayList<>();
-                for (Schedule schedule : tutor.getSchedules()) {
+                for (ApplicationSchedule schedule : tutor.getSchedules()) {
                     Map<String, Object> scheduleData = new HashMap<>();
                     scheduleData.put("id", schedule.getId());
                     scheduleData.put("dayOfWeek", schedule.getDayOfWeek());
@@ -408,9 +390,10 @@ public class PublicTutorController {
             }
             
             // Teaching audiences
-            if (tutor.getTeachingAudiences() != null) {
+            if (false) { // Teaching audiences are now managed through ProfileApplication
                 List<Map<String, Object>> audiences = new ArrayList<>();
-                for (TeachingAudience audience : tutor.getTeachingAudiences()) {
+                for (Object obj : new ArrayList<>()) {
+                    TeachingAudience audience = (TeachingAudience) obj;
                     Map<String, Object> audienceData = new HashMap<>();
                     audienceData.put("id", audience.getId());
                     audienceData.put("name", audience.getName());
@@ -502,30 +485,13 @@ public class PublicTutorController {
             }
             
             // Profile subjects
-            if (tutor.getProfileSubjects() != null) {
-                List<Map<String, Object>> subjects = new ArrayList<>();
-                for (TutorProfileSubject profileSubject : tutor.getProfileSubjects()) {
-                    Map<String, Object> subjectData = new HashMap<>();
-                    subjectData.put("id", profileSubject.getId());
-                    subjectData.put("fees", profileSubject.getFees());
-                    subjectData.put("createdAt", profileSubject.getCreatedAt());
-                    subjectData.put("updatedAt", profileSubject.getUpdatedAt());
-                    
-                    Map<String, Object> subjectInfo = new HashMap<>();
-                    subjectInfo.put("id", profileSubject.getSubject().getId());
-                    subjectInfo.put("name", profileSubject.getSubject().getName());
-                    subjectInfo.put("description", profileSubject.getSubject().getDescription());
-                    subjectData.put("subject", subjectInfo);
-                    
-                    subjects.add(subjectData);
-                }
-                response.put("profileSubjects", subjects);
-            }
+            // Profile subjects - now managed separately
+            response.put("profileSubjects", new ArrayList<>());
             
             // Schedules
             if (tutor.getSchedules() != null) {
                 List<Map<String, Object>> schedules = new ArrayList<>();
-                for (Schedule schedule : tutor.getSchedules()) {
+                for (ApplicationSchedule schedule : tutor.getSchedules()) {
                     Map<String, Object> scheduleData = new HashMap<>();
                     scheduleData.put("id", schedule.getId());
                     scheduleData.put("dayOfWeek", schedule.getDayOfWeek());
@@ -562,9 +528,10 @@ public class PublicTutorController {
             }
             
             // Teaching audiences
-            if (tutor.getTeachingAudiences() != null) {
+            if (false) { // Teaching audiences are now managed through ProfileApplication
                 List<Map<String, Object>> audiences = new ArrayList<>();
-                for (TeachingAudience audience : tutor.getTeachingAudiences()) {
+                for (Object obj : new ArrayList<>()) {
+                    TeachingAudience audience = (TeachingAudience) obj;
                     Map<String, Object> audienceData = new HashMap<>();
                     audienceData.put("id", audience.getId());
                     audienceData.put("name", audience.getName());

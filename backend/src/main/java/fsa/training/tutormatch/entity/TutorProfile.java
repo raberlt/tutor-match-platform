@@ -12,11 +12,14 @@ import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 @Entity
 @Data
-@EqualsAndHashCode(exclude = {"user", "profileSubjects", "schedules", "educations", "certificates", "bookingsAsTutor", "teachingAudiences"})
-@ToString(exclude = {"user", "profileSubjects", "schedules", "educations", "certificates", "bookingsAsTutor", "teachingAudiences"})
+@EqualsAndHashCode(exclude = {"user", "educations", "certificates", "bookingsAsTutor", "applicationTeachingAudiences", "applicationSubjectFees"})
+@ToString(exclude = {"user", "educations", "certificates", "bookingsAsTutor", "applicationTeachingAudiences", "applicationSubjectFees"})
 @Table(name = "tutor_profiles")
 public class TutorProfile {
     
@@ -70,11 +73,6 @@ public class TutorProfile {
     private boolean isVerified = false;
 
     // Relationships
-    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<TutorProfileSubject> profileSubjects;
-
-    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Schedule> schedules;
 
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Education> educations;
@@ -85,14 +83,12 @@ public class TutorProfile {
     @OneToMany(mappedBy = "tutor", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Booking> bookingsAsTutor;
 
-    // Many-to-Many relationship với TeachingAudience entity
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "tutor_teaching_audiences",
-        joinColumns = @JoinColumn(name = "tutor_profile_id"),
-        inverseJoinColumns = @JoinColumn(name = "teaching_audience_id")
-    )
-    private Set<TeachingAudience> teachingAudiences;
+    @OneToMany(mappedBy = "tutorProfile", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<ApplicationTeachingAudience> applicationTeachingAudiences;
+
+    @OneToMany(mappedBy = "tutorProfile", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<ApplicationSubjectFee> applicationSubjectFees;
+
 
     // Helper methods to access personal info from User
     public String getFirstName() {
@@ -160,9 +156,7 @@ public class TutorProfile {
     // Business methods
     public boolean isAvailableForBooking() {
         return Boolean.TRUE.equals(this.getEnable()) &&
-                getUser() != null && getUser().isVerified() &&
-                schedules != null &&
-                !schedules.isEmpty();
+                getUser() != null && getUser().isVerified();
     }
 
     public boolean hasRequiredCertifications() {
@@ -184,42 +178,24 @@ public class TutorProfile {
 
     // Helper methods for fees (backward compatibility)
     public Integer getFees() {
-        // Trả về học phí trung bình hoặc học phí của môn đầu tiên
-        if (profileSubjects != null && !profileSubjects.isEmpty()) {
-            return profileSubjects.stream()
-                    .mapToInt(subject -> subject.getFees())
-                    .min()
-                    .orElse(0);
-        }
+        // Return 0 as fees are now managed separately
         return 0;
     }
     
     public Integer getMaxFees() {
-        // Trả về học phí cao nhất
-        if (profileSubjects != null && !profileSubjects.isEmpty()) {
-            return profileSubjects.stream()
-                    .mapToInt(subject -> subject.getFees())
-                    .max()
-                    .orElse(0);
-        }
+        // Return 0 as fees are now managed separately
         return 0;
     }
     
     public Integer getAverageFees() {
-        // Trả về học phí trung bình
-        if (profileSubjects != null && !profileSubjects.isEmpty()) {
-            return (int) profileSubjects.stream()
-                    .mapToInt(subject -> subject.getFees())
-                    .average()
-                    .orElse(0);
-        }
+        // Return 0 as fees are now managed separately
         return 0;
     }
     
-    // Backward compatibility method - không làm gì cả vì fees giờ ở ProfileSubject
+    // Backward compatibility method - không làm gì cả vì fees giờ được quản lý riêng
     public void setFees(Integer fees) {
         // Method này được giữ lại để tương thích ngược, nhưng không làm gì
-        // Fees giờ được set riêng cho từng môn học trong TutorProfileSubject
+        // Fees giờ được quản lý riêng trong các entity khác
     }
     
     // Helper methods for timezone handling
@@ -250,6 +226,16 @@ public class TutorProfile {
     
     public boolean canBePromoted() {
         return enable && user != null && user.isEnable();
+    }
+    
+    // Getter for schedules (for backward compatibility)
+    public List<ApplicationSchedule> getSchedules() {
+        return new ArrayList<>(); // Return empty list as schedules are now managed separately
+    }
+    
+    public void setSchedules(List<ApplicationSchedule> schedules) {
+        // Method kept for backward compatibility but does nothing
+        // Schedules are now managed separately through ProfileApplication
     }
 
 }

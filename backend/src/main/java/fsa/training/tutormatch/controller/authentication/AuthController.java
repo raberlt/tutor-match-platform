@@ -99,7 +99,7 @@ public class AuthController {
                 tutor.setBio("");
                 tutor.setHeadline("");
                 tutor.setExperience("");
-                // Fees are now handled per subject in TutorProfileSubject
+                // Fees are now handled per subject in ApplicationSubjectFee
 
                 // Lưu profile vào repository
                 tutorProfileRepository.save(tutor);

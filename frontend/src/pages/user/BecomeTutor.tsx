@@ -40,11 +40,11 @@ export const BecomeTutor: React.FC = () => {
 
   const [formData, setFormData] = useState({
     // Step 1: Thông tin cơ bản
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
+    firstName: "",
+    lastName: "",
     phone: "",
     subjects: [] as Array<{ name: string; hourlyRate: string }>,
-    email: user?.email || "",
+    email: "",
     province: "",
     confirmAge: false,
     acceptTerms: false,
@@ -212,6 +212,18 @@ export const BecomeTutor: React.FC = () => {
     setCompletedSteps(newCompletedSteps);
   }, [formData, isStepCompleted]);
 
+  // Update formData when user is loaded
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+      }));
+    }
+  }, [user]);
+
   // Load draft data đã lưu
   useEffect(() => {
     const loadDraftData = async () => {
@@ -247,12 +259,20 @@ export const BecomeTutor: React.FC = () => {
             console.log("🔍 Draft certificates:", typedDraftData.certificates);
             console.log("🔍 Draft educations:", typedDraftData.educations);
             console.log(
+              "🔍 Draft teachingAudiences:",
+              typedDraftData.teachingAudiences
+            );
+            console.log(
               "🔍 Draft certificates length:",
               typedDraftData.certificates?.length
             );
             console.log(
               "🔍 Draft educations length:",
               typedDraftData.educations?.length
+            );
+            console.log(
+              "🔍 Draft teachingAudiences length:",
+              typedDraftData.teachingAudiences?.length
             );
 
             // Điền dữ liệu vào form
@@ -368,10 +388,23 @@ export const BecomeTutor: React.FC = () => {
                     : prev.availableDays,
                 // Map teachingAudiences from API data
                 teachingAudiences: typedDraftData.teachingAudiences
-                  ? typedDraftData.teachingAudiences.map(
-                      (audience: any) => audience.name
-                    )
-                  : prev.teachingAudiences,
+                  ? (() => {
+                      console.log(
+                        "🔄 Processing teachingAudiences:",
+                        typedDraftData.teachingAudiences
+                      );
+                      // Backend already returns string array directly
+                      const mapped = typedDraftData.teachingAudiences;
+                      console.log("🔄 Mapped teachingAudiences:", mapped);
+                      return mapped;
+                    })()
+                  : (() => {
+                      console.log(
+                        "🔄 No teachingAudiences from API, keeping previous:",
+                        prev.teachingAudiences
+                      );
+                      return prev.teachingAudiences;
+                    })(),
                 // Auto-check confirmations if draft data exists
                 confirmAge: true,
                 acceptTerms: true,
@@ -453,6 +486,14 @@ export const BecomeTutor: React.FC = () => {
                       (audience: any) => audience.name
                     )
                   : prev.teachingAudiences,
+                // Map schedules from API data
+                schedules: typedDraftData.schedules || prev.schedules,
+                // Map subjectFees from API data
+                subjectFees: typedDraftData.subjectFees || prev.subjectFees,
+                // Map educations from API data
+                educations: typedDraftData.educations || prev.educations,
+                // Map certificates from API data
+                certificates: typedDraftData.certificates || prev.certificates,
                 // Auto-check confirmations if draft data exists
                 confirmAge: true,
                 acceptTerms: true,
@@ -1260,6 +1301,10 @@ export const BecomeTutor: React.FC = () => {
 
       // Video giới thiệu
       videoIntro: formData.videoUrl || "",
+
+      // Education và Certificate flags
+      noEducation: formData.noEducation || false,
+      noCertificates: formData.noCertificates || false,
 
       // Môn học với học phí
       subjectFees: formData.subjects

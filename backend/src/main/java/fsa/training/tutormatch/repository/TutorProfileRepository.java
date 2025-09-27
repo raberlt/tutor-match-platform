@@ -26,9 +26,9 @@ public interface TutorProfileRepository extends JpaRepository<TutorProfile, Inte
     @Query("SELECT p FROM TutorProfile p WHERE p.enable = true")
     List<TutorProfile> findEnabledTutors();
     
-    // Find tutors by subject
-    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.subject.name = :subjectName AND p.enable = true")
-    List<TutorProfile> findBySubjectName(@Param("subjectName") String subjectName);
+    // Find tutors by subject - temporarily disabled as applicationSubjectFees no longer exists
+    // @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.applicationSubjectFees ps WHERE ps.subject.name = :subjectName AND p.enable = true")
+    // List<TutorProfile> findBySubjectName(@Param("subjectName") String subjectName);
     
     // Search tutors by keyword
     @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.enable = true")
@@ -40,8 +40,9 @@ public interface TutorProfileRepository extends JpaRepository<TutorProfile, Inte
     @Query("SELECT p FROM TutorProfile p WHERE (p.bio LIKE %:keyword% OR p.headline LIKE %:keyword% OR p.experience LIKE %:keyword%) AND p.enable = true")
     List<TutorProfile> findTutorsByKeyword(@Param("keyword") String keyword);
     
-    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.subject.name = :subject AND p.enable = true")
-    List<TutorProfile> findTutorsBySubject(@Param("subject") String subject);
+    // Temporarily disabled as applicationSubjectFees no longer exists
+    // @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.applicationSubjectFees ps WHERE ps.subject.name = :subject AND p.enable = true")
+    // List<TutorProfile> findTutorsBySubject(@Param("subject") String subject);
     
     // REMOVED: findTutorsByLocation - city field no longer exists
     
@@ -54,8 +55,9 @@ public interface TutorProfileRepository extends JpaRepository<TutorProfile, Inte
     @Query("SELECT p FROM TutorProfile p WHERE p.enable = true ORDER BY p.ratePointAverage DESC")
     List<TutorProfile> findTopRatedTutors(@Param("limit") int limit);
     
-    @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.profileSubjects ps WHERE ps.fees BETWEEN :minPrice AND :maxPrice AND p.enable = true")
-    List<TutorProfile> findTutorsByPriceRange(@Param("minPrice") Double minPrice, @Param("maxPrice") Double maxPrice);
+    // Temporarily disabled as applicationSubjectFees no longer exists
+    // @Query("SELECT DISTINCT p FROM TutorProfile p JOIN p.applicationSubjectFees ps WHERE ps.fees BETWEEN :minPrice AND :maxPrice AND p.enable = true")
+    // List<TutorProfile> findTutorsByPriceRange(@Param("minPrice") Double minPrice, @Param("maxPrice") Double maxPrice);
     
     // Count methods for dashboard
     @Query("SELECT COUNT(p) FROM TutorProfile p WHERE p.enable = true")

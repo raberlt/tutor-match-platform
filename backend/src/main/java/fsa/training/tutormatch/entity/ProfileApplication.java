@@ -9,12 +9,13 @@ import org.hibernate.annotations.UpdateTimestamp;
 import fsa.training.tutormatch.enums.ApplicationStatus;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Data
-@EqualsAndHashCode(exclude = {"user", "reviewedBy", "educations", "certificates", "schedules", "subjectFees"})
-@ToString(exclude = {"user", "reviewedBy", "educations", "certificates", "schedules", "subjectFees"})
+@EqualsAndHashCode(exclude = {"user", "reviewedBy", "educations", "certificates", "schedules", "subjectFees", "teachingAudiences"})
+@ToString(exclude = {"user", "reviewedBy", "educations", "certificates", "schedules", "subjectFees", "teachingAudiences"})
 @Table(name = "profile_applications")
 public class ProfileApplication {
     
@@ -66,6 +67,7 @@ public class ProfileApplication {
     private String videoIntro;
 
     // Application workflow fields
+    @Column(name = "submitted_at")
     private ZonedDateTime submittedAt;
     
     private ZonedDateTime reviewedAt;
@@ -100,13 +102,9 @@ public class ProfileApplication {
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ApplicationSubjectFee> subjectFees;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "application_teaching_audiences",
-        joinColumns = @JoinColumn(name = "application_id"),
-        inverseJoinColumns = @JoinColumn(name = "teaching_audience_id")
-    )
-    private List<TeachingAudience> teachingAudiences;
+    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<ApplicationTeachingAudience> teachingAudiences;
+
 
     // Helper methods
     public boolean isDraft() {

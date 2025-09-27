@@ -141,7 +141,7 @@ export class TutorService {
   ): Promise<TutorRegistrationResponse> {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/applications/${endpoint}`,
+        `${API_BASE_URL}/api/tutor/draft/${endpoint}`,
         {
           method,
           headers: {
@@ -188,17 +188,14 @@ export class TutorService {
         };
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/applications/tutor/draft`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          redirect: "manual", // Không follow redirect tự động
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/tutor/draft/my-draft`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        redirect: "manual", // Không follow redirect tự động
+      });
 
       // Kiểm tra redirect (Spring Security redirect về login)
       if (response.status === 302 || response.status === 0) {
@@ -268,7 +265,7 @@ export class TutorService {
     );
 
     // Use real endpoint with authentication
-    return this.makeRequest("tutor/draft", "POST", cleanData);
+    return this.makeRequest("save", "POST", cleanData);
   }
 
   // Gửi hồ sơ gia sư để duyệt
@@ -276,7 +273,7 @@ export class TutorService {
     data: TutorApplicationData
   ): Promise<TutorRegistrationResponse> {
     // Use real endpoint with authentication
-    return this.makeRequest("tutor/submit", "POST", data);
+    return this.makeRequest("submit", "POST", data);
   }
 
   // Lấy hồ sơ gia sư hiện tại

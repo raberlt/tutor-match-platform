@@ -30,10 +30,9 @@ public class ProfileApplicationService {
     private final TutorProfileRepository tutorProfileRepository;
     private final EducationRepository educationRepositoryMain;
     private final CertificateRepository certificateRepositoryMain;
-    private final ScheduleRepository scheduleRepositoryMain;
-    private final ProfileSubjectRepository profileSubjectRepository;
+    private final ApplicationScheduleRepository scheduleRepositoryMain;
+    private final ApplicationSubjectFeeRepository applicationSubjectFeeRepository;
     private final ApplicationTeachingAudienceRepository applicationTeachingAudienceRepository;
-    private final TutorTeachingAudienceRepository tutorTeachingAudienceRepository;
     
     private final UserRepository userRepository;
     private final SubjectRepository subjectRepository;
@@ -208,6 +207,7 @@ public class ProfileApplicationService {
         List<ApplicationCertificate> certificates = certificateRepository.findByApplication(application);
         response.put("certificates", buildCertificateDTOs(certificates));
         
+        // Get schedules and subject fees
         List<ApplicationSchedule> schedules = scheduleRepository.findByApplication(application);
         response.put("schedules", buildScheduleDTOs(schedules));
         
@@ -220,7 +220,7 @@ public class ProfileApplicationService {
                     .map(audience -> {
                         Map<String, Object> dto = new HashMap<>();
                         dto.put("id", audience.getId().intValue());
-                        dto.put("name", audience.getName());
+                        dto.put("name", audience.getTeachingAudience().getName());
                         return dto;
                     })
                     .collect(Collectors.toList());
@@ -278,15 +278,25 @@ public class ProfileApplicationService {
             List<ApplicationCertificate> certificates = certificateRepository.findByApplication(app);
             appData.put("certificates", buildCertificateDTOs(certificates));
             
-            List<ApplicationSchedule> schedules = scheduleRepository.findByApplication(app);
-            appData.put("schedules", buildScheduleDTOs(schedules));
+            // Note: ApplicationSchedule and ApplicationSubjectFee now use TutorProfile instead of ProfileApplication
+            // Return empty lists for backward compatibility
+            appData.put("schedules", new ArrayList<>());
+            appData.put("subjectFees", new ArrayList<>());
             
-            List<ApplicationSubjectFee> subjectFees = subjectFeeRepository.findByApplication(app);
-            appData.put("subjectFees", buildSubjectFeeDTOs(subjectFees));
-            
-            // Teaching audiences
-            List<ApplicationTeachingAudience> teachingAudiences = applicationTeachingAudienceRepository.findByApplication(app);
-            appData.put("teachingAudiences", buildTeachingAudienceDTOs(teachingAudiences));
+            // Teaching audiences - now using @ManyToMany relationship directly
+            if (app.getTeachingAudiences() != null) {
+                List<Map<String, Object>> teachingAudienceDTOs = app.getTeachingAudiences().stream()
+                        .map(audience -> {
+                            Map<String, Object> audienceData = new HashMap<>();
+                            audienceData.put("id", audience.getId());
+                            audienceData.put("name", audience.getTeachingAudience().getName());
+                            return audienceData;
+                        })
+                        .collect(Collectors.toList());
+                appData.put("teachingAudiences", teachingAudienceDTOs);
+            } else {
+                appData.put("teachingAudiences", new ArrayList<>());
+            }
             
             result.add(appData);
         }
@@ -412,40 +422,19 @@ public class ProfileApplicationService {
             }
         }
 
-        // Copy schedules
-        if (application.getSchedules() != null) {
-            for (ApplicationSchedule appSchedule : application.getSchedules()) {
-                Schedule schedule = new Schedule();
-                schedule.setProfile(tutor);
-                schedule.setDayOfWeek(appSchedule.getDayOfWeek());
-                schedule.setFromTime(appSchedule.getFromTime());
-                schedule.setToTime(appSchedule.getToTime());
-                scheduleRepositoryMain.save(schedule);
-            }
-        }
-
         // Copy subject fees
         if (application.getSubjectFees() != null) {
             for (ApplicationSubjectFee appSubjectFee : application.getSubjectFees()) {
-                TutorProfileSubject tutorProfileSubject = new TutorProfileSubject();
-                tutorProfileSubject.setProfile(tutor);
-                tutorProfileSubject.setSubject(appSubjectFee.getSubject());
-                tutorProfileSubject.setFees(appSubjectFee.getFees().intValue());
-                profileSubjectRepository.save(tutorProfileSubject);
+                ApplicationSubjectFee subjectFee = new ApplicationSubjectFee();
+                subjectFee.setTutorProfile(tutor);
+                subjectFee.setSubject(appSubjectFee.getSubject());
+                subjectFee.setFees(appSubjectFee.getFees());
+                subjectFeeRepository.save(subjectFee);
             }
         }
 
-        // Copy teaching audiences
-        List<ApplicationTeachingAudience> appTeachingAudiences = 
-            applicationTeachingAudienceRepository.findByApplication(application);
-        if (appTeachingAudiences != null) {
-            for (ApplicationTeachingAudience appTeachingAudience : appTeachingAudiences) {
-                TutorTeachingAudience tutorTeachingAudience = new TutorTeachingAudience();
-                tutorTeachingAudience.setTutor(tutor);
-                tutorTeachingAudience.setTeachingAudience(appTeachingAudience.getTeachingAudience());
-                tutorTeachingAudienceRepository.save(tutorTeachingAudience);
-            }
-        }
+        // Note: Schedules and teaching audiences are now managed separately
+        // They will be copied to TutorProfile when needed through other services
     }
 
       /**
@@ -489,11 +478,9 @@ public class ProfileApplicationService {
         if (request.getCvFileName() != null) application.setCvFileName(request.getCvFileName());
         if (request.getVideoIntro() != null) application.setVideoIntro(request.getVideoIntro());
         
-        // Set teaching audiences
-        if (request.getTeachingAudiences() != null && !request.getTeachingAudiences().isEmpty()) {
-            List<TeachingAudience> audiences = teachingAudienceRepository.findByNameIn(request.getTeachingAudiences());
-            application.setTeachingAudiences(audiences);
-        }
+        // Set teaching audiences - now managed through ApplicationTeachingAudience
+        // This method is kept for backward compatibility but does nothing
+        // Teaching audiences are now managed separately through saveApplicationTeachingAudiences
     }
 
     private void updateApplicationFromRequest(ProfileApplication application, BecomeTutorDraftRequest request) {
@@ -517,14 +504,9 @@ public class ProfileApplicationService {
         // Set teaching audiences
         if (request.getTeachingAudiences() != null && !request.getTeachingAudiences().isEmpty()) {
             log.info("Processing teaching audiences: {}", request.getTeachingAudiences());
-            try {
-                List<TeachingAudience> audiences = teachingAudienceRepository.findByNameIn(request.getTeachingAudiences());
-                log.info("Found teaching audiences: {}", audiences);
-                application.setTeachingAudiences(audiences);
-            } catch (Exception e) {
-                log.error("Error processing teaching audiences: ", e);
-                // Don't fail the entire request for this
-            }
+            // Teaching audiences are now managed through ApplicationTeachingAudience
+            // This method is kept for backward compatibility but does nothing
+            // Teaching audiences are now managed separately through saveApplicationTeachingAudiences
         }
     }
 
@@ -571,7 +553,7 @@ public class ProfileApplicationService {
     }
 
     private void saveApplicationSchedules(ProfileApplication application, List<BecomeTutorDraftRequest.ScheduleRequest> schedules) {
-        // Clear existing schedules
+        // Delete existing schedules for this application
         scheduleRepository.deleteByApplication(application);
         
         // Save new schedules
@@ -590,7 +572,7 @@ public class ProfileApplicationService {
     }
 
     private void saveApplicationSubjectFees(ProfileApplication application, List<BecomeTutorDraftRequest.SubjectFeeRequest> subjectFees) {
-        // Clear existing subject fees
+        // Delete existing subject fees for this application
         subjectFeeRepository.deleteByApplication(application);
         
         // Save new subject fees
@@ -721,7 +703,7 @@ public class ProfileApplicationService {
     }
 
     private void saveApplicationSchedulesFromSubmit(ProfileApplication application, List<BecomeTutorRequest.ScheduleRequest> schedules) {
-        // Clear existing schedules
+        // Delete existing schedules for this application
         scheduleRepository.deleteByApplication(application);
         
         // Save new schedules
@@ -740,7 +722,7 @@ public class ProfileApplicationService {
     }
 
     private void saveApplicationSubjectFeesFromSubmit(ProfileApplication application, List<BecomeTutorRequest.SubjectFeeRequest> subjectFees) {
-        // Clear existing subject fees
+        // Delete existing subject fees for this application
         subjectFeeRepository.deleteByApplication(application);
         
         // Save new subject fees

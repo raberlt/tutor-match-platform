@@ -1,10 +1,10 @@
 package fsa.training.tutormatch.service;
 
 import fsa.training.tutormatch.entity.Booking;
-import fsa.training.tutormatch.enums.BookingStatus;import fsa.training.tutormatch.entity.Schedule;
+import fsa.training.tutormatch.enums.BookingStatus;import fsa.training.tutormatch.entity.ApplicationSchedule;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.repository.BookingRepository;
-import fsa.training.tutormatch.repository.ScheduleRepository;
+import fsa.training.tutormatch.repository.ApplicationScheduleRepository;
 import fsa.training.tutormatch.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,7 @@ import java.util.Optional;
 public class ScheduleService {
 
     @Autowired
-    private ScheduleRepository scheduleRepository;
+    private ApplicationScheduleRepository scheduleRepository;
 
     @Autowired
     private BookingRepository bookingRepository;
@@ -69,13 +69,8 @@ public class ScheduleService {
         String dayOfWeekEn = getDayOfWeekEnglish(cal.get(Calendar.DAY_OF_WEEK));
         String dayOfWeekVi = getDayOfWeekVietnamese(cal.get(Calendar.DAY_OF_WEEK));
 
-        List<Schedule> daySchedules = scheduleRepository.findByProfileIdAndEnableTrue(tutorProfileOpt.get().getId())
-            .stream()
-            .filter(schedule ->
-                schedule.getDayOfWeek().equals(dayOfWeekEn) ||
-                schedule.getDayOfWeek().equals(dayOfWeekVi)
-            )
-            .toList();
+        // Schedules are now managed through ProfileApplication, not TutorProfile
+        List<ApplicationSchedule> daySchedules = new ArrayList<>();
 
         if (daySchedules.isEmpty()) {
             return List.of();
@@ -92,7 +87,7 @@ public class ScheduleService {
 
         // Create available slots by removing booked time slots
         List<AvailableSlot> availableSlots = new ArrayList<>();
-        for (Schedule schedule : daySchedules) {
+        for (ApplicationSchedule schedule : daySchedules) {
             boolean isBooked = existingBookings.stream()
                 .anyMatch(booking -> 
                     booking.getFromTime().equals(schedule.getFromTime()) &&
@@ -115,8 +110,9 @@ public class ScheduleService {
     /**
      * Lấy lịch dạy của tutor theo profile ID
      */
-    public List<Schedule> getTutorSchedules(Integer profileId) {
-        return scheduleRepository.findByProfileIdAndEnableTrue(profileId);
+    public List<ApplicationSchedule> getTutorSchedules(Integer profileId) {
+        // Schedules are now managed through ProfileApplication, not TutorProfile
+        return new ArrayList<>();
     }
 
     private String getDayOfWeekEnglish(int dayOfWeek) {

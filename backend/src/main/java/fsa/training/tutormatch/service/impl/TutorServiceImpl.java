@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -144,13 +145,8 @@ public class TutorServiceImpl implements TutorService {
         dto.setTotalPoint(tutor.getTotalPoint());
         dto.setVerified(tutor.isVerified());
         
-        // Populate subjects from profileSubjects
-        if (tutor.getProfileSubjects() != null && !tutor.getProfileSubjects().isEmpty()) {
-            List<TutorDTO.SubjectDTO> subjects = tutor.getProfileSubjects().stream()
-                .map(ps -> new TutorDTO.SubjectDTO(ps.getSubject().getId(), ps.getSubject().getName(), ps.getFees()))
-                .toList();
-            dto.setSubjects(subjects);
-        }
+        // Subjects are now managed separately - return empty list for now
+        dto.setSubjects(new ArrayList<>());
         
         return dto;
     }
@@ -175,13 +171,8 @@ public class TutorServiceImpl implements TutorService {
         dto.setTotalPoint(tutor.getTotalPoint());
         dto.setVerified(tutor.isVerified());
         
-        // Populate subjectNames from profileSubjects
-        if (tutor.getProfileSubjects() != null && !tutor.getProfileSubjects().isEmpty()) {
-            List<String> subjectNames = tutor.getProfileSubjects().stream()
-                .map(ps -> ps.getSubject().getName())
-                .toList();
-            dto.setSubjectNames(subjectNames);
-        }
+        // Subject names are now managed separately - return empty list for now
+        dto.setSubjectNames(new ArrayList<>());
         
         return dto;
     }

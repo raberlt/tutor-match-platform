@@ -45,6 +45,10 @@ public class BecomeTutorDraftRequest {
     @Size(max = 100, message = "Múi giờ không được quá 100 ký tự")
     private String timezone;
     
+    // Flags for optional sections
+    private boolean noEducation = false;
+    private boolean noCertificates = false;
+    
     // Avatar
     @Size(max = 500, message = "Link avatar không được quá 500 ký tự")
     private String avatar;

@@ -34,10 +34,10 @@ public class TutorApplicationController {
     private UserRepository userRepository;
     
     @Autowired
-    private ProfileSubjectRepository profileSubjectRepository;
+    private ApplicationSubjectFeeRepository applicationSubjectFeeRepository;
     
     @Autowired
-    private ScheduleRepository scheduleRepository;
+    private ApplicationScheduleRepository scheduleRepository;
     
     @Autowired
     private CertificateRepository certificateRepository;

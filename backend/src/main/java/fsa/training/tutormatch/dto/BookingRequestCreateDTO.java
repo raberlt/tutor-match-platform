@@ -34,6 +34,10 @@ public class BookingRequestCreateDTO {
     private BigDecimal sessionFee;    // Phí 1 buổi học
     private BigDecimal totalAmount;   // Tổng tiền
     
+    // Payment fields
+    private String paymentMethod;      // CREDIT, VNPAY, MOMO, SEPAY_QR
+    private Integer couponId;         // Mã giảm giá
+    
     // Schedule fields (for PACKAGE)
     private String scheduleType;      // FIXED, FLEXIBLE
     private String selectedDays;      // "MONDAY,WEDNESDAY,FRIDAY"

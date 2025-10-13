@@ -35,11 +35,11 @@ public class StatisticsService {
         // Count today's confirmed bookings
         long todayCount = bookingRepository.findByTutorUserAndDate(tutor, today)
             .stream()
-            .filter(booking -> booking.getStatus() == BookingStatus.CONFIRMED)
+            .filter(booking -> booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || booking.getStatus() == BookingStatus.TUTOR_APPROVED || booking.getStatus() == BookingStatus.UPCOMING)
             .count();
 
         // Count pending bookings
-        long pendingCount = bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.PENDING).size();
+        long pendingCount = bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.PAYMENT_PENDING).size();
 
         // Count upcoming week bookings
         Calendar cal = Calendar.getInstance();
@@ -48,7 +48,7 @@ public class StatisticsService {
         
         long upcomingCount = bookingRepository.findByTutorUserAndDateBetween(tutor, today, nextWeek)
             .stream()
-            .filter(booking -> booking.getStatus() == BookingStatus.CONFIRMED)
+            .filter(booking -> booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || booking.getStatus() == BookingStatus.TUTOR_APPROVED || booking.getStatus() == BookingStatus.UPCOMING)
             .count();
 
         // Calculate monthly earnings (mock for now - should implement real calculation)

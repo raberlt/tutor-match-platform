@@ -46,10 +46,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // Validate token và set authentication context
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            try {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-            // Validate token
-            if (jwtUtil.validateToken(jwtToken, userDetails)) {
+                // Validate token
+                if (jwtUtil.validateToken(jwtToken, userDetails)) {
                 // Extract role from JWT token for additional verification
                 String roleFromToken = jwtUtil.extractRole(jwtToken);
                 
@@ -69,6 +70,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Add custom attributes to request for role-based access
                 request.setAttribute("jwt.username", username);
                 request.setAttribute("jwt.role", roleFromToken);
+                }
+            } catch (Exception e) {
+                logger.warn("User not found or invalid token for username: " + username + ", error: " + e.getMessage());
+                // Clear any existing authentication
+                SecurityContextHolder.clearContext();
             }
         }
         

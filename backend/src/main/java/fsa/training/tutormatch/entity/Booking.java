@@ -47,7 +47,7 @@ public class Booking {
     private String time;
 
     @Enumerated(EnumType.STRING)
-    private BookingStatus status = BookingStatus.PENDING;
+    private BookingStatus status = BookingStatus.PAYMENT_PENDING;
 
     @Enumerated(EnumType.STRING)
     private BookingType bookingType;

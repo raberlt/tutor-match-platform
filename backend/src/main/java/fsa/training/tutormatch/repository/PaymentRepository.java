@@ -21,11 +21,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     
     List<Payment> findByTutorOrderByCreatedAtDesc(User tutor);
     
-    List<Payment> findByStatus(PaymentStatus status);
-    
     Optional<Payment> findByTransactionId(String transactionId);
     
-    List<Payment> findByBookingId(Integer bookingId);
+    // Query method to find payments by booking ID through relationship
+    @Query("SELECT p FROM Payment p WHERE p.booking.id = :bookingId")
+    List<Payment> findByBookingId(@Param("bookingId") Integer bookingId);
     
     // Admin pagination methods
     Page<Payment> findByStatus(PaymentStatus status, Pageable pageable);

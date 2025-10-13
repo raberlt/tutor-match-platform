@@ -1,0 +1,79 @@
+{
+    "stats": {
+        "totalUsers": 1250,
+        "totalTutors": 89,
+        "totalBookings": 3420,
+        "totalRevenue": 125000000,
+        "pendingApplications": 12,
+        "activeCoupons": 8,
+        "averageRating": 4.6,
+        "monthlyGrowth": {
+            "users": 15.2,
+            "bookings": 23.8, 
+            "revenue": 18.5
+        }
+    },
+    "activities": [
+        {
+            "id": 1,
+            "type": "booking",
+            "description": "Nguyễn Văn A đã đặt lịch học Toán với gia sư Trần Thị B",
+            "timestamp": "2024-01-25T10:30:00Z",
+            "status": "success"
+        },
+        {
+            "id": 2,
+            "type": "application",
+            "description": "Có đơn đăng ký gia sư mới từ Phạm Văn C",
+            "timestamp": "2024-01-25T09:15:00Z",
+            "status": "info"
+        },
+        {
+            "id": 3,
+            "type": "payment",
+            "description": "Thanh toán thành công cho buổi học #1234 - 500,000 VNĐ",
+            "timestamp": "2024-01-25T08:45:00Z",
+            "status": "success"
+        },
+        {
+            "id": 4,
+            "type": "review",
+            "description": "Đánh giá 5 sao mới từ học viên Lê Thị D",
+            "timestamp": "2024-01-25T07:20:00Z",
+            "status": "success"
+        },
+        {
+            "id": 5,
+            "type": "booking",
+            "description": "Hủy buổi học #1233 - Lý do: Gia sư bận việc",
+            "timestamp": "2024-01-24T16:30:00Z",
+            "status": "warning"
+        }
+    ],
+    "topTutors": [
+        {
+            "id": 1,
+            "name": "Trần Thị B",
+            "subject": "Toán học",
+            "rating": 4.9,
+            "totalBookings": 156,
+            "revenue": 12500000
+        },
+        {
+            "id": 2,
+            "name": "Phạm Văn C",
+            "subject": "Vật lý",
+            "rating": 4.8,
+            "totalBookings": 134,
+            "revenue": 10800000
+        },
+        {
+            "id": 3,
+            "name": "Lê Thị D",
+            "subject": "Hóa học",
+            "rating": 4.7,
+            "totalBookings": 98,
+            "revenue": 8900000
+        }
+    ]
+}

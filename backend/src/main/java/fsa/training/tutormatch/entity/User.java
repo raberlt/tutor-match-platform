@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import java.time.LocalDate; 
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
+import java.math.BigDecimal;
 
 @Data
 @Entity
@@ -85,6 +86,11 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private EducationLevel educationLevel;
+    
+    // Credit system - đồng tiền của hệ thống
+    @Column(name = "credit_balance", nullable = false, precision = 10, scale = 2)
+    private BigDecimal creditBalance = BigDecimal.ZERO;
+    
     @Column(nullable = false)
     private boolean enable = true;
 
@@ -135,5 +141,32 @@ public class User {
             return firstName + " " + lastName;
         }
         return username;
+    }
+    
+    // Credit management methods
+    public boolean hasEnoughCredit(BigDecimal amount) {
+        return creditBalance != null && creditBalance.compareTo(amount) >= 0;
+    }
+
+    public void addCredit(BigDecimal amount) {
+        if (creditBalance == null) {
+            creditBalance = BigDecimal.ZERO;
+        }
+        creditBalance = creditBalance.add(amount);
+    }
+
+    public void deductCredit(BigDecimal amount) {
+        if (creditBalance == null) {
+            creditBalance = BigDecimal.ZERO;
+        }
+        if (hasEnoughCredit(amount)) {
+            creditBalance = creditBalance.subtract(amount);
+        } else {
+            throw new IllegalArgumentException("Insufficient credit balance");
+        }
+    }
+
+    public BigDecimal getCreditBalance() {
+        return creditBalance != null ? creditBalance : BigDecimal.ZERO;
     }
 }

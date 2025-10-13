@@ -1,223 +1,561 @@
-import React, { useState } from "react";
-
-interface User {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  dateOfBirth: string;
-  gender: string;
-  address: string;
-  imageAvatar?: string;
-  imageAvatarUrl?: string;
-}
-
-interface ProfileApplication {
-  id: number;
-  bio: string;
-  headline: string;
-  experience: string;
-  cvFileUrl?: string;
-  videoIntro?: string;
-  teachingAudiences: string[];
-  subjects: Array<{ name: string; hourlyRate: number }>;
-  hourlyRate: number;
-  status: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED";
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Message {
-  id: number;
-  senderName: string;
-  senderAvatar?: string;
-  subject: string;
-  content: string;
-  isRead: boolean;
-  createdAt: string;
-  type: "system" | "student" | "admin";
-}
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  TutorService,
+  type TutorApplicationData,
+  type TeachingAudience,
+} from "../../services/tutorService";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 
 export const ProfileManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("profile");
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 7;
 
-  // Mock data - trong thực tế sẽ fetch từ API
-  const [userData] = useState<User>({
-    id: 1,
-    firstName: "Nguyễn Thị",
-    lastName: "Lan",
-    email: "lan@example.com",
-    phoneNumber: "0901234567",
-    dateOfBirth: "1990-05-15",
-    gender: "FEMALE",
-    address: "123 Lê Lợi, Q.1, TP.HCM",
-    imageAvatarUrl: "https://example.com/avatar.jpg",
-  });
+  // Track completed steps
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [isDraftSaving, setIsDraftSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [subjects, setSubjects] = useState<Array<{ id: number; name: string }>>(
+    []
+  );
+  const [teachingAudiences, setTeachingAudiences] = useState<
+    TeachingAudience[]
+  >([]);
+  const [provinces, setProvinces] = useState<
+    Array<{ id: number; name: string }>
+  >([]);
+  const [showProvinceDropdown, setShowProvinceDropdown] = useState(false);
+  const [filteredProvinces, setFilteredProvinces] = useState<
+    Array<{ id: number; name: string }>
+  >([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const [profileApplication] = useState<ProfileApplication>({
-    id: 1,
-    bio: "Tôi là một giảng viên tiếng Anh với 5 năm kinh nghiệm dạy IELTS. Đã giúp hơn 100 học viên đạt điểm mục tiêu.",
-    headline: "Giảng viên Tiếng Anh chuyên nghiệp",
-    experience: "5 năm kinh nghiệm dạy tiếng Anh, chuyên về IELTS và TOEIC",
-    cvFileUrl: "https://example.com/cv.pdf",
-    videoIntro: "https://youtube.com/watch?v=example",
-    teachingAudiences: ["Lớp 10-12", "Đại học", "Người đi làm"],
-    subjects: [
-      { name: "Tiếng Anh", hourlyRate: 200000 },
-      { name: "IELTS", hourlyRate: 300000 },
-      { name: "TOEIC", hourlyRate: 250000 },
-    ],
-    hourlyRate: 300000,
-    status: "SUBMITTED",
-    createdAt: "2025-01-01T00:00:00Z",
-    updatedAt: "2025-01-15T00:00:00Z",
-  });
-
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      senderName: "Hệ thống",
-      subject: "Hồ sơ của bạn đã được duyệt",
-      content:
-        "Chúc mừng! Hồ sơ đăng ký trở thành gia sư của bạn đã được phê duyệt. Bạn có thể bắt đầu nhận lớp ngay bây giờ.",
-      isRead: false,
-      createdAt: "2025-01-20T10:00:00Z",
-      type: "system",
-    },
-    {
-      id: 2,
-      senderName: "Nguyễn Văn A",
-      subject: "Yêu cầu học IELTS",
-      content:
-        "Chào cô Lan, em muốn học IELTS để đạt 7.0. Cô có thể dạy em vào cuối tuần không ạ?",
-      isRead: true,
-      createdAt: "2025-01-19T14:30:00Z",
-      type: "student",
-    },
-    {
-      id: 3,
-      senderName: "Admin",
-      subject: "Cập nhật thông tin hồ sơ",
-      content:
-        "Vui lòng cập nhật thêm thông tin về kinh nghiệm giảng dạy trong hồ sơ của bạn.",
-      isRead: false,
-      createdAt: "2025-01-18T09:15:00Z",
-      type: "admin",
-    },
-  ]);
+  // States for upload modal
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadType, setUploadType] = useState<"avatar" | "cv">("avatar");
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     // Step 1: Thông tin cơ bản
-    firstName: userData.firstName,
-    lastName: userData.lastName,
-    phone: userData.phoneNumber,
-    email: userData.email,
-    address: userData.address,
-    dateOfBirth: userData.dateOfBirth,
-    gender: userData.gender,
+    firstName: "",
+    lastName: "",
+    phone: "",
+    subjects: [] as Array<{ name: string; hourlyRate: string }>,
+    email: "",
+    province: "",
+    confirmAge: false,
+    acceptTerms: false,
 
     // Step 2: Ảnh đại diện và CV
-    imageAvatarUrl: userData.imageAvatarUrl || "",
-    cvFileUrl: profileApplication.cvFileUrl || "",
-
+    imageAvatar: null as File | null,
+    cvFile: null as File | null,
+    imageAvatarUrl: "",
+    cvFileUrl: "",
+    cvFileName: "",
     // Step 3: Chứng chỉ
     certificates: [
       {
-        name: "IELTS 8.0",
-        description: "Chứng chỉ tiếng Anh quốc tế",
-        issuedBy: "British Council",
-        year: "2020",
-        isVerified: true,
+        name: "",
+        description: "",
+        issuedBy: "",
+        file: null,
+        imageUrl: "",
+        imageFileName: "",
       },
-      {
-        name: "TESOL Certificate",
-        description: "Chứng chỉ giảng dạy tiếng Anh",
-        issuedBy: "Arizona State University",
-        year: "2019",
-        isVerified: false,
-      },
-    ],
+    ] as Array<{
+      name: string;
+      description: string;
+      issuedBy: string;
+      file: File | null;
+      imageUrl: string;
+      imageFileName: string;
+    }>,
+    noCertificates: false,
 
     // Step 4: Học vấn
+    noEducation: false,
     educations: [
       {
-        schoolName: "Đại học Sư phạm TP.HCM",
-        degree: "Cử nhân",
-        major: "Sư phạm Tiếng Anh",
-        fromTime: 2011,
-        toTime: 2015,
-        isVerified: true,
+        schoolName: "",
+        degree: "",
+        major: "",
+        fromTime: 0,
+        toTime: 0,
+        degreeFileName: "",
+        degreeFileUrl: "",
       },
-    ],
+    ] as Array<{
+      schoolName: string;
+      degree: string;
+      major: string;
+      fromTime: number;
+      toTime: number;
+      degreeFileName: string;
+      degreeFileUrl: string;
+    }>,
 
     // Step 5: Giới thiệu
-    bio: profileApplication.bio,
-    headline: profileApplication.headline,
-    experience: profileApplication.experience,
-    teachingAudiences: profileApplication.teachingAudiences,
+    bio: "",
+    headline: "",
+    experience: "",
+    teachingAudiences: [] as string[],
 
-    // Step 6: Video
-    videoUrl: profileApplication.videoIntro || "",
+    // Step 6: Video giới thiệu
+    videoIntro: "",
 
     // Step 7: Thời gian dạy
-    availableDays: ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6"],
-    availableTimes: ["Sáng", "Chiều", "Tối"],
+    availableTimes: [] as Array<{
+      dayOfWeek: string;
+      startTime: string;
+      endTime: string;
+    }>,
+    timezone: "Asia/Ho_Chi_Minh",
   });
 
-  const handleInputChange = (
-    field: string,
-    value:
-      | string
-      | number
-      | string[]
-      | Array<{
-          name: string;
-          description: string;
-          issuedBy: string;
-          year: string;
-        }>
-      | Array<{
-          schoolName: string;
-          degree: string;
-          major: string;
-          fromTime: number;
-          toTime: number;
-        }>
-  ) => {
+  // Kiểm tra từng bước có hoàn thành không
+  const isStepCompleted = useCallback(
+    (step: number) => {
+      switch (step) {
+        case 1:
+          return (
+            formData.firstName &&
+            formData.lastName &&
+            formData.phone &&
+            formData.email &&
+            formData.province &&
+            formData.subjects.length > 0 &&
+            formData.confirmAge &&
+            formData.acceptTerms
+          );
+        case 2:
+          return formData.imageAvatarUrl && formData.cvFileUrl;
+        case 3:
+          return (
+            formData.noCertificates ||
+            formData.certificates.some((cert) => cert.name)
+          );
+        case 4:
+          return (
+            formData.noEducation ||
+            formData.educations.some((edu) => edu.schoolName)
+          );
+        case 5:
+          return (
+            formData.bio &&
+            formData.headline &&
+            formData.experience &&
+            formData.teachingAudiences.length > 0
+          );
+        case 6:
+          return true; // Video is optional
+        case 7:
+          return formData.availableTimes.length > 0;
+        default:
+          return false;
+      }
+    },
+    [formData]
+  );
+
+  // Update completed steps when form data changes
+  useEffect(() => {
+    const newCompletedSteps = new Set<number>();
+    for (let i = 1; i <= totalSteps; i++) {
+      if (isStepCompleted(i)) {
+        newCompletedSteps.add(i);
+      }
+    }
+    setCompletedSteps(newCompletedSteps);
+  }, [formData, isStepCompleted]);
+
+  // Update formData when user is loaded
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+      }));
+    }
+  }, [user]);
+
+  // Load draft data đã lưu
+  useEffect(() => {
+    const loadDraftData = async () => {
+      console.log("🔍 Debug: isAuthenticated =", isAuthenticated);
+      console.log("🔍 Debug: user =", user);
+      const token = localStorage.getItem("token");
+      console.log("🔍 Debug: token =", token);
+
+      // Check both isAuthenticated and token existence
+      if (isAuthenticated && token && subjects.length > 0) {
+        try {
+          console.log("✅ User is authenticated, loading draft data...");
+          const draftData = await TutorService.getDraftData();
+
+          if ((draftData as any).success && (draftData as any).hasDraft) {
+            console.log("✅ Loading saved draft data:", draftData);
+            const typedDraftData = draftData as any;
+
+            // Điền dữ liệu vào form
+            setFormData((prev) => {
+              const updatedData = {
+                ...prev,
+                // Step 1: Thông tin cơ bản
+                firstName: typedDraftData.firstName || prev.firstName,
+                lastName: typedDraftData.lastName || prev.lastName,
+                phone: typedDraftData.phoneNumber || prev.phone,
+                email: typedDraftData.email || prev.email,
+                province: typedDraftData.address || prev.province,
+                timezone: typedDraftData.timezone || prev.timezone,
+
+                // Step 2: Ảnh đại diện và CV
+                imageAvatarUrl:
+                  typedDraftData.imageAvatar || prev.imageAvatarUrl,
+                cvFileUrl: typedDraftData.cvFileUrl || prev.cvFileUrl,
+                cvFileName: typedDraftData.cvFileName || prev.cvFileName,
+
+                // Step 5: Giới thiệu
+                bio: typedDraftData.bio || prev.bio,
+                headline: typedDraftData.headline || prev.headline,
+                experience: typedDraftData.experience || prev.experience,
+
+                // Step 6: Video
+                videoIntro: typedDraftData.videoIntro || prev.videoIntro,
+
+                // Step 7: Thời gian dạy
+                availableTimes:
+                  typedDraftData.availableTimes || prev.availableTimes,
+              };
+
+              console.log("📝 Updated formData:", updatedData);
+              return updatedData;
+            });
+          }
+        } catch (error) {
+          console.error("❌ Error loading draft data:", error);
+        }
+      }
+    };
+
+    loadDraftData();
+  }, [isAuthenticated, user, subjects]);
+
+  // Load initial data (subjects, provinces, etc.)
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        console.log("🔄 Loading initial data...");
+
+        // Load subjects
+        const subjectsResponse = await TutorService.getSubjects();
+        console.log("📚 Subjects response:", subjectsResponse);
+        setSubjects(subjectsResponse);
+
+        // Load teaching audiences
+        const audiencesResponse = await TutorService.getTeachingAudiences();
+        console.log("👥 Teaching audiences response:", audiencesResponse);
+        setTeachingAudiences(audiencesResponse);
+
+        // Load provinces - Mock data for now
+        const mockProvinces = [
+          { id: 1, name: "Hà Nội" },
+          { id: 2, name: "TP. Hồ Chí Minh" },
+          { id: 3, name: "Đà Nẵng" },
+          { id: 4, name: "Hải Phòng" },
+          { id: 5, name: "Cần Thơ" },
+        ];
+        setProvinces(mockProvinces);
+        setFilteredProvinces(mockProvinces);
+      } catch (error) {
+        console.error("❌ Error loading initial data:", error);
+      }
+    };
+
+    loadInitialData();
+  }, []);
+
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
+
+    // Clear error when user makes changes
+    if (errors[field]) {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }));
+    }
   };
 
-  const handleSave = () => {
-    console.log("Saving profile data:", formData);
-    alert("Lưu hồ sơ thành công!");
+  const validateStep = (step: number) => {
+    const newErrors: Record<string, string> = {};
+
+    switch (step) {
+      case 1:
+        if (!formData.firstName) newErrors.firstName = "Vui lòng nhập tên";
+        if (!formData.lastName) newErrors.lastName = "Vui lòng nhập họ";
+        if (!formData.phone) newErrors.phone = "Vui lòng nhập số điện thoại";
+        if (!formData.province)
+          newErrors.province = "Vui lòng chọn tỉnh/thành phố";
+        if (formData.subjects.length === 0)
+          newErrors.subjects = "Vui lòng chọn ít nhất một môn học";
+        if (!formData.confirmAge)
+          newErrors.confirmAge = "Vui lòng xác nhận độ tuổi";
+        if (!formData.acceptTerms)
+          newErrors.acceptTerms = "Vui lòng đồng ý với điều khoản";
+        break;
+      case 2:
+        if (!formData.imageAvatarUrl)
+          newErrors.imageAvatar = "Vui lòng tải lên ảnh đại diện";
+        if (!formData.cvFileUrl) newErrors.cvFile = "Vui lòng tải lên CV";
+        break;
+      case 5:
+        if (!formData.headline) newErrors.headline = "Vui lòng nhập tiêu đề";
+        if (!formData.bio) newErrors.bio = "Vui lòng nhập giới thiệu";
+        if (!formData.experience)
+          newErrors.experience = "Vui lòng nhập kinh nghiệm";
+        if (formData.teachingAudiences.length === 0)
+          newErrors.teachingAudiences = "Vui lòng chọn đối tượng học viên";
+        break;
+      case 7:
+        if (formData.availableTimes.length === 0)
+          newErrors.availableTimes = "Vui lòng chọn thời gian dạy";
+        break;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    console.log("Submitting profile data:", formData);
-    alert("Gửi hồ sơ thành công!");
+  const nextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(Math.min(totalSteps, currentStep + 1));
+    }
+  };
+
+  const prevStep = () => {
+    setCurrentStep(Math.max(1, currentStep - 1));
+  };
+
+  const goToStep = (step: number) => {
+    if (canNavigateToStep(step)) {
+      setCurrentStep(step);
+    }
+  };
+
+  const saveDraft = async () => {
+    setIsDraftSaving(true);
+    try {
+      console.log("💾 Saving draft data:", formData);
+
+      const draftData: Partial<TutorApplicationData> = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phoneNumber: formData.phone,
+        address: formData.province,
+        timezone: formData.timezone,
+        // imageAvatarUrl: formData.imageAvatarUrl, // Will be handled separately
+        cvFileUrl: formData.cvFileUrl,
+        cvFileName: formData.cvFileName,
+        bio: formData.bio,
+        headline: formData.headline,
+        experience: formData.experience,
+        videoIntro: formData.videoIntro,
+        // availableTimes: formData.availableTimes, // Will be handled separately
+        teachingAudiences: formData.teachingAudiences,
+        // subjects: formData.subjects.map((subject) => ({
+        //   name: subject.name,
+        //   hourlyRate: parseFloat(subject.hourlyRate) || 0,
+        // })),
+        certificates: formData.certificates
+          .filter((cert) => cert.name)
+          .map((cert) => ({
+            name: cert.name,
+            description: cert.description,
+            issuedBy: cert.issuedBy,
+            certFileName: cert.imageFileName,
+            certFileUrl: cert.imageUrl,
+          })),
+        educations: formData.educations
+          .filter((edu) => edu.schoolName)
+          .map((edu) => ({
+            schoolName: edu.schoolName,
+            degree: edu.degree,
+            major: edu.major,
+            fromTime: edu.fromTime,
+            toTime: edu.toTime,
+            degreeFileName: edu.degreeFileName,
+            degreeFileUrl: edu.degreeFileUrl,
+          })),
+      };
+
+      await TutorService.saveDraft(draftData as TutorApplicationData);
+      console.log("✅ Draft saved successfully");
+      alert("Lưu nháp thành công!");
+    } catch (error) {
+      console.error("❌ Error saving draft:", error);
+      alert("Có lỗi khi lưu nháp!");
+    } finally {
+      setIsDraftSaving(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!areAllStepsCompleted()) {
+      alert("Vui lòng hoàn thành tất cả các bước trước khi gửi!");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      console.log("📤 Submitting application:", formData);
+
+      const applicationData: Partial<TutorApplicationData> = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phoneNumber: formData.phone,
+        address: formData.province,
+        timezone: formData.timezone,
+        // imageAvatarUrl: formData.imageAvatarUrl, // Will be handled separately
+        cvFileUrl: formData.cvFileUrl,
+        cvFileName: formData.cvFileName,
+        bio: formData.bio,
+        headline: formData.headline,
+        experience: formData.experience,
+        videoIntro: formData.videoIntro,
+        // availableTimes: formData.availableTimes, // Will be handled separately
+        teachingAudiences: formData.teachingAudiences,
+        // subjects: formData.subjects.map((subject) => ({
+        //   name: subject.name,
+        //   hourlyRate: parseFloat(subject.hourlyRate) || 0,
+        // })),
+        certificates: formData.certificates
+          .filter((cert) => cert.name)
+          .map((cert) => ({
+            name: cert.name,
+            description: cert.description,
+            issuedBy: cert.issuedBy,
+            certFileName: cert.imageFileName,
+            certFileUrl: cert.imageUrl,
+          })),
+        educations: formData.educations
+          .filter((edu) => edu.schoolName)
+          .map((edu) => ({
+            schoolName: edu.schoolName,
+            degree: edu.degree,
+            major: edu.major,
+            fromTime: edu.fromTime,
+            toTime: edu.toTime,
+            degreeFileName: edu.degreeFileName,
+            degreeFileUrl: edu.degreeFileUrl,
+          })),
+      };
+
+      const response = await TutorService.submitApplication(
+        applicationData as TutorApplicationData
+      );
+
+      if (response.success) {
+        console.log("✅ Application submitted successfully");
+        alert("Cập nhật hồ sơ thành công! Hồ sơ của bạn đã được cập nhật.");
+        // Navigate to profile or dashboard
+        navigate("/tutor/profile");
+      } else {
+        throw new Error(response.message || "Submission failed");
+      }
+    } catch (error) {
+      console.error("❌ Error submitting application:", error);
+      alert("Có lỗi khi cập nhật hồ sơ!");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleProvinceChange = (value: string) => {
+    handleInputChange("province", value);
+    setShowProvinceDropdown(true);
+
+    if (value) {
+      const filtered = provinces.filter((province) =>
+        province.name.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredProvinces(filtered);
+    } else {
+      setFilteredProvinces(provinces);
+    }
+  };
+
+  const selectProvince = (province: { id: number; name: string }) => {
+    handleInputChange("province", province.name);
+    setShowProvinceDropdown(false);
+  };
+
+  const handleUploadClick = (type: "avatar" | "cv") => {
+    setUploadType(type);
+    setShowUploadModal(true);
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setPreviewFile(file);
+    }
+  };
+
+  const handleConfirmUpload = async () => {
+    if (!previewFile) return;
+
+    setIsUploading(true);
+    try {
+      console.log("📤 Uploading file:", previewFile.name);
+
+      // Mock upload - in real app, upload to server
+      const mockUrl = URL.createObjectURL(previewFile);
+
+      if (uploadType === "avatar") {
+        handleInputChange("imageAvatarUrl", mockUrl);
+        handleInputChange("imageAvatar", previewFile);
+      } else {
+        handleInputChange("cvFileUrl", mockUrl);
+        handleInputChange("cvFile", previewFile);
+        handleInputChange("cvFileName", previewFile.name);
+      }
+
+      setShowUploadModal(false);
+      setPreviewFile(null);
+      console.log("✅ File uploaded successfully");
+    } catch (error) {
+      console.error("❌ Upload error:", error);
+      alert("Có lỗi khi tải lên file!");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleCancelUpload = () => {
+    setShowUploadModal(false);
+    setPreviewFile(null);
   };
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="p-8 space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  Thông tin cơ bản
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 space-y-6">
+                {/* Thông tin cá nhân - Compact */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Họ *
+                      Tên *
                     </label>
                     <input
                       type="text"
@@ -225,14 +563,18 @@ export const ProfileManagement: React.FC = () => {
                       onChange={(e) =>
                         handleInputChange("firstName", e.target.value)
                       }
-                      className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-colors"
-                      style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      placeholder="Nhập tên của bạn"
                     />
+                    {errors.firstName && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.firstName}
+                      </p>
+                    )}
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tên *
+                      Họ *
                     </label>
                     <input
                       type="text"
@@ -240,26 +582,19 @@ export const ProfileManagement: React.FC = () => {
                       onChange={(e) =>
                         handleInputChange("lastName", e.target.value)
                       }
-                      className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-colors"
-                      style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      placeholder="Nhập họ của bạn"
                     />
+                    {errors.lastName && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.lastName}
+                      </p>
+                    )}
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        handleInputChange("email", e.target.value)
-                      }
-                      className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-colors"
-                      style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                    />
-                  </div>
-
+                {/* Thông tin liên hệ - Compact */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Số điện thoại *
@@ -267,61 +602,201 @@ export const ProfileManagement: React.FC = () => {
                     <input
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) =>
-                        handleInputChange("phone", e.target.value)
-                      }
-                      className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-colors"
-                      style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, "");
+                        handleInputChange("phone", value);
+                      }}
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      placeholder="Nhập số điện thoại"
                     />
+                    {errors.phone && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.phone}
+                      </p>
+                    )}
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ngày sinh
+                      Email *
                     </label>
                     <input
-                      type="date"
-                      value={formData.dateOfBirth}
-                      onChange={(e) =>
-                        handleInputChange("dateOfBirth", e.target.value)
-                      }
-                      className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-colors"
-                      style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
+                      type="email"
+                      value={formData.email}
+                      readOnly
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Giới tính
-                    </label>
-                    <select
-                      value={formData.gender}
-                      onChange={(e) =>
-                        handleInputChange("gender", e.target.value)
-                      }
-                      className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-colors"
-                      style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                    >
-                      <option value="MALE">Nam</option>
-                      <option value="FEMALE">Nữ</option>
-                      <option value="OTHER">Khác</option>
-                    </select>
+                    {errors.email && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.email}
+                      </p>
+                    )}
                   </div>
                 </div>
 
+                {/* Địa chỉ - Compact */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Địa chỉ
+                    Tỉnh/Thành phố *
                   </label>
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) =>
-                      handleInputChange("address", e.target.value)
-                    }
-                    rows={3}
-                    className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-colors"
-                    style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={formData.province}
+                      onChange={(e) => handleProvinceChange(e.target.value)}
+                      onFocus={() => setShowProvinceDropdown(true)}
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      placeholder="Chọn tỉnh/thành phố"
+                      autoComplete="off"
+                    />
+                    {showProvinceDropdown && filteredProvinces.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {filteredProvinces.map((province) => (
+                          <div
+                            key={province.id}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              selectProvince(province);
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              selectProvince(province);
+                            }}
+                            className="px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm"
+                          >
+                            {province.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {errors.province && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.province}
+                    </p>
+                  )}
+                </div>
+
+                {/* Môn học giảng dạy - Compact */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Môn học giảng dạy *
+                  </label>
+                  <select
+                    onChange={(e) => {
+                      if (
+                        e.target.value &&
+                        !formData.subjects.some(
+                          (sub) => sub.name === e.target.value
+                        )
+                      ) {
+                        handleInputChange("subjects", [
+                          ...formData.subjects,
+                          { name: e.target.value, hourlyRate: "" },
+                        ]);
+                      }
+                      e.target.value = "";
+                    }}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  >
+                    <option value="">Chọn môn học</option>
+                    {subjects.map((subject) => (
+                      <option key={subject.id} value={subject.name}>
+                        {subject.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Danh sách môn học đã chọn - Compact */}
+                  {formData.subjects.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {formData.subjects.map((subject, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg"
+                        >
+                          <div className="flex-1">
+                            <span className="font-medium text-gray-900 text-sm">
+                              {subject.name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={subject.hourlyRate}
+                              onChange={(e) => {
+                                const newSubjects = [...formData.subjects];
+                                newSubjects[index].hourlyRate = e.target.value;
+                                handleInputChange("subjects", newSubjects);
+                              }}
+                              className="w-24 px-2 py-1 border border-gray-200 rounded text-sm"
+                              placeholder="Học phí"
+                              min="0"
+                            />
+                            <span className="text-xs text-gray-500">VNĐ/h</span>
+                            <button
+                              onClick={() => {
+                                const newSubjects = formData.subjects.filter(
+                                  (_, i) => i !== index
+                                );
+                                handleInputChange("subjects", newSubjects);
+                              }}
+                              className="text-red-500 hover:text-red-700 text-sm"
+                            >
+                              Xóa
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {errors.subjects && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.subjects}
+                    </p>
+                  )}
+                </div>
+
+                {/* Xác nhận tuổi và điều khoản */}
+                <div className="space-y-3">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.confirmAge}
+                      onChange={(e) =>
+                        handleInputChange("confirmAge", e.target.checked)
+                      }
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">
+                      Tôi xác nhận đã đủ 18 tuổi *
+                    </span>
+                  </label>
+                  {errors.confirmAge && (
+                    <p className="text-red-500 text-xs">{errors.confirmAge}</p>
+                  )}
+
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.acceptTerms}
+                      onChange={(e) =>
+                        handleInputChange("acceptTerms", e.target.checked)
+                      }
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">
+                      Tôi đồng ý với{" "}
+                      <a href="#" className="text-blue-500 hover:underline">
+                        điều khoản sử dụng
+                      </a>{" "}
+                      *
+                    </span>
+                  </label>
+                  {errors.acceptTerms && (
+                    <p className="text-red-500 text-xs">{errors.acceptTerms}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -330,74 +805,89 @@ export const ProfileManagement: React.FC = () => {
 
       case 2:
         return (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="p-8 space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  Ảnh đại diện và CV
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-4">
-                      Ảnh đại diện
-                    </label>
-                    <div className="flex flex-col items-center space-y-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 space-y-6">
+                {/* Ảnh đại diện */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ảnh đại diện *
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-24 h-24 border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
                       {formData.imageAvatarUrl ? (
                         <img
                           src={formData.imageAvatarUrl}
                           alt="Avatar"
-                          className="w-32 h-32 rounded-full object-cover border-4"
-                          style={{ borderColor: "rgb(148, 204, 230)" }}
+                          className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div
-                          className="w-32 h-32 rounded-full flex items-center justify-center text-white font-medium text-2xl"
-                          style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                        >
-                          {formData.firstName.charAt(0)}
-                          {formData.lastName.charAt(0)}
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <svg
+                            className="w-8 h-8"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
                         </div>
                       )}
-                      <button
-                        className="px-4 py-2 text-white rounded-xl transition-colors duration-200"
-                        style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                      >
-                        Chọn ảnh
-                      </button>
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-4">
-                      CV/Sơ yếu lý lịch
-                    </label>
-                    <div
-                      className="border-2 border-dashed rounded-xl p-6 text-center"
-                      style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
+                    <button
+                      onClick={() => handleUploadClick("avatar")}
+                      className="px-4 py-2 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      style={{ backgroundColor: "rgb(148, 204, 230)" }}
                     >
+                      Tải lên ảnh
+                    </button>
+                  </div>
+                  {errors.imageAvatar && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.imageAvatar}
+                    </p>
+                  )}
+                </div>
+
+                {/* CV */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    CV/Bằng cấp *
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-1 p-4 border border-gray-200 rounded-lg bg-gray-50">
                       {formData.cvFileUrl ? (
-                        <div className="space-y-2">
-                          <div className="text-blue-600 text-4xl">📄</div>
-                          <p className="text-sm text-gray-600">CV đã tải lên</p>
-                          <button className="text-sm text-blue-600 hover:text-blue-800">
-                            Xem CV
-                          </button>
+                        <div className="flex items-center space-x-3">
+                          <div className="text-2xl">📄</div>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {formData.cvFileName || "CV đã tải lên"}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              CV đã tải lên
+                            </p>
+                          </div>
                         </div>
                       ) : (
-                        <div className="space-y-2">
-                          <div className="text-gray-400 text-4xl">📄</div>
-                          <p className="text-sm text-gray-600">Chưa có CV</p>
-                          <button
-                            className="px-4 py-2 text-white rounded-xl transition-colors duration-200"
-                            style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                          >
-                            Tải lên CV
-                          </button>
-                        </div>
+                        <p className="text-gray-500">Chưa có CV</p>
                       )}
                     </div>
+                    <button
+                      onClick={() => handleUploadClick("cv")}
+                      className="px-4 py-2 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                    >
+                      Tải lên CV
+                    </button>
                   </div>
+                  {errors.cvFile && (
+                    <p className="text-red-500 text-xs mt-1">{errors.cvFile}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -406,112 +896,141 @@ export const ProfileManagement: React.FC = () => {
 
       case 3:
         return (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="p-8 space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  Chứng chỉ
-                </h2>
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Chứng chỉ và bằng cấp
+                  </h3>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.noCertificates}
+                      onChange={(e) =>
+                        handleInputChange("noCertificates", e.target.checked)
+                      }
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-600">
+                      Tôi chưa có chứng chỉ nào
+                    </span>
+                  </label>
+                </div>
 
-                <div className="space-y-4">
-                  {formData.certificates.map((cert, index) => (
-                    <div
-                      key={index}
-                      className="border rounded-xl p-4"
-                      style={{ borderColor: "rgba(148, 204, 230, 0.2)" }}
-                    >
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Tên chứng chỉ
-                          </label>
-                          <input
-                            type="text"
-                            value={cert.name}
-                            onChange={(e) => {
-                              const newCerts = [...formData.certificates];
-                              newCerts[index].name = e.target.value;
-                              handleInputChange("certificates", newCerts);
-                            }}
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                            style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Tổ chức cấp
-                          </label>
-                          <input
-                            type="text"
-                            value={cert.issuedBy}
-                            onChange={(e) => {
-                              const newCerts = [...formData.certificates];
-                              newCerts[index].issuedBy = e.target.value;
-                              handleInputChange("certificates", newCerts);
-                            }}
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                            style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Năm cấp
-                          </label>
-                          <input
-                            type="text"
-                            value={cert.year}
-                            onChange={(e) => {
-                              const newCerts = [...formData.certificates];
-                              newCerts[index].year = e.target.value;
-                              handleInputChange("certificates", newCerts);
-                            }}
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                            style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                          />
-                        </div>
-                      </div>
-                      <div className="mt-4 flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-600">
-                            Trạng thái xác thực:
-                          </span>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              cert.isVerified
-                                ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
-                          >
-                            {cert.isVerified ? "Đã xác thực" : "Chờ xác thực"}
-                          </span>
-                        </div>
-                        {cert.isVerified && (
-                          <div className="flex items-center space-x-1 text-green-600">
-                            <svg
-                              className="w-4 h-4"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            <span className="text-xs">Verified</span>
+                {!formData.noCertificates && (
+                  <div className="space-y-4">
+                    {formData.certificates.map((certificate, index) => (
+                      <div
+                        key={index}
+                        className="p-4 border border-gray-200 rounded-lg space-y-3"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Tên chứng chỉ
+                            </label>
+                            <input
+                              type="text"
+                              value={certificate.name}
+                              onChange={(e) => {
+                                const newCertificates = [
+                                  ...formData.certificates,
+                                ];
+                                newCertificates[index].name = e.target.value;
+                                handleInputChange(
+                                  "certificates",
+                                  newCertificates
+                                );
+                              }}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Ví dụ: IELTS 7.5"
+                            />
                           </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Tổ chức cấp
+                            </label>
+                            <input
+                              type="text"
+                              value={certificate.issuedBy}
+                              onChange={(e) => {
+                                const newCertificates = [
+                                  ...formData.certificates,
+                                ];
+                                newCertificates[index].issuedBy =
+                                  e.target.value;
+                                handleInputChange(
+                                  "certificates",
+                                  newCertificates
+                                );
+                              }}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Ví dụ: British Council"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Mô tả
+                          </label>
+                          <textarea
+                            value={certificate.description}
+                            onChange={(e) => {
+                              const newCertificates = [
+                                ...formData.certificates,
+                              ];
+                              newCertificates[index].description =
+                                e.target.value;
+                              handleInputChange(
+                                "certificates",
+                                newCertificates
+                              );
+                            }}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            rows={2}
+                            placeholder="Mô tả ngắn về chứng chỉ"
+                          />
+                        </div>
+                        {formData.certificates.length > 1 && (
+                          <button
+                            onClick={() => {
+                              const newCertificates =
+                                formData.certificates.filter(
+                                  (_, i) => i !== index
+                                );
+                              handleInputChange(
+                                "certificates",
+                                newCertificates
+                              );
+                            }}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            Xóa chứng chỉ
+                          </button>
                         )}
                       </div>
-                    </div>
-                  ))}
-
-                  <button
-                    className="w-full py-3 border-2 border-dashed rounded-xl text-gray-600 hover:text-gray-800 transition-colors"
-                    style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                  >
-                    + Thêm chứng chỉ
-                  </button>
-                </div>
+                    ))}
+                    <button
+                      onClick={() => {
+                        handleInputChange("certificates", [
+                          ...formData.certificates,
+                          {
+                            name: "",
+                            description: "",
+                            issuedBy: "",
+                            file: null,
+                            imageUrl: "",
+                            imageFileName: "",
+                          },
+                        ]);
+                      }}
+                      className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-700 transition-colors"
+                    >
+                      + Thêm chứng chỉ
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -519,128 +1038,160 @@ export const ProfileManagement: React.FC = () => {
 
       case 4:
         return (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="p-8 space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  Học vấn
-                </h2>
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-900">Học vấn</h3>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.noEducation}
+                      onChange={(e) =>
+                        handleInputChange("noEducation", e.target.checked)
+                      }
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-600">
+                      Tôi chưa có bằng cấp chính thức
+                    </span>
+                  </label>
+                </div>
 
-                <div className="space-y-4">
-                  {formData.educations.map((edu, index) => (
-                    <div
-                      key={index}
-                      className="border rounded-xl p-4"
-                      style={{ borderColor: "rgba(148, 204, 230, 0.2)" }}
-                    >
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Tên trường
-                          </label>
-                          <input
-                            type="text"
-                            value={edu.schoolName}
-                            onChange={(e) => {
-                              const newEdus = [...formData.educations];
-                              newEdus[index].schoolName = e.target.value;
-                              handleInputChange("educations", newEdus);
-                            }}
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                            style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                          />
+                {!formData.noEducation && (
+                  <div className="space-y-4">
+                    {formData.educations.map((education, index) => (
+                      <div
+                        key={index}
+                        className="p-4 border border-gray-200 rounded-lg space-y-3"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Tên trường
+                            </label>
+                            <input
+                              type="text"
+                              value={education.schoolName}
+                              onChange={(e) => {
+                                const newEducations = [...formData.educations];
+                                newEducations[index].schoolName =
+                                  e.target.value;
+                                handleInputChange("educations", newEducations);
+                              }}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Ví dụ: Đại học Bách Khoa Hà Nội"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Bằng cấp
+                            </label>
+                            <input
+                              type="text"
+                              value={education.degree}
+                              onChange={(e) => {
+                                const newEducations = [...formData.educations];
+                                newEducations[index].degree = e.target.value;
+                                handleInputChange("educations", newEducations);
+                              }}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Ví dụ: Cử nhân"
+                            />
+                          </div>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Bằng cấp
-                          </label>
-                          <input
-                            type="text"
-                            value={edu.degree}
-                            onChange={(e) => {
-                              const newEdus = [...formData.educations];
-                              newEdus[index].degree = e.target.value;
-                              handleInputChange("educations", newEdus);
-                            }}
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                            style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Chuyên ngành
                           </label>
                           <input
                             type="text"
-                            value={edu.major}
+                            value={education.major}
                             onChange={(e) => {
-                              const newEdus = [...formData.educations];
-                              newEdus[index].major = e.target.value;
-                              handleInputChange("educations", newEdus);
+                              const newEducations = [...formData.educations];
+                              newEducations[index].major = e.target.value;
+                              handleInputChange("educations", newEducations);
                             }}
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                            style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Ví dụ: Công nghệ thông tin"
                           />
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Năm tốt nghiệp
-                          </label>
-                          <input
-                            type="number"
-                            value={edu.toTime}
-                            onChange={(e) => {
-                              const newEdus = [...formData.educations];
-                              newEdus[index].toTime = parseInt(e.target.value);
-                              handleInputChange("educations", newEdus);
-                            }}
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                            style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                          />
-                        </div>
-                      </div>
-                      <div className="mt-4 flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-600">
-                            Trạng thái xác thực:
-                          </span>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              edu.isVerified
-                                ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
-                          >
-                            {edu.isVerified ? "Đã xác thực" : "Chờ xác thực"}
-                          </span>
-                        </div>
-                        {edu.isVerified && (
-                          <div className="flex items-center space-x-1 text-green-600">
-                            <svg
-                              className="w-4 h-4"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            <span className="text-xs">Verified</span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Năm bắt đầu
+                            </label>
+                            <input
+                              type="number"
+                              value={education.fromTime || ""}
+                              onChange={(e) => {
+                                const newEducations = [...formData.educations];
+                                newEducations[index].fromTime =
+                                  parseInt(e.target.value) || 0;
+                                handleInputChange("educations", newEducations);
+                              }}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="2020"
+                              min="1900"
+                              max="2030"
+                            />
                           </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Năm kết thúc
+                            </label>
+                            <input
+                              type="number"
+                              value={education.toTime || ""}
+                              onChange={(e) => {
+                                const newEducations = [...formData.educations];
+                                newEducations[index].toTime =
+                                  parseInt(e.target.value) || 0;
+                                handleInputChange("educations", newEducations);
+                              }}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="2024"
+                              min="1900"
+                              max="2030"
+                            />
+                          </div>
+                        </div>
+                        {formData.educations.length > 1 && (
+                          <button
+                            onClick={() => {
+                              const newEducations = formData.educations.filter(
+                                (_, i) => i !== index
+                              );
+                              handleInputChange("educations", newEducations);
+                            }}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            Xóa học vấn
+                          </button>
                         )}
                       </div>
-                    </div>
-                  ))}
-
-                  <button
-                    className="w-full py-3 border-2 border-dashed rounded-xl text-gray-600 hover:text-gray-800 transition-colors"
-                    style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                  >
-                    + Thêm học vấn
-                  </button>
-                </div>
+                    ))}
+                    <button
+                      onClick={() => {
+                        handleInputChange("educations", [
+                          ...formData.educations,
+                          {
+                            schoolName: "",
+                            degree: "",
+                            major: "",
+                            fromTime: 0,
+                            toTime: 0,
+                            degreeFileName: "",
+                            degreeFileUrl: "",
+                          },
+                        ]);
+                      }}
+                      className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-700 transition-colors"
+                    >
+                      + Thêm học vấn
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -648,100 +1199,109 @@ export const ProfileManagement: React.FC = () => {
 
       case 5:
         return (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="p-8 space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  Giới thiệu
-                </h2>
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 space-y-6">
+                {/* Tiêu đề chuyên môn */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tiêu đề chuyên môn *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.headline}
+                    onChange={(e) =>
+                      handleInputChange("headline", e.target.value)
+                    }
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    placeholder="Ví dụ: Giảng viên Tiếng Anh với 5 năm kinh nghiệm"
+                  />
+                  {errors.headline && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.headline}
+                    </p>
+                  )}
+                </div>
 
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tiêu đề hồ sơ
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.headline}
-                      onChange={(e) =>
-                        handleInputChange("headline", e.target.value)
-                      }
-                      className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-colors"
-                      style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                      placeholder="Ví dụ: Giảng viên Tiếng Anh chuyên nghiệp"
-                    />
-                  </div>
+                {/* Giới thiệu bản thân */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Giới thiệu bản thân *
+                  </label>
+                  <textarea
+                    value={formData.bio}
+                    onChange={(e) => handleInputChange("bio", e.target.value)}
+                    rows={4}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    placeholder="Hãy giới thiệu về bản thân, phong cách giảng dạy và những gì bạn có thể mang lại cho học viên..."
+                  />
+                  {errors.bio && (
+                    <p className="text-red-500 text-xs mt-1">{errors.bio}</p>
+                  )}
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Kinh nghiệm giảng dạy
-                    </label>
-                    <textarea
-                      value={formData.experience}
-                      onChange={(e) =>
-                        handleInputChange("experience", e.target.value)
-                      }
-                      rows={4}
-                      className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-colors"
-                      style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                      placeholder="Mô tả kinh nghiệm giảng dạy của bạn..."
-                    />
-                  </div>
+                {/* Kinh nghiệm giảng dạy */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Kinh nghiệm giảng dạy *
+                  </label>
+                  <textarea
+                    value={formData.experience}
+                    onChange={(e) =>
+                      handleInputChange("experience", e.target.value)
+                    }
+                    rows={3}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    placeholder="Mô tả kinh nghiệm giảng dạy của bạn, các thành tích đã đạt được..."
+                  />
+                  {errors.experience && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.experience}
+                    </p>
+                  )}
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Giới thiệu bản thân
-                    </label>
-                    <textarea
-                      value={formData.bio}
-                      onChange={(e) => handleInputChange("bio", e.target.value)}
-                      rows={6}
-                      className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-colors"
-                      style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                      placeholder="Giới thiệu về bản thân, phương pháp giảng dạy..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Đối tượng giảng dạy
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {["Lớp 10-12", "Đại học", "Người đi làm", "Trẻ em"].map(
-                        (audience) => (
-                          <button
-                            key={audience}
-                            className={`px-4 py-2 rounded-full text-sm transition-colors ${
-                              formData.teachingAudiences.includes(audience)
-                                ? "text-white"
-                                : "text-gray-600 border"
-                            }`}
-                            style={{
-                              backgroundColor:
-                                formData.teachingAudiences.includes(audience)
-                                  ? "rgb(148, 204, 230)"
-                                  : "transparent",
-                              borderColor: "rgba(148, 204, 230, 0.3)",
-                            }}
-                            onClick={() => {
-                              const newAudiences =
-                                formData.teachingAudiences.includes(audience)
-                                  ? formData.teachingAudiences.filter(
-                                      (a) => a !== audience
-                                    )
-                                  : [...formData.teachingAudiences, audience];
+                {/* Đối tượng học viên */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Đối tượng học viên mong muốn *
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {teachingAudiences.map((audience) => (
+                      <label key={audience.id} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.teachingAudiences.includes(
+                            audience.name
+                          )}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              handleInputChange("teachingAudiences", [
+                                ...formData.teachingAudiences,
+                                audience.name,
+                              ]);
+                            } else {
                               handleInputChange(
                                 "teachingAudiences",
-                                newAudiences
+                                formData.teachingAudiences.filter(
+                                  (aud) => aud !== audience.name
+                                )
                               );
-                            }}
-                          >
-                            {audience}
-                          </button>
-                        )
-                      )}
-                    </div>
+                            }
+                          }}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700">
+                          {audience.name}
+                        </span>
+                      </label>
+                    ))}
                   </div>
+                  {errors.teachingAudiences && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.teachingAudiences}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -750,42 +1310,27 @@ export const ProfileManagement: React.FC = () => {
 
       case 6:
         return (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="p-8 space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  Video giới thiệu
-                </h2>
-
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Link video YouTube
+                    Video giới thiệu (tùy chọn)
                   </label>
                   <input
                     type="url"
-                    value={formData.videoUrl}
+                    value={formData.videoIntro}
                     onChange={(e) =>
-                      handleInputChange("videoUrl", e.target.value)
+                      handleInputChange("videoIntro", e.target.value)
                     }
-                    className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-colors"
-                    style={{ borderColor: "rgba(148, 204, 230, 0.3)" }}
-                    placeholder="https://youtube.com/watch?v=..."
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    placeholder="Nhập link YouTube hoặc video giới thiệu"
                   />
-                  <p className="text-sm text-gray-500 mt-2">
-                    Tải video lên YouTube và dán link vào đây
+                  <p className="text-sm text-gray-500 mt-1">
+                    Video giới thiệu giúp học viên hiểu rõ hơn về bạn và phong
+                    cách giảng dạy
                   </p>
                 </div>
-
-                {formData.videoUrl && (
-                  <div className="mt-4">
-                    <div className="aspect-video bg-gray-100 rounded-xl flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-4xl text-gray-400 mb-2">🎥</div>
-                        <p className="text-gray-600">Video preview</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -793,97 +1338,109 @@ export const ProfileManagement: React.FC = () => {
 
       case 7:
         return (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="p-8 space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  Thời gian dạy
-                </h2>
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">
+                    Thời gian có thể dạy *
+                  </label>
 
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-4">
-                      Ngày trong tuần
-                    </label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {[
-                        "Thứ 2",
-                        "Thứ 3",
-                        "Thứ 4",
-                        "Thứ 5",
-                        "Thứ 6",
-                        "Thứ 7",
-                        "Chủ nhật",
-                      ].map((day) => (
+                  {/* Available times list */}
+                  <div className="space-y-3 mb-4">
+                    {formData.availableTimes.map((time, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <span className="text-sm">
+                          {time.dayOfWeek}: {time.startTime} - {time.endTime}
+                        </span>
                         <button
-                          key={day}
-                          className={`py-3 px-4 rounded-xl text-sm font-medium transition-colors ${
-                            formData.availableDays.includes(day)
-                              ? "text-white"
-                              : "text-gray-600 border"
-                          }`}
-                          style={{
-                            backgroundColor: formData.availableDays.includes(
-                              day
-                            )
-                              ? "rgb(148, 204, 230)"
-                              : "transparent",
-                            borderColor: "rgba(148, 204, 230, 0.3)",
-                          }}
                           onClick={() => {
-                            const newDays = formData.availableDays.includes(day)
-                              ? formData.availableDays.filter((d) => d !== day)
-                              : [...formData.availableDays, day];
-                            handleInputChange("availableDays", newDays);
-                          }}
-                        >
-                          {day}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-4">
-                      Khung giờ
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {[
-                        "Sáng (7h-12h)",
-                        "Chiều (12h-17h)",
-                        "Tối (17h-22h)",
-                      ].map((time) => (
-                        <button
-                          key={time}
-                          className={`py-3 px-4 rounded-xl text-sm font-medium transition-colors ${
-                            formData.availableTimes.includes(time)
-                              ? "text-white"
-                              : "text-gray-600 border"
-                          }`}
-                          style={{
-                            backgroundColor: formData.availableTimes.includes(
-                              time
-                            )
-                              ? "rgb(148, 204, 230)"
-                              : "transparent",
-                            borderColor: "rgba(148, 204, 230, 0.3)",
-                          }}
-                          onClick={() => {
-                            const newTimes = formData.availableTimes.includes(
-                              time
-                            )
-                              ? formData.availableTimes.filter(
-                                  (t) => t !== time
-                                )
-                              : [...formData.availableTimes, time];
+                            const newTimes = formData.availableTimes.filter(
+                              (_, i) => i !== index
+                            );
                             handleInputChange("availableTimes", newTimes);
                           }}
+                          className="text-red-500 hover:text-red-700 text-sm"
                         >
-                          {time}
+                          Xóa
                         </button>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
+
+                  {/* Add new time slot */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 border border-gray-200 rounded-lg">
+                    <select
+                      id="dayOfWeek"
+                      className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Chọn ngày</option>
+                      <option value="Thứ 2">Thứ 2</option>
+                      <option value="Thứ 3">Thứ 3</option>
+                      <option value="Thứ 4">Thứ 4</option>
+                      <option value="Thứ 5">Thứ 5</option>
+                      <option value="Thứ 6">Thứ 6</option>
+                      <option value="Thứ 7">Thứ 7</option>
+                      <option value="Chủ nhật">Chủ nhật</option>
+                    </select>
+                    <input
+                      type="time"
+                      id="startTime"
+                      className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="time"
+                      id="endTime"
+                      className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => {
+                        const daySelect = document.getElementById(
+                          "dayOfWeek"
+                        ) as HTMLSelectElement;
+                        const startInput = document.getElementById(
+                          "startTime"
+                        ) as HTMLInputElement;
+                        const endInput = document.getElementById(
+                          "endTime"
+                        ) as HTMLInputElement;
+
+                        if (
+                          daySelect.value &&
+                          startInput.value &&
+                          endInput.value
+                        ) {
+                          const newTime = {
+                            dayOfWeek: daySelect.value,
+                            startTime: startInput.value,
+                            endTime: endInput.value,
+                          };
+
+                          handleInputChange("availableTimes", [
+                            ...formData.availableTimes,
+                            newTime,
+                          ]);
+
+                          // Reset form
+                          daySelect.value = "";
+                          startInput.value = "";
+                          endInput.value = "";
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                      Thêm
+                    </button>
+                  </div>
+
+                  {errors.availableTimes && (
+                    <p className="text-red-500 text-sm">
+                      {errors.availableTimes}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -895,263 +1452,373 @@ export const ProfileManagement: React.FC = () => {
     }
   };
 
-  const renderMessages = () => {
-    const unreadCount = messages.filter((msg) => !msg.isRead).length;
+  const getStepTitle = (step: number) => {
+    const titles = [
+      "Thông tin cơ bản",
+      "Ảnh đại diện & CV",
+      "Chứng chỉ",
+      "Học vấn",
+      "Giới thiệu",
+      "Video",
+      "Thời gian dạy",
+    ];
+    return titles[step - 1] || "";
+  };
 
-    return (
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Hộp thư</h2>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-500">
-                  {unreadCount} tin nhắn chưa đọc
-                </span>
-                <button
-                  className="px-4 py-2 text-white rounded-xl transition-colors duration-200"
-                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                >
-                  Đánh dấu tất cả đã đọc
-                </button>
-              </div>
-            </div>
-          </div>
+  // Kiểm tra tất cả bước có hoàn thành không
+  const areAllStepsCompleted = () => {
+    for (let i = 1; i <= totalSteps; i++) {
+      if (!isStepCompleted(i)) return false;
+    }
+    return true;
+  };
 
-          <div className="divide-y divide-gray-100">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`p-6 hover:bg-gray-50 transition-colors cursor-pointer ${
-                  !message.isRead ? "bg-blue-50" : ""
-                }`}
-                onClick={() => {
-                  setMessages((prev) =>
-                    prev.map((msg) =>
-                      msg.id === message.id ? { ...msg, isRead: true } : msg
-                    )
-                  );
-                }}
-              >
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0">
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
-                      style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                    >
-                      {message.senderName.charAt(0)}
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium text-gray-900">
-                        {message.senderName}
-                      </h3>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-500">
-                          {new Date(message.createdAt).toLocaleDateString(
-                            "vi-VN"
-                          )}
-                        </span>
-                        {!message.isRead && (
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                          />
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-sm font-medium text-gray-900 mt-1">
-                      {message.subject}
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                      {message.content}
-                    </p>
-                    <div className="mt-2">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          message.type === "system"
-                            ? "bg-blue-100 text-blue-800"
-                            : message.type === "student"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {message.type === "system"
-                          ? "Hệ thống"
-                          : message.type === "student"
-                          ? "Học viên"
-                          : "Admin"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  // Kiểm tra có thể navigate đến step này không
+  const canNavigateToStep = (step: number) => {
+    if (step === 1) return true; // Always allow step 1
+
+    // Check if all previous steps are completed
+    for (let i = 1; i < step; i++) {
+      if (!completedSteps.has(i)) {
+        return false;
+      }
+    }
+    return true;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Quản lý hồ sơ gia sư
-            </h1>
-            <div className="flex items-center space-x-4">
-              <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  profileApplication.status === "APPROVED"
-                    ? "bg-green-100 text-green-800"
-                    : profileApplication.status === "SUBMITTED"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : profileApplication.status === "REJECTED"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {profileApplication.status === "APPROVED"
-                  ? "Đã duyệt"
-                  : profileApplication.status === "SUBMITTED"
-                  ? "Chờ duyệt"
-                  : profileApplication.status === "REJECTED"
-                  ? "Bị từ chối"
-                  : "Nháp"}
-              </span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header Section - Larger and more prominent */}
+      <div
+        className="shadow-2xl"
+        style={{ backgroundColor: "rgb(148, 204, 230)" }}
+      >
+        <div className="container mx-auto px-4 py-6">
+          {/* Progress Steps - Desktop */}
+          <div className="hidden lg:block">
+            <div className="flex items-center justify-center space-x-4">
+              {Array.from({ length: totalSteps }, (_, i) => i + 1).map(
+                (step) => (
+                  <React.Fragment key={step}>
+                    <div
+                      className={`px-3 py-2 rounded text-sm font-medium transition-all duration-200 ${
+                        step === currentStep
+                          ? "bg-white cursor-pointer"
+                          : completedSteps.has(step)
+                          ? "text-white hover:opacity-80 cursor-pointer"
+                          : canNavigateToStep(step)
+                          ? "bg-white/20 text-white hover:bg-white/30 cursor-pointer"
+                          : "bg-gray-400/50 text-gray-500 cursor-not-allowed"
+                      }`}
+                      style={{
+                        backgroundColor:
+                          step === currentStep
+                            ? "white"
+                            : completedSteps.has(step)
+                            ? "rgb(148, 204, 230)"
+                            : canNavigateToStep(step)
+                            ? "rgba(255, 255, 255, 0.2)"
+                            : "rgba(156, 163, 175, 0.5)",
+                        color:
+                          step === currentStep
+                            ? "rgb(31, 41, 55)" // Màu xám đậm để dễ đọc trên nền trắng
+                            : completedSteps.has(step)
+                            ? "white"
+                            : canNavigateToStep(step)
+                            ? "white"
+                            : "rgb(107, 114, 128)",
+                      }}
+                      onClick={() => canNavigateToStep(step) && goToStep(step)}
+                    >
+                      {step} {getStepTitle(step)}
+                    </div>
+                    {step < totalSteps && (
+                      <span className="text-gray-600 text-lg">&gt;</span>
+                    )}
+                  </React.Fragment>
+                )
+              )}
+            </div>
+          </div>
+
+          {/* Progress Steps - Mobile */}
+          <div className="lg:hidden">
+            <div className="flex items-center justify-center space-x-2 overflow-x-auto">
+              {Array.from({ length: totalSteps }, (_, i) => i + 1).map(
+                (step) => (
+                  <React.Fragment key={step}>
+                    <div
+                      className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap transition-all duration-200 ${
+                        step === currentStep
+                          ? "bg-white cursor-pointer"
+                          : completedSteps.has(step)
+                          ? "text-white hover:opacity-80 cursor-pointer"
+                          : canNavigateToStep(step)
+                          ? "bg-white/20 text-white hover:bg-white/30 cursor-pointer"
+                          : "bg-gray-400/50 text-gray-500 cursor-not-allowed"
+                      }`}
+                      style={{
+                        backgroundColor:
+                          step === currentStep
+                            ? "white"
+                            : completedSteps.has(step)
+                            ? "rgb(148, 204, 230)"
+                            : canNavigateToStep(step)
+                            ? "rgba(255, 255, 255, 0.2)"
+                            : "rgba(156, 163, 175, 0.5)",
+                        color:
+                          step === currentStep
+                            ? "rgb(31, 41, 55)" // Màu xám đậm để dễ đọc trên nền trắng
+                            : completedSteps.has(step)
+                            ? "white"
+                            : canNavigateToStep(step)
+                            ? "white"
+                            : "rgb(107, 114, 128)",
+                      }}
+                      onClick={() => canNavigateToStep(step) && goToStep(step)}
+                    >
+                      {step} {getStepTitle(step)}
+                    </div>
+                    {step < totalSteps && (
+                      <span className="text-gray-600 text-sm">&gt;</span>
+                    )}
+                  </React.Fragment>
+                )
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Tabs */}
-        <div className="mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8">
-              <button
-                onClick={() => setActiveTab("profile")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === "profile"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                Hồ sơ cá nhân
-              </button>
-              <button
-                onClick={() => setActiveTab("messages")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === "messages"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                Hộp thư
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        {/* Content */}
-        {activeTab === "profile" ? (
-          <div>
-            {/* Step Progress */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  {Array.from({ length: totalSteps }, (_, i) => i + 1).map(
-                    (step) => (
-                      <div key={step} className="flex items-center">
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                            step <= currentStep
-                              ? "text-white"
-                              : "text-gray-500 border-2"
-                          }`}
-                          style={{
-                            backgroundColor:
-                              step <= currentStep
-                                ? "rgb(148, 204, 230)"
-                                : "transparent",
-                            borderColor:
-                              step <= currentStep
-                                ? "rgb(148, 204, 230)"
-                                : "rgba(148, 204, 230, 0.3)",
-                          }}
-                        >
-                          {step}
-                        </div>
-                        {step < totalSteps && (
-                          <div
-                            className={`w-8 h-0.5 mx-2 ${
-                              step < currentStep ? "bg-blue-400" : "bg-gray-200"
-                            }`}
-                          />
-                        )}
-                      </div>
-                    )
-                  )}
-                </div>
-                <div className="text-sm text-gray-500">
-                  Bước {currentStep} / {totalSteps}
-                </div>
-              </div>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Form Content */}
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            {/* Form Header */}
+            <div
+              className="px-8 py-6"
+              style={{ backgroundColor: "rgb(148, 204, 230)" }}
+            >
+              <h3 className="text-2xl font-bold text-white mb-2">
+                {getStepTitle(currentStep)}
+              </h3>
+              <p className="text-white text-sm opacity-90">
+                {currentStep === 1 &&
+                  "Cập nhật thông tin cá nhân của bạn. Thông tin sẽ được lưu và có thể chỉnh sửa bất cứ lúc nào."}
+                {currentStep === 2 &&
+                  "Cập nhật ảnh đại diện chuyên nghiệp để tạo ấn tượng tốt với học viên."}
+                {currentStep === 3 &&
+                  "Cập nhật các chứng chỉ và bằng cấp của bạn để tăng độ tin cậy."}
+                {currentStep === 4 &&
+                  "Cập nhật thông tin học vấn và chuyên môn của bạn."}
+                {currentStep === 5 &&
+                  "Cập nhật giới thiệu bản thân và phương pháp giảng dạy độc đáo của bạn."}
+                {currentStep === 6 &&
+                  "Cập nhật video giới thiệu ngắn để học viên hiểu rõ hơn về bạn."}
+                {currentStep === 7 &&
+                  "Cập nhật lịch dạy phù hợp với thời gian rảnh của bạn."}
+              </p>
             </div>
 
-            {/* Step Content */}
-            {renderStepContent()}
+            {/* Form Body */}
+            <div className="p-8">{renderStepContent()}</div>
 
-            {/* Navigation */}
-            <div className="flex justify-between mt-8">
-              <button
-                onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-                disabled={currentStep === 1}
-                className={`px-6 py-3 rounded-xl font-medium transition-colors ${
-                  currentStep === 1
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                Quay lại
-              </button>
-              <div className="flex space-x-4">
-                <button
-                  onClick={handleSave}
-                  className="px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-xl font-medium hover:bg-gray-50 transition-colors"
-                >
-                  Lưu nháp
-                </button>
-                {currentStep < totalSteps ? (
+            {/* Navigation Buttons */}
+            <div className="bg-gray-50 px-8 py-6 border-t border-gray-200">
+              <div className="flex justify-between items-center">
+                {/* Nhóm bên trái: Quay lại và Tiếp tục */}
+                <div className="flex space-x-3">
+                  {/* Nút Quay lại */}
+                  {currentStep > 1 && (
+                    <button
+                      onClick={prevStep}
+                      className="flex items-center px-6 py-3 text-gray-700 bg-gray-200 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium hover:bg-gray-300"
+                    >
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                      Quay lại
+                    </button>
+                  )}
+
+                  {/* Nút Tiếp tục */}
                   <button
-                    onClick={() =>
-                      setCurrentStep(Math.min(totalSteps, currentStep + 1))
-                    }
-                    className="px-6 py-3 text-white rounded-xl font-medium transition-colors duration-200"
-                    style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                    onClick={nextStep}
+                    disabled={currentStep >= totalSteps}
+                    className="flex items-center px-8 py-3 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor:
+                        currentStep >= totalSteps ? "#9ca3af" : "#94cce6",
+                    }}
                   >
-                    Tiếp theo
+                    Tiếp tục
+                    <svg
+                      className="w-4 h-4 ml-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
                   </button>
-                ) : (
+                </div>
+
+                {/* Nhóm bên phải: Lưu nháp và Cập nhật hồ sơ */}
+                <div className="flex space-x-3">
+                  {/* Nút Lưu nháp */}
+                  <button
+                    onClick={saveDraft}
+                    disabled={isDraftSaving}
+                    className="flex items-center px-6 py-3 text-gray-700 bg-gray-200 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium hover:bg-gray-300 disabled:opacity-50"
+                  >
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                    {isDraftSaving ? "Đang lưu..." : "Lưu nháp"}
+                  </button>
+
+                  {/* Nút Cập nhật hồ sơ */}
                   <button
                     onClick={handleSubmit}
-                    className="px-6 py-3 text-white rounded-xl font-medium transition-colors duration-200"
-                    style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                    disabled={!areAllStepsCompleted() || isSubmitting}
+                    className="flex items-center px-8 py-3 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: areAllStepsCompleted()
+                        ? "#10b981"
+                        : "#9ca3af",
+                    }}
                   >
-                    Hoàn thành
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    {isSubmitting ? "Đang cập nhật..." : "Cập nhật hồ sơ"}
                   </button>
-                )}
+                </div>
               </div>
             </div>
           </div>
-        ) : (
-          renderMessages()
-        )}
+        </div>
       </div>
+
+      {/* Upload Preview Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Tải lên {uploadType === "avatar" ? "ảnh đại diện" : "CV"}
+            </h3>
+
+            <div className="mb-4">
+              <input
+                type="file"
+                accept={uploadType === "avatar" ? "image/*" : ".pdf,.doc,.docx"}
+                onChange={handleFileSelect}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="mb-4">
+              {!previewFile ? (
+                <div className="text-center text-gray-500 py-8">
+                  <div className="text-4xl mb-2">📁</div>
+                  <p>Chọn file để xem trước</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {uploadType === "avatar" ? (
+                    <div className="w-40 h-40 mx-auto border border-gray-300 rounded-lg overflow-hidden">
+                      <img
+                        src={URL.createObjectURL(previewFile)}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">📄</div>
+                      <p className="text-sm font-medium text-gray-900 mb-1">
+                        {previewFile.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {(previewFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => setPreviewFile(null)}
+                    className="px-3 py-1 text-sm text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Xoá
+                  </button>
+                </div>
+              )}
+
+              {/* Error message */}
+              {(errors.imageAvatar || errors.cvFile) && (
+                <div className="mt-2 text-sm text-red-600">
+                  {errors.imageAvatar || errors.cvFile}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-between">
+              <button
+                onClick={handleCancelUpload}
+                className="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Huỷ
+              </button>
+              {previewFile && (
+                <button
+                  onClick={handleConfirmUpload}
+                  disabled={isUploading}
+                  className="px-4 py-2 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                >
+                  {isUploading ? "Đang tải lên..." : "Áp dụng"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

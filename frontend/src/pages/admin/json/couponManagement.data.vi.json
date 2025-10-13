@@ -1,0 +1,59 @@
+{
+    "coupons": [
+        {
+            "id": 1,
+            "code": "WELCOME20",
+            "description": "Giảm giá 20% cho học viên mới",
+            "discountType": "PERCENTAGE",
+            "discountValue": 20,
+            "minOrderAmount": 500000,
+            "maxDiscountAmount": 200000,
+            "usageLimit": 100,
+            "usedCount": 45,
+            "startDate": "2024-01-01",
+            "endDate": "2024-12-31",
+            "isActive": true,
+            "createdAt": "2024-01-01T00:00:00Z",
+            "updatedAt": "2024-01-15T10:30:00Z"
+        },
+        {
+            "id": 2,
+            "code": "SUMMER50K",
+            "description": "Giảm giá cố định 50,000 VNĐ cho mùa hè",
+            "discountType": "FIXED",
+            "discountValue": 50000,
+            "minOrderAmount": 300000,
+            "maxDiscountAmount": 50000,
+            "usageLimit": 200,
+            "usedCount": 78,
+            "startDate": "2024-06-01",
+            "endDate": "2024-08-31",
+            "isActive": true,
+            "createdAt": "2024-05-15T09:00:00Z",
+            "updatedAt": "2024-07-20T14:15:00Z"
+        },
+        {
+            "id": 3,
+            "code": "TUTOR10",
+            "description": "Giảm giá 10% cho gia sư đăng ký",
+            "discountType": "PERCENTAGE",
+            "discountValue": 10,
+            "minOrderAmount": 1000000,
+            "maxDiscountAmount": 100000,
+            "usageLimit": 50,
+            "usedCount": 12,
+            "startDate": "2024-03-01",
+            "endDate": "2024-05-31",
+            "isActive": false,
+            "createdAt": "2024-02-20T11:00:00Z",
+            "updatedAt": "2024-05-31T23:59:59Z"
+        }
+    ],
+    "stats": {
+        "totalCoupons": 3,
+        "activeCoupons": 2,
+        "expiredCoupons": 1,
+        "totalUsage": 135,
+        "totalDiscount": 15000000
+    }
+}

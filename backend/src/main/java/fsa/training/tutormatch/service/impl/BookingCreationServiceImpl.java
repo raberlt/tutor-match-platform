@@ -6,6 +6,7 @@ import fsa.training.tutormatch.enums.BookingStatus;
 import fsa.training.tutormatch.enums.BookingType;
 import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.SubjectRepository;
+import fsa.training.tutormatch.repository.TutorProfileRepository;
 import fsa.training.tutormatch.repository.UserRepository;
 import fsa.training.tutormatch.service.BookingCreationService;
 import fsa.training.tutormatch.service.BookingValidationService;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Optional;
 
 @Service
 public class BookingCreationServiceImpl implements BookingCreationService {
@@ -26,6 +28,9 @@ public class BookingCreationServiceImpl implements BookingCreationService {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private TutorProfileRepository tutorProfileRepository;
     
     @Autowired
     private SubjectRepository subjectRepository;
@@ -107,12 +112,40 @@ public class BookingCreationServiceImpl implements BookingCreationService {
     private Booking createBaseBooking(String studentUsername, BookingRequestCreateDTO request) {
         // Get entities
         User studentUser = findUserByUsername(studentUsername);
-        User tutorUser = findUserById(request.getTutorId());
         Subject subject = findSubjectById(request.getSubjectId());
 
-        // StudentProfile removed - use User directly
-        TutorProfile tutor = tutorUser.getTutorProfile()
-                .orElseThrow(() -> new IllegalArgumentException("User không phải là tutor hợp lệ"));
+        System.out.println("=== DEBUG: Finding TutorProfile ===");
+        System.out.println("Received tutorId: " + request.getTutorId());
+        
+        // Try to find TutorProfile by ID first (in case frontend sends TutorProfile.id)
+        Optional<TutorProfile> tutorProfileOpt = tutorProfileRepository.findById(request.getTutorId());
+        TutorProfile tutor = null;
+        User tutorUser = null;
+        
+        if (tutorProfileOpt.isPresent()) {
+            // Found TutorProfile by ID - get the associated User
+            tutor = tutorProfileOpt.get();
+            tutorUser = tutor.getUser();
+            System.out.println("Found TutorProfile by ID: " + tutor.getId());
+            System.out.println("Associated User ID: " + tutorUser.getId());
+        } else {
+            // Try to find User by ID (in case frontend sends User.id)
+            try {
+                tutorUser = findUserById(request.getTutorId());
+                tutorProfileOpt = tutorProfileRepository.findByUser(tutorUser);
+                if (tutorProfileOpt.isPresent()) {
+                    tutor = tutorProfileOpt.get();
+                    System.out.println("Found User by ID, then TutorProfile: " + tutor.getId());
+                } else {
+                    throw new IllegalArgumentException("User không phải là tutor hợp lệ");
+                }
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Không tìm thấy tutor với ID: " + request.getTutorId());
+            }
+        }
+        
+        System.out.println("Final TutorProfile ID: " + tutor.getId());
+        System.out.println("Final TutorUser ID: " + tutorUser.getId());
 
         // Parse time
         String[] timeRange = request.getTime().split("-");
@@ -129,7 +162,17 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         booking.setFromTime(fromLocalTime);
         booking.setToTime(toLocalTime);
         booking.setNote(request.getNote());
-        booking.setStatus(BookingStatus.PENDING);
+        booking.setStatus(BookingStatus.PAYMENT_PENDING);
+        
+        // Set financial fields - required for database constraints
+        booking.setHourlyRate(request.getHourlyRate() != null ? request.getHourlyRate() : BigDecimal.ZERO);
+        booking.setSessionFee(request.getSessionFee() != null ? request.getSessionFee() : BigDecimal.ZERO);
+        booking.setTotalAmount(request.getTotalAmount() != null ? request.getTotalAmount() : BigDecimal.ZERO);
+        
+        System.out.println("=== DEBUG: Booking financial fields ===");
+        System.out.println("hourlyRate: " + booking.getHourlyRate());
+        System.out.println("sessionFee: " + booking.getSessionFee());
+        System.out.println("totalAmount: " + booking.getTotalAmount());
 
         return booking;
     }

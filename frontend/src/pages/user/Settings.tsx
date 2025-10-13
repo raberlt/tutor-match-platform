@@ -9,6 +9,12 @@ export const Settings: React.FC = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  // Credit management states
+  const [creditBalance, setCreditBalance] = useState<number>(0);
+  const [loadingBalance, setLoadingBalance] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState<string>("");
+  const [topUpDescription, setTopUpDescription] = useState<string>("");
+
   // Profile form
   const [profileData, setProfileData] = useState({
     firstName: user?.firstName || "",
@@ -261,6 +267,78 @@ export const Settings: React.FC = () => {
     }
   };
 
+  // Credit management functions
+  const loadCreditBalance = async () => {
+    setLoadingBalance(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/payments/credit-balance", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCreditBalance(data.balance || 0);
+      }
+    } catch (error) {
+      console.error("Error loading credit balance:", error);
+    } finally {
+      setLoadingBalance(false);
+    }
+  };
+
+  const handleTopUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!topUpAmount || parseFloat(topUpAmount) <= 0) {
+      setError("Vui lòng nhập số tiền hợp lệ");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/credit/top-up", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          amount: parseFloat(topUpAmount),
+          description: topUpDescription || "Nạp tín dụng từ cài đặt",
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setMessage(
+          `Nạp tín dụng thành công! Số dư mới: ${result.newBalance.toLocaleString()} VNĐ`
+        );
+        setCreditBalance(result.newBalance);
+        setTopUpAmount("");
+        setTopUpDescription("");
+      } else {
+        setError(result.message || "Nạp tín dụng thất bại");
+      }
+    } catch (error) {
+      setError("Có lỗi xảy ra khi nạp tín dụng");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load credit balance when credit tab is active
+  useEffect(() => {
+    if (activeTab === "credit" && user) {
+      loadCreditBalance();
+    }
+  }, [activeTab, user]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto p-4">
@@ -308,6 +386,20 @@ export const Settings: React.FC = () => {
               }}
             >
               Đổi mật khẩu
+            </button>
+            <button
+              onClick={() => setActiveTab("credit")}
+              className={`flex-1 py-3 px-4 text-center font-semibold text-base transition-all duration-200 ${
+                activeTab === "credit"
+                  ? "text-white border-b-2 border-white"
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              }`}
+              style={{
+                backgroundColor:
+                  activeTab === "credit" ? "rgb(148, 204, 230)" : "transparent",
+              }}
+            >
+              Tín dụng
             </button>
             <button
               onClick={() => setActiveTab("payment")}
@@ -788,6 +880,120 @@ export const Settings: React.FC = () => {
                   </form>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Credit Tab */}
+        {activeTab === "credit" && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Quản lý tín dụng
+              </h2>
+              <p className="text-gray-600 text-sm mt-1">
+                Nạp tín dụng và theo dõi số dư tài khoản
+              </p>
+            </div>
+
+            <div className="p-6">
+              {/* Current Balance */}
+              <div className="mb-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-blue-900 mb-1">
+                        Số dư hiện tại
+                      </h3>
+                      <p className="text-3xl font-bold text-blue-600">
+                        {loadingBalance ? (
+                          <span className="animate-pulse">Đang tải...</span>
+                        ) : (
+                          `${creditBalance.toLocaleString()} VNĐ`
+                        )}
+                      </p>
+                    </div>
+                    <button
+                      onClick={loadCreditBalance}
+                      disabled={loadingBalance}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    >
+                      {loadingBalance ? "Đang tải..." : "Làm mới"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Up Form */}
+              <form onSubmit={handleTopUp} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Số tiền nạp (VNĐ)
+                  </label>
+                  <input
+                    type="number"
+                    value={topUpAmount}
+                    onChange={(e) => setTopUpAmount(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Nhập số tiền muốn nạp"
+                    min="1000"
+                    step="1000"
+                    required
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Số tiền tối thiểu: 1,000 VNĐ
+                  </p>
+                </div>
+
+                {/* Quick Amount Buttons */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Chọn nhanh
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[50000, 100000, 200000, 500000, 1000000, 2000000].map(
+                      (amount) => (
+                        <button
+                          key={amount}
+                          type="button"
+                          onClick={() => setTopUpAmount(amount.toString())}
+                          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                        >
+                          {amount.toLocaleString()}
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ghi chú (tùy chọn)
+                  </label>
+                  <input
+                    type="text"
+                    value={topUpDescription}
+                    onChange={(e) => setTopUpDescription(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Mô tả cho giao dịch này"
+                  />
+                </div>
+
+                <div className="flex justify-end pt-4 border-t border-gray-200">
+                  <button
+                    type="submit"
+                    disabled={
+                      isLoading ||
+                      !topUpAmount ||
+                      parseFloat(topUpAmount) < 1000
+                    }
+                    className="px-6 py-2 text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 font-medium transition-all duration-200"
+                    style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                  >
+                    {isLoading ? "Đang nạp..." : "Nạp tín dụng"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

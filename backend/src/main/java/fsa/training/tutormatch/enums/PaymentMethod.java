@@ -6,5 +6,7 @@ public enum PaymentMethod {
     VNPAY,
     MOMO,
     BANKING,
-    CASH
+    CASH,
+    CREDIT,        // Thanh toán bằng tín dụng hệ thống
+    SEPAY_QR       // Thanh toán QR qua SePay
 }

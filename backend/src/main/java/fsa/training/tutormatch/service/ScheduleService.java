@@ -80,8 +80,11 @@ public class ScheduleService {
         List<Booking> existingBookings = bookingRepository.findByTutorUserAndDate(tutor, bookingDate)
             .stream()
             .filter(booking -> 
-                booking.getStatus() == BookingStatus.CONFIRMED || 
-                booking.getStatus() == BookingStatus.PENDING
+                booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || 
+                booking.getStatus() == BookingStatus.TUTOR_APPROVED ||
+                booking.getStatus() == BookingStatus.UPCOMING ||
+                booking.getStatus() == BookingStatus.IN_PROGRESS ||
+                booking.getStatus() == BookingStatus.PAYMENT_PENDING
             )
             .toList();
 

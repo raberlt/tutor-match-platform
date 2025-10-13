@@ -176,18 +176,40 @@ public class TutorProfileDraftController {
     public ResponseEntity<Map<String, Object>> getMyDraft(Authentication authentication) {
         
         try {
+            if (authentication == null) {
+                log.error("Authentication is null");
+                return ResponseEntity.status(401).body(Map.of(
+                    "success", false,
+                    "error", "Authentication required"
+                ));
+            }
+            
             String username = authentication.getName();
             log.info("Getting draft profile data for user: {}", username);
+            
+            if (username == null || username.trim().isEmpty()) {
+                log.error("Username is null or empty");
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Invalid username"
+                ));
+            }
             
             Map<String, Object> result = draftService.getDraftProfileData(username);
             
             return ResponseEntity.ok(result);
             
-        } catch (Exception e) {
-            log.error("Error getting draft profile data: ", e);
+        } catch (RuntimeException e) {
+            log.error("Runtime error getting draft profile data: ", e);
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
                 "error", e.getMessage()
+            ));
+        } catch (Exception e) {
+            log.error("Unexpected error getting draft profile data: ", e);
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "error", "Internal server error: " + e.getMessage()
             ));
         }
     }

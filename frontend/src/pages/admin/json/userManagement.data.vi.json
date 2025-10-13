@@ -1,0 +1,57 @@
+{
+    "users": [
+        {
+            "id": "1",
+            "firstName": "Nguyễn",
+            "lastName": "Văn A",
+            "email": "nguyenvana@email.com",
+            "role": "STUDENT",
+            "enable": true,
+            "createdAt": "2024-01-15T10:00:00Z"
+        },
+        {
+            "id": "2",
+            "firstName": "Trần",
+            "lastName": "Thị B",
+            "email": "tranthib@email.com",
+            "role": "TUTOR",
+            "enable": true,
+            "createdAt": "2024-01-14T09:30:00Z"
+        },
+        {
+            "id": "3",
+            "firstName": "Lê",
+            "lastName": "Văn C",
+            "email": "levanc@email.com",
+            "role": "STUDENT",
+            "enable": false,
+            "createdAt": "2024-01-13T14:20:00Z"
+        },
+        {
+            "id": "4",
+            "firstName": "Phạm",
+            "lastName": "Thị D",
+            "email": "phamthid@email.com",
+            "role": "TUTOR",
+            "enable": true,
+            "createdAt": "2024-01-12T11:15:00Z"
+        },
+        {
+            "id": "5",
+            "firstName": "Hoàng",
+            "lastName": "Văn E",
+            "email": "hoangvane@email.com",
+            "role": "ADMIN",
+            "enable": true,
+            "createdAt": "2024-01-11T08:45:00Z"
+        }
+    ],
+    "stats": {
+        "totalUsers": 5,
+        "activeUsers": 4,
+        "inactiveUsers": 1,
+        "students": 2,
+        "tutors": 2,
+        "admins": 1
+    }
+}

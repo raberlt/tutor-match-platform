@@ -119,7 +119,7 @@ const TutorDetail: React.FC = () => {
 
   const handleSingleBooking = () => {
     if (tutor) {
-      navigate("/single-booking-new", {
+      navigate("/booking", {
         state: {
           selectedTutor: tutor,
         },
@@ -129,7 +129,7 @@ const TutorDetail: React.FC = () => {
 
   const handlePackageBooking = () => {
     if (tutor) {
-      navigate("/package-booking-new", {
+      navigate("/booking", {
         state: {
           selectedTutor: tutor,
         },

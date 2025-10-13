@@ -44,6 +44,23 @@ public class MessageService {
         
         return convertToDTO(savedMessage);
     }
+
+    // Overload method for MessageController compatibility
+    @Transactional
+    public MessageDTO sendMessage(User sender, User receiver, String content) {
+        log.info("Sending message from user {} to user {}", sender.getId(), receiver.getId());
+        
+        Message message = new Message();
+        message.setSender(sender);
+        message.setReceiver(receiver);
+        message.setContent(content);
+        message.setIsRead(false);
+        
+        Message savedMessage = messageRepository.save(message);
+        log.info("Message sent successfully with ID: {}", savedMessage.getId());
+        
+        return convertToDTO(savedMessage);
+    }
     
     @Transactional(readOnly = true)
     public List<MessageDTO> getMessagesBetweenUsers(Integer userId1, Integer userId2) {
@@ -156,19 +173,19 @@ public class MessageService {
         messageRepository.delete(message);
     }
     
-    private MessageDTO convertToDTO(Message message) {
+    public MessageDTO convertToDTO(Message message) {
         MessageDTO dto = new MessageDTO();
         dto.setId(message.getId());
-        dto.setSenderId(message.getSenderId());
-        dto.setSenderName(message.getSenderName());
-        dto.setSenderRole(message.getSenderRole());
-        dto.setReceiverId(message.getReceiverId());
-        dto.setReceiverName(message.getReceiverName());
-        dto.setReceiverRole(message.getReceiverRole());
+        dto.setSenderId(message.getSender().getId());
+        dto.setSenderName(message.getSender().getFirstName() + " " + message.getSender().getLastName());
+        dto.setSenderRole(message.getSender().getRole().toString());
+        dto.setReceiverId(message.getReceiver().getId());
+        dto.setReceiverName(message.getReceiver().getFirstName() + " " + message.getReceiver().getLastName());
+        dto.setReceiverRole(message.getReceiver().getRole().toString());
         dto.setContent(message.getContent());
         dto.setIsRead(message.getIsRead());
-        dto.setCreatedAt(message.getCreatedAt());
-        dto.setUpdatedAt(message.getUpdatedAt());
+        dto.setCreatedAt(message.getCreatedAt().toLocalDateTime());
+        dto.setUpdatedAt(message.getUpdatedAt() != null ? message.getUpdatedAt().toLocalDateTime() : null);
         return dto;
     }
 }

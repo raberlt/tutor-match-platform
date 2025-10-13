@@ -1,6 +1,7 @@
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AuthProvider } from "../contexts/AuthContext";
+import { I18nProvider } from "../contexts/I18nContext";
 
 // Layouts
 import { UserLayout } from "../components/layouts/UserLayout";
@@ -25,27 +26,26 @@ import Messages from "../pages/user/Messages";
 import MySessions from "../pages/user/MySessions";
 import { Settings } from "../pages/user/Settings";
 import BookingDetail from "../pages/user/BookingDetail";
-import UnifiedBooking from "../pages/user/UnifiedBooking";
-import SingleBookingNew from "../pages/user/SingleBookingNew";
-import PackageBooking from "../pages/user/PackageBooking";
-import PackageBookingNew from "../pages/user/PackageBookingNew";
-import PackagePayment from "../pages/user/PackagePayment";
+import Booking from "../pages/user/Booking";
 import PaymentPage from "../pages/user/PaymentPage";
+import PaymentQR from "../pages/user/PaymentQR";
 import BookingSuccess from "../pages/user/BookingSuccess";
 import TutorDetail from "../pages/user/TutorDetail";
+import CreditDemo from "../pages/CreditDemo";
 
 // Tutor Pages
 import { TutorDashboard } from "../pages/tutor/TutorDashboard";
 import { Schedule } from "../pages/tutor/Schedule";
 import { StudentManagement } from "../pages/tutor/StudentManagement";
 import { ProfileManagement } from "../pages/tutor/ProfileManagement";
+import { TutorInbox } from "../pages/tutor/TutorInbox";
 import TutorBookings from "../pages/tutor/TutorBookings";
 
 // Admin Pages
 import AdminDashboard from "../pages/admin/AdminDashboard";
-import { UserManagement } from "../pages/admin/UserManagement";
+import UserManagement from "../pages/admin/UserManagement";
 import { AdminProfileManagement } from "../pages/admin/ProfileManagement";
-import { AdminMessages } from "../pages/admin/AdminMessages";
+import AdminMessages from "../pages/admin/AdminMessages";
 import CouponManagement from "../pages/admin/CouponManagement";
 import PaymentManagement from "../pages/admin/PaymentManagement";
 import BookingManagement from "../pages/admin/BookingManagement";
@@ -121,54 +121,18 @@ const router = createBrowserRouter([
         element: <Messages />,
       },
       {
-        path: "my-sessions",
-        element: (
-          <BookingProtectedRoute allowedRoles={["STUDENT", "TUTOR", "ADMIN"]}>
-            <MySessions />
-          </BookingProtectedRoute>
-        ),
-      },
-      {
         path: "settings",
         element: <Settings />,
       },
       {
-        path: "unified-booking",
-        element: (
-          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
-            <UnifiedBooking />
-          </BookingProtectedRoute>
-        ),
+        path: "my-sessions",
+        element: <MySessions />,
       },
       {
-        path: "single-booking-new",
+        path: "booking",
         element: (
           <BookingProtectedRoute allowedRoles={["STUDENT"]}>
-            <SingleBookingNew />
-          </BookingProtectedRoute>
-        ),
-      },
-      {
-        path: "package-booking-new",
-        element: (
-          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
-            <PackageBookingNew />
-          </BookingProtectedRoute>
-        ),
-      },
-      {
-        path: "package-booking",
-        element: (
-          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
-            <PackageBooking />
-          </BookingProtectedRoute>
-        ),
-      },
-      {
-        path: "package-payment",
-        element: (
-          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
-            <PackagePayment />
+            <Booking />
           </BookingProtectedRoute>
         ),
       },
@@ -177,6 +141,22 @@ const router = createBrowserRouter([
         element: (
           <BookingProtectedRoute allowedRoles={["STUDENT"]}>
             <PaymentPage />
+          </BookingProtectedRoute>
+        ),
+      },
+      {
+        path: "payment-qr",
+        element: (
+          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
+            <PaymentQR />
+          </BookingProtectedRoute>
+        ),
+      },
+      {
+        path: "credit-demo",
+        element: (
+          <BookingProtectedRoute allowedRoles={["STUDENT", "TUTOR"]}>
+            <CreditDemo />
           </BookingProtectedRoute>
         ),
       },
@@ -234,6 +214,10 @@ const router = createBrowserRouter([
       {
         path: "profile",
         element: <ProfileManagement />,
+      },
+      {
+        path: "inbox",
+        element: <TutorInbox />,
       },
       {
         path: "bookings",
@@ -315,7 +299,9 @@ const router = createBrowserRouter([
 export const AppRouter: React.FC = () => {
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <I18nProvider>
+        <RouterProvider router={router} />
+      </I18nProvider>
     </AuthProvider>
   );
 };

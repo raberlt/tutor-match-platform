@@ -1,0 +1,96 @@
+{
+    "bookings": [
+        {
+            "id": 1,
+            "student": {
+                "id": 1,
+                "firstName": "Nguyễn",
+                "lastName": "Văn A",
+                "email": "nguyenvana@email.com",
+                "phoneNumber": "0123456789"
+            },
+            "tutor": {
+                "id": 1,
+                "user": {
+                    "firstName": "Trần",
+                    "lastName": "Thị B",
+                    "email": "tranthib@email.com"
+                },
+                "headline": "Gia sư Toán học kinh nghiệm 5 năm",
+                "city": "Hà Nội"
+            },
+            "subject": {
+                "id": 1,
+                "name": "Toán học",
+                "description": "Toán học cơ bản và nâng cao"
+            },
+            "date": "2024-01-15",
+            "fromTime": "09:00",
+            "toTime": "11:00",
+            "time": "09:00 - 11:00",
+            "status": "CONFIRMED",
+            "bookingType": "SINGLE",
+            "note": "Học sinh cần hỗ trợ về đại số",
+            "amount": 500000,
+            "paymentStatus": "COMPLETED",
+            "paymentMethod": "VNPay",
+            "paymentReference": "TXN123456",
+            "paymentDate": "2024-01-12T10:00:00Z",
+            "contractDuration": 1,
+            "sessionsPerWeek": 2,
+            "adminNote": "Học sinh có tiến bộ tốt",
+            "createdAt": "2024-01-10T10:00:00Z",
+            "updatedAt": "2024-01-12T14:30:00Z"
+        },
+        {
+            "id": 2,
+            "student": {
+                "id": 2,
+                "firstName": "Lê",
+                "lastName": "Văn C",
+                "email": "levanc@email.com",
+                "phoneNumber": "0987654321"
+            },
+            "tutor": {
+                "id": 2,
+                "user": {
+                    "firstName": "Phạm",
+                    "lastName": "Thị D",
+                    "email": "phamthid@email.com"
+                },
+                "headline": "Gia sư Vật lý chuyên nghiệp",
+                "city": "TP.HCM"
+            },
+            "subject": {
+                "id": 2,
+                "name": "Vật lý",
+                "description": "Vật lý cơ bản và nâng cao"
+            },
+            "date": "2024-01-16",
+            "fromTime": "14:00",
+            "toTime": "16:00",
+            "time": "14:00 - 16:00",
+            "status": "PENDING",
+            "bookingType": "PACKAGE",
+            "note": "Học sinh cần hỗ trợ về cơ học",
+            "amount": 2000000,
+            "paymentStatus": "PENDING",
+            "paymentMethod": "Bank Transfer",
+            "paymentReference": "",
+            "paymentDate": "",
+            "contractDuration": 4,
+            "sessionsPerWeek": 3,
+            "adminNote": "",
+            "createdAt": "2024-01-11T15:20:00Z",
+            "updatedAt": "2024-01-11T15:20:00Z"
+        }
+    ],
+    "stats": {
+        "totalBookings": 2,
+        "pendingBookings": 1,
+        "confirmedBookings": 1,
+        "completedBookings": 0,
+        "cancelledBookings": 0,
+        "totalRevenue": 2500000
+    }
+}

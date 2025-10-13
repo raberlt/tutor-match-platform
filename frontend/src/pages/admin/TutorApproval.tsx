@@ -179,6 +179,11 @@ export const TutorApproval: React.FC = () => {
       setShowModal(false);
       setSelectedApplication(null);
       setAdminNote(""); // Clear admin note when approving
+
+      // Trigger dashboard refresh if parent component has refresh function
+      if (window.dashboardRefresh) {
+        window.dashboardRefresh();
+      }
     } catch (err: unknown) {
       console.error("Error approving application:", err);
       setError(err instanceof Error ? err.message : "Lỗi khi duyệt hồ sơ");
@@ -198,6 +203,11 @@ export const TutorApproval: React.FC = () => {
       setSelectedApplication(null);
       setAdminNote("");
       setShowRejectNote(false);
+
+      // Trigger dashboard refresh if parent component has refresh function
+      if (window.dashboardRefresh) {
+        window.dashboardRefresh();
+      }
     } catch (err: unknown) {
       console.error("Error rejecting application:", err);
       setError(err instanceof Error ? err.message : "Lỗi khi từ chối hồ sơ");

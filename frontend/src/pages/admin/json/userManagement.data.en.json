@@ -1,0 +1,57 @@
+{
+    "users": [
+        {
+            "id": "1",
+            "firstName": "John",
+            "lastName": "Smith",
+            "email": "johnsmith@email.com",
+            "role": "STUDENT",
+            "enable": true,
+            "createdAt": "2024-01-15T10:00:00Z"
+        },
+        {
+            "id": "2",
+            "firstName": "Sarah",
+            "lastName": "Johnson",
+            "email": "sarahjohnson@email.com",
+            "role": "TUTOR",
+            "enable": true,
+            "createdAt": "2024-01-14T09:30:00Z"
+        },
+        {
+            "id": "3",
+            "firstName": "Michael",
+            "lastName": "Brown",
+            "email": "michaelbrown@email.com",
+            "role": "STUDENT",
+            "enable": false,
+            "createdAt": "2024-01-13T14:20:00Z"
+        },
+        {
+            "id": "4",
+            "firstName": "Emily",
+            "lastName": "Davis",
+            "email": "emilydavis@email.com",
+            "role": "TUTOR",
+            "enable": true,
+            "createdAt": "2024-01-12T11:15:00Z"
+        },
+        {
+            "id": "5",
+            "firstName": "David",
+            "lastName": "Wilson",
+            "email": "davidwilson@email.com",
+            "role": "ADMIN",
+            "enable": true,
+            "createdAt": "2024-01-11T08:45:00Z"
+        }
+    ],
+    "stats": {
+        "totalUsers": 5,
+        "activeUsers": 4,
+        "inactiveUsers": 1,
+        "students": 2,
+        "tutors": 2,
+        "admins": 1
+    }
+}

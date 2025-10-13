@@ -5,6 +5,7 @@ import fsa.training.tutormatch.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -53,6 +54,7 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
     Long countUnreadMessagesByUser(@Param("user") User user);
     
     // Đánh dấu tin nhắn là đã đọc
+    @Modifying
     @Query("UPDATE Message m SET m.isRead = true WHERE m.sender = :sender AND m.receiver = :receiver AND m.isRead = false")
     void markMessagesAsRead(@Param("sender") User sender, @Param("receiver") User receiver);
     
@@ -78,4 +80,16 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
     @Query("SELECT m FROM Message m WHERE m.createdAt BETWEEN :startDate AND :endDate ORDER BY m.createdAt DESC")
     List<Message> findMessagesByDateRange(@Param("startDate") java.time.LocalDateTime startDate, 
                                         @Param("endDate") java.time.LocalDateTime endDate);
+
+    // Methods needed by MessageController
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.receiver = :receiver AND m.sender = :sender AND m.isRead = false")
+    Long countByReceiverAndSenderAndIsReadFalse(@Param("receiver") User receiver, @Param("sender") User sender);
+
+    @Query("SELECT m FROM Message m WHERE " +
+           "(m.sender = :sender AND m.receiver = :receiver) OR " +
+           "(m.sender = :receiver AND m.receiver = :sender)")
+    Page<Message> findBySenderAndReceiverOrReceiverAndSenderOrderByCreatedAtDesc(@Param("sender") User sender, @Param("receiver") User receiver, Pageable pageable);
+
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.receiver = :receiver AND m.isRead = false")
+    Long countByReceiverAndIsReadFalse(@Param("receiver") User receiver);
 }

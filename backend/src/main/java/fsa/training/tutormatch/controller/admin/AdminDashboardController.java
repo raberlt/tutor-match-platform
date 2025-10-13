@@ -66,8 +66,8 @@ public class AdminDashboardController {
             // Booking statistics
             Map<String, Object> bookingStats = new HashMap<>();
             bookingStats.put("totalBookings", bookingRepository.count());
-            bookingStats.put("pendingBookings", bookingRepository.countByStatus(BookingStatus.PENDING));
-            bookingStats.put("confirmedBookings", bookingRepository.countByStatus(BookingStatus.CONFIRMED));
+            bookingStats.put("pendingBookings", bookingRepository.countByStatus(BookingStatus.PAYMENT_PENDING));
+            bookingStats.put("confirmedBookings", bookingRepository.countByStatus(BookingStatus.PAYMENT_COMPLETED));
             bookingStats.put("completedBookings", bookingRepository.countByStatus(BookingStatus.COMPLETED));
             
             // Today's bookings

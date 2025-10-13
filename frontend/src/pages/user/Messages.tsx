@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useSearchParams } from "react-router-dom";
 
 interface Message {
   id: number;
@@ -25,6 +26,9 @@ interface Conversation {
 
 const Messages: React.FC = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const tutorParam = searchParams.get("tutor"); // Get tutor ID from URL
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedConversation, setSelectedConversation] =
@@ -32,45 +36,109 @@ const Messages: React.FC = () => {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshInterval, setRefreshInterval] = useState<ReturnType<
+    typeof setInterval
+  > | null>(null);
+  const [previousMessageCount, setPreviousMessageCount] = useState(0);
+  const messagesContainerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadConversations();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-select conversation with tutor from URL parameter
+  useEffect(() => {
+    if (tutorParam && tutorParam !== "undefined") {
+      const tutorId = parseInt(tutorParam);
+      if (!isNaN(tutorId)) {
+        // Wait for conversations to load first
+        if (conversations.length > 0) {
+          const tutorConversation = conversations.find(
+            (conv) => conv.participantId === tutorId
+          );
+          if (tutorConversation) {
+            setSelectedConversation(tutorConversation);
+            loadMessages(tutorConversation.participantId);
+          } else {
+            // Create new conversation with tutor
+            createNewConversationWithTutor(tutorId);
+          }
+        } else {
+          // If no conversations yet, create new one directly
+          createNewConversationWithTutor(tutorId);
+        }
+      }
+    }
+  }, [tutorParam, conversations]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Setup auto-refresh for selected conversation
+  useEffect(() => {
+    if (selectedConversation) {
+      // Start polling for new messages every 3 seconds
+      const interval = setInterval(() => {
+        loadMessages(selectedConversation.participantId, true); // isPolling = true
+      }, 3000);
+
+      setRefreshInterval(interval);
+
+      // Cleanup on conversation change or unmount
+      return () => {
+        if (interval) {
+          clearInterval(interval);
+        }
+      };
+    } else {
+      // Clear interval when no conversation selected
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+        setRefreshInterval(null);
+      }
+    }
+  }, [selectedConversation]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, [refreshInterval]);
+
+  // Only scroll when user sends a new message, not during polling
+  useEffect(() => {
+    // Don't auto-scroll at all - let user control scrolling
+    setPreviousMessageCount(messages.length);
+  }, [messages, previousMessageCount]);
+
+  const scrollToBottom = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  };
 
   const loadConversations = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/messages/admin/all");
+      const response = await fetch("/api/messages/conversations", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
       if (response.ok) {
         const data = await response.json();
-        // Tạo danh sách conversations từ messages
-        const conversationMap = new Map();
-        data.forEach((msg: Message) => {
-          const key = `${Math.min(msg.senderId, msg.receiverId)}-${Math.max(
-            msg.senderId,
-            msg.receiverId
-          )}`;
-          if (!conversationMap.has(key)) {
-            conversationMap.set(key, {
-              participantId:
-                msg.senderId === user?.id ? msg.receiverId : msg.senderId,
-              participantName:
-                msg.senderId === user?.id ? msg.receiverName : msg.senderName,
-              participantRole:
-                msg.senderId === user?.id ? msg.receiverRole : msg.senderRole,
-              lastMessage: msg.content,
-              lastMessageTime: new Date(msg.createdAt).toLocaleTimeString(
-                "vi-VN",
-                {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }
-              ),
-              unreadCount: 0,
-            });
-          }
-        });
-        setConversations(Array.from(conversationMap.values()));
+        console.log("Conversations API response:", data);
+
+        // Backend returns conversations directly, not messages to process
+        if (Array.isArray(data)) {
+          setConversations(data);
+        } else {
+          console.log("Unexpected data format, using mock conversations");
+          loadMockConversations();
+        }
       } else {
         throw new Error("Failed to load conversations");
       }
@@ -90,9 +158,9 @@ const Messages: React.FC = () => {
         participantId: 1,
         participantName: "Nguyễn Văn A",
         participantRole: "TUTOR",
-        lastMessage: "Chào em, em có thể học vào tối thứ 3 được không ạ?",
-        lastMessageTime: "10:30",
-        unreadCount: 2,
+        lastMessage: "Chào bạn! Tôi có thể giúp gì cho bạn?",
+        lastMessageTime: "Vừa xong",
+        unreadCount: 0,
       },
       {
         participantId: 2,
@@ -106,23 +174,100 @@ const Messages: React.FC = () => {
     setConversations(mockConversations);
   };
 
-  const loadMessages = async (participantId: number) => {
+  // Create new conversation with tutor
+  const createNewConversationWithTutor = async (tutorId: number) => {
     try {
-      setLoading(true);
-      const response = await fetch(`/api/messages/between/${participantId}`);
+      // Fetch tutor info first
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/tutors/${tutorId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const tutorData = await response.json();
+        const newConversation: Conversation = {
+          participantId: tutorId,
+          participantName:
+            `${tutorData.user?.firstName || ""} ${
+              tutorData.user?.lastName || ""
+            }`.trim() || "Giảng viên",
+          participantRole: "TUTOR",
+          lastMessage: "Bắt đầu cuộc trò chuyện",
+          lastMessageTime: new Date().toLocaleTimeString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          unreadCount: 0,
+        };
+
+        // Add to conversations list if not exists
+        setConversations((prev) => {
+          const exists = prev.find((conv) => conv.participantId === tutorId);
+          if (!exists) {
+            return [newConversation, ...prev];
+          }
+          return prev;
+        });
+
+        // Select this conversation
+        setSelectedConversation(newConversation);
+        setMessages([]); // Start with empty messages
+      } else {
+        throw new Error("Failed to fetch tutor info");
+      }
+    } catch (error) {
+      console.error("Error creating conversation with tutor:", error);
+      setError("Không thể tạo cuộc trò chuyện với giảng viên");
+    }
+  };
+
+  const loadMessages = async (participantId: number, isPollingCall = false) => {
+    try {
+      if (!isPollingCall) {
+        setLoading(true);
+      }
+      console.log(
+        `Loading messages for participant ${participantId}, isPolling: ${isPollingCall}`
+      );
+
+      const response = await fetch(
+        `/api/messages/conversation/${participantId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      console.log(
+        `Messages response status for ${participantId}:`,
+        response.status
+      );
+
       if (response.ok) {
         const data = await response.json();
+        console.log(`Messages data for ${participantId}:`, data);
+        console.log(`First message time:`, data[0]?.createdAt);
+        console.log(`Last message time:`, data[data.length - 1]?.createdAt);
         setMessages(data);
       } else {
+        const errorText = await response.text();
+        console.error(`Messages error for ${participantId}:`, errorText);
         throw new Error("Failed to load messages");
       }
     } catch (err) {
-      setError("Không thể tải tin nhắn");
       console.error("Error loading messages:", err);
-      // Fallback to mock data
-      loadMockMessages(participantId);
+      // Fallback to mock messages only if not polling
+      if (!isPollingCall) {
+        setError("Không thể tải tin nhắn");
+        loadMockMessages(participantId);
+      }
     } finally {
-      setLoading(false);
+      if (!isPollingCall) {
+        setLoading(false);
+      }
     }
   };
 
@@ -131,26 +276,26 @@ const Messages: React.FC = () => {
       {
         id: 1,
         senderId: participantId,
-        senderName: selectedConversation?.participantName || "",
-        senderRole: selectedConversation?.participantRole || "",
+        senderName: selectedConversation?.participantName || "Giảng viên",
+        senderRole: selectedConversation?.participantRole || "TUTOR",
         receiverId: user?.id || 0,
-        receiverName: user?.firstName + " " + user?.lastName || "",
-        receiverRole: user?.role || "",
-        content: "Chào em, em có thể học vào tối thứ 3 được không ạ?",
+        receiverName: user?.firstName + " " + user?.lastName || "Bạn",
+        receiverRole: user?.role || "STUDENT",
+        content: "Chào bạn! Tôi có thể giúp gì cho bạn?",
         isRead: true,
-        createdAt: "2024-01-15T10:30:00",
+        createdAt: new Date().toISOString(),
       },
       {
         id: 2,
         senderId: user?.id || 0,
-        senderName: user?.firstName + " " + user?.lastName || "",
-        senderRole: user?.role || "",
+        senderName: user?.firstName + " " + user?.lastName || "Bạn",
+        senderRole: user?.role || "STUDENT",
         receiverId: participantId,
-        receiverName: selectedConversation?.participantName || "",
-        receiverRole: selectedConversation?.participantRole || "",
-        content: "Chào thầy/cô, em có thể sắp xếp được ạ.",
+        receiverName: selectedConversation?.participantName || "Giảng viên",
+        receiverRole: selectedConversation?.participantRole || "TUTOR",
+        content: "Chào thầy/cô! Em muốn hỏi về buổi học sắp tới.",
         isRead: true,
-        createdAt: "2024-01-15T10:35:00",
+        createdAt: new Date(Date.now() - 60000).toISOString(), // 1 minute ago
       },
     ];
     setMessages(mockMessages);
@@ -159,13 +304,13 @@ const Messages: React.FC = () => {
   const handleSendMessage = async () => {
     if (newMessage.trim() && selectedConversation) {
       try {
-        const response = await fetch("/api/messages", {
+        const response = await fetch("/api/messages/send", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify({
-            senderId: user?.id || 0,
             receiverId: selectedConversation.participantId,
             content: newMessage,
           }),
@@ -173,8 +318,11 @@ const Messages: React.FC = () => {
 
         if (response.ok) {
           const sentMessage = await response.json();
-          setMessages([...messages, sentMessage]);
+          setMessages((prev) => [...prev, sentMessage.data || sentMessage]);
           setNewMessage("");
+
+          // Scroll to bottom only when user sends a message
+          setTimeout(scrollToBottom, 100);
 
           // Cập nhật last message trong conversation
           setConversations((prev) =>
@@ -236,6 +384,26 @@ const Messages: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">⚠️</div>
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              loadConversations();
+            }}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
@@ -249,52 +417,76 @@ const Messages: React.FC = () => {
                 Cuộc trò chuyện
               </h2>
             </div>
-            {conversations.map((conv) => (
-              <div
-                key={conv.participantId}
-                className={`flex items-center p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors ${
-                  selectedConversation?.participantId === conv.participantId
-                    ? "bg-blue-50"
-                    : ""
-                }`}
-                onClick={() => handleConversationSelect(conv)}
-              >
-                <div className="relative">
-                  <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
-                    <span className="text-gray-600 font-semibold">
-                      {conv.participantName.charAt(0)}
+            {conversations.length > 0 ? (
+              conversations.map((conv) => (
+                <div
+                  key={conv.participantId}
+                  className={`flex items-center p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors ${
+                    selectedConversation?.participantId === conv.participantId
+                      ? "bg-blue-50"
+                      : ""
+                  }`}
+                  onClick={() => handleConversationSelect(conv)}
+                >
+                  <div className="relative">
+                    <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
+                      <span className="text-gray-600 font-semibold">
+                        {conv.participantName.charAt(0)}
+                      </span>
+                    </div>
+                    {conv.unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                        {conv.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-medium text-gray-900">
+                        {conv.participantName}
+                      </p>
+                      <span className="text-xs text-gray-500">
+                        {conv.lastMessageTime}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
+                      <p className="text-sm text-gray-600 truncate">
+                        {conv.lastMessage}
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${getRoleColor(
+                        conv.participantRole
+                      )}`}
+                    >
+                      {getRoleText(conv.participantRole)}
                     </span>
                   </div>
-                  {conv.unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                      {conv.unreadCount}
-                    </span>
-                  )}
                 </div>
-                <div className="ml-3 flex-1">
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm font-medium text-gray-900">
-                      {conv.participantName}
-                    </p>
-                    <span className="text-xs text-gray-500">
-                      {conv.lastMessageTime}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center mt-1">
-                    <p className="text-sm text-gray-600 truncate">
-                      {conv.lastMessage}
-                    </p>
-                  </div>
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${getRoleColor(
-                      conv.participantRole
-                    )}`}
+              ))
+            ) : (
+              <div className="p-8 text-center text-gray-500">
+                <div className="mb-4">
+                  <svg
+                    className="mx-auto h-12 w-12 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    {getRoleText(conv.participantRole)}
-                  </span>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
+                  </svg>
                 </div>
+                <p className="text-sm">Chưa có cuộc trò chuyện nào</p>
+                <p className="text-xs mt-1">
+                  Bấm "Nhắn tin" từ trang buổi học để bắt đầu
+                </p>
               </div>
-            ))}
+            )}
           </div>
 
           {/* Khu vực tin nhắn */}
@@ -322,7 +514,10 @@ const Messages: React.FC = () => {
                 </div>
 
                 {/* Danh sách tin nhắn */}
-                <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+                <div
+                  ref={messagesContainerRef}
+                  className="flex-1 p-4 overflow-y-auto bg-gray-50"
+                >
                   {messages.map((msg) => (
                     <div
                       key={msg.id}

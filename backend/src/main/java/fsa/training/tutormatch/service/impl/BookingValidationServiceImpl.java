@@ -88,7 +88,7 @@ public class BookingValidationServiceImpl implements BookingValidationService {
         switch (action.toLowerCase()) {
             case "accept":
             case "reject":
-                if (booking.getStatus() != BookingStatus.PENDING) {
+                if (booking.getStatus() != BookingStatus.PAYMENT_PENDING) {
                     throw new IllegalArgumentException("Can only accept/reject pending bookings");
                 }
                 break;
@@ -98,8 +98,8 @@ public class BookingValidationServiceImpl implements BookingValidationService {
                 }
                 break;
             case "complete":
-                if (booking.getStatus() != BookingStatus.CONFIRMED) {
-                    throw new IllegalArgumentException("Can only complete confirmed bookings");
+                if (booking.getStatus() != BookingStatus.PAYMENT_COMPLETED && booking.getStatus() != BookingStatus.TUTOR_APPROVED && booking.getStatus() != BookingStatus.UPCOMING && booking.getStatus() != BookingStatus.IN_PROGRESS) {
+                    throw new IllegalArgumentException("Can only complete confirmed/in-progress bookings");
                 }
                 break;
             default:
@@ -112,7 +112,7 @@ public class BookingValidationServiceImpl implements BookingValidationService {
         return booking != null && 
                tutor != null &&
                Objects.equals(booking.getTutor().getId(), tutor.getId()) &&
-               booking.getStatus() == BookingStatus.PENDING;
+               booking.getStatus() == BookingStatus.PAYMENT_PENDING;
     }
     
     @Override
@@ -120,7 +120,7 @@ public class BookingValidationServiceImpl implements BookingValidationService {
         return booking != null &&
                student != null &&
                Objects.equals(booking.getStudent().getId(), student.getId()) &&
-               booking.getStatus() == BookingStatus.PENDING;
+               booking.getStatus() == BookingStatus.PAYMENT_PENDING;
     }
     
     @Override

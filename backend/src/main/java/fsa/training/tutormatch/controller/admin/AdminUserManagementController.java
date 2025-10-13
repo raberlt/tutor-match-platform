@@ -3,17 +3,13 @@ package fsa.training.tutormatch.controller.admin;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.enums.UserRole;
 import fsa.training.tutormatch.repository.UserRepository;
-import fsa.training.tutormatch.repository.ProfileApplicationRepository;
-import fsa.training.tutormatch.repository.BookingRepository;
-import fsa.training.tutormatch.enums.ApplicationStatus;
-import fsa.training.tutormatch.enums.BookingStatus;
+import fsa.training.tutormatch.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.ZonedDateTime;
@@ -31,10 +27,7 @@ public class AdminUserManagementController {
     private UserRepository userRepository;
 
     @Autowired
-    private ProfileApplicationRepository applicationRepository;
-
-    @Autowired
-    private BookingRepository bookingRepository;
+    private UserService userService;
 
     /**
      * Lấy danh sách tất cả người dùng với phân trang
@@ -95,6 +88,145 @@ public class AdminUserManagementController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(
                 Map.of("error", "Lỗi khi lấy danh sách người dùng: " + e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * Tạo người dùng mới
+     */
+    @PostMapping
+    public ResponseEntity<?> createUser(@RequestBody Map<String, Object> userData) {
+        try {
+            // Validate required fields
+            String firstName = (String) userData.get("firstName");
+            String lastName = (String) userData.get("lastName");
+            String email = (String) userData.get("email");
+            String password = (String) userData.get("password");
+            String roleStr = (String) userData.get("role");
+
+            if (firstName == null || firstName.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "Họ không được để trống")
+                );
+            }
+            if (lastName == null || lastName.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "Tên không được để trống")
+                );
+            }
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "Email không được để trống")
+                );
+            }
+            if (password == null || password.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "Mật khẩu không được để trống")
+                );
+            }
+            if (roleStr == null || roleStr.trim().isEmpty()) {
+                roleStr = "STUDENT";
+            }
+
+            // Validate email format
+            if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "Email không hợp lệ")
+                );
+            }
+
+            // Check if email already exists
+            if (userService.existsByEmail(email)) {
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "Email đã được sử dụng")
+                );
+            }
+
+            // Parse role
+            UserRole role;
+            try {
+                role = UserRole.valueOf(roleStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "Vai trò không hợp lệ")
+                );
+            }
+
+            // Create user
+            User user = userService.createUser(
+                email, // username = email
+                email,
+                password,
+                firstName,
+                lastName,
+                role
+            );
+
+            // Set additional fields if provided
+            if (userData.get("phoneNumber") != null) {
+                user.setPhoneNumber((String) userData.get("phoneNumber"));
+            }
+            if (userData.get("address") != null) {
+                user.setAddress((String) userData.get("address"));
+            }
+            if (userData.get("dateOfBirth") != null) {
+                try {
+                    String dateStr = (String) userData.get("dateOfBirth");
+                    if (!dateStr.trim().isEmpty()) {
+                        user.setDateOfBirth(java.time.LocalDate.parse(dateStr));
+                    }
+                } catch (Exception e) {
+                    return ResponseEntity.badRequest().body(
+                        Map.of("error", "Ngày sinh không hợp lệ. Định dạng: YYYY-MM-DD")
+                    );
+                }
+            }
+            if (userData.get("gender") != null) {
+                try {
+                    String genderStr = (String) userData.get("gender");
+                    if (!genderStr.trim().isEmpty()) {
+                        user.setGender(fsa.training.tutormatch.enums.Gender.valueOf(genderStr.toUpperCase()));
+                    }
+                } catch (Exception e) {
+                    return ResponseEntity.badRequest().body(
+                        Map.of("error", "Giới tính không hợp lệ")
+                    );
+                }
+            }
+            if (userData.get("educationLevel") != null) {
+                try {
+                    String eduStr = (String) userData.get("educationLevel");
+                    if (!eduStr.trim().isEmpty()) {
+                        user.setEducationLevel(fsa.training.tutormatch.enums.EducationLevel.valueOf(eduStr.toUpperCase()));
+                    }
+                } catch (Exception e) {
+                    return ResponseEntity.badRequest().body(
+                        Map.of("error", "Trình độ học vấn không hợp lệ")
+                    );
+                }
+            }
+
+            // Save user
+            User savedUser = userService.save(user);
+
+            // Response
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Tạo người dùng thành công");
+            response.put("user", Map.of(
+                "id", savedUser.getId(),
+                "firstName", savedUser.getFirstName(),
+                "lastName", savedUser.getLastName(),
+                "email", savedUser.getEmail(),
+                "role", savedUser.getRole()
+            ));
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(
+                Map.of("error", "Lỗi khi tạo người dùng: " + e.getMessage())
             );
         }
     }

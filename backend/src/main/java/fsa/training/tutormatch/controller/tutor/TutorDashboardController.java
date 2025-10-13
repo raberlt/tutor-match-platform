@@ -57,8 +57,8 @@ public class TutorDashboardController {
 
             // Count statistics
             long todayClasses = bookingRepository.countByDate(today);
-            long pendingRequests = bookingRepository.findByTutorAndStatus(tutor, BookingStatus.PENDING).size();
-            long confirmedClasses = bookingRepository.findByTutorAndStatus(tutor, BookingStatus.CONFIRMED).size();
+            long pendingRequests = bookingRepository.findByTutorAndStatus(tutor, BookingStatus.PAYMENT_PENDING).size();
+            long confirmedClasses = bookingRepository.findByTutorAndStatus(tutor, BookingStatus.PAYMENT_COMPLETED).size();
 
             Map<String, Object> stats = new HashMap<>();
             stats.put("todayClasses", todayClasses);
@@ -98,7 +98,7 @@ public class TutorDashboardController {
 
             Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
             Page<Booking> pendingBookings = bookingRepository.findByTutorAndStatus(
-                    tutor, BookingStatus.PENDING, pageable);
+                    tutor, BookingStatus.PAYMENT_PENDING, pageable);
 
             // Convert to simplified format using Map
             List<Map<String, Object>> requestDTOs = pendingBookings.getContent().stream()
@@ -192,7 +192,7 @@ public class TutorDashboardController {
                 LocalDate endDate = LocalDate.parse(toDate);
                 schedule = bookingRepository.findByTutorAndDateBetween(tutor, startDate, endDate);
             } else {
-                schedule = bookingRepository.findByTutorAndStatus(tutor, BookingStatus.CONFIRMED);
+                schedule = bookingRepository.findByTutorAndStatus(tutor, BookingStatus.TUTOR_APPROVED);
             }
 
             // Convert to simplified format using Map

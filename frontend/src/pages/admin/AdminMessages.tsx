@@ -1,131 +1,99 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
+import { useI18n } from "../../contexts/I18nContext";
+import viData from "./json/adminMessages.data.vi.json";
+import enData from "./json/adminMessages.data.en.json";
 
+// Types based on backend entities
 interface Message {
   id: number;
-  senderId: number;
   senderName: string;
-  senderRole: string;
-  receiverId: number;
-  receiverName: string;
-  receiverRole: string;
+  senderEmail: string;
+  recipientName: string;
+  recipientEmail: string;
+  subject: string;
   content: string;
-  isRead: boolean;
+  messageType: "BOOKING_INQUIRY" | "FEEDBACK" | "CANCELLATION_REQUEST";
+  status: "UNREAD" | "READ";
   createdAt: string;
+  updatedAt: string;
 }
 
-interface Conversation {
-  id: string;
-  participantId: number;
-  participantName: string;
-  participantRole: string;
-  lastMessage: string;
-  lastMessageTime: string;
-  unreadCount: number;
-  isOnline: boolean;
-  avatar?: string;
+interface MessageStats {
+  totalMessages: number;
+  unreadMessages: number;
+  readMessages: number;
+  bookingInquiries: number;
+  feedbacks: number;
+  cancellationRequests: number;
 }
 
-export const AdminMessages: React.FC = () => {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+const AdminMessages: React.FC = () => {
+  const { t, locale } = useI18n();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [selectedConversation, setSelectedConversation] =
-    useState<Conversation | null>(null);
+  const [stats, setStats] = useState<MessageStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [selectedType, setSelectedType] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const loadAllMessages = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/messages/admin/all");
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data);
-        // Tạo danh sách conversations từ messages
-        const conversationMap = new Map();
-        data.forEach((msg: Message) => {
-          const key = `${Math.min(msg.senderId, msg.receiverId)}-${Math.max(
-            msg.senderId,
-            msg.receiverId
-          )}`;
-          if (!conversationMap.has(key)) {
-            conversationMap.set(key, {
-              id: key,
-              participantId: msg.senderId,
-              participantName: msg.senderName,
-              participantRole: msg.senderRole,
-              lastMessage: msg.content,
-              lastMessageTime: msg.createdAt,
-              unreadCount: 0,
-              isOnline: false,
-            });
-          }
-        });
-        setConversations(Array.from(conversationMap.values()));
-      } else {
-        setError("Không thể tải tin nhắn");
-      }
-    } catch (err) {
-      setError("Lỗi khi tải tin nhắn");
-      console.error("Error loading messages:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // Load localized mock data (replace with API later)
   useEffect(() => {
-    loadAllMessages();
-  }, [loadAllMessages]);
+    const dataset = locale === "vi" ? viData : enData;
+    setMessages(dataset.messages as Message[]);
+    setStats(dataset.stats as MessageStats);
+    setLoading(false);
+  }, [locale]);
 
-  const handleConversationSelect = (conversation: Conversation) => {
-    setSelectedConversation(conversation);
-    // Load messages for this conversation
-    const conversationMessages = messages.filter(
-      (msg) =>
-        (msg.senderId === conversation.participantId ||
-          msg.receiverId === conversation.participantId) &&
-        (msg.senderId !== conversation.participantId ||
-          msg.receiverId !== conversation.participantId)
-    );
-    setMessages(conversationMessages);
+  const filteredMessages = messages.filter((message) => {
+    const matchesSearch =
+      message.senderName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      message.recipientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      message.content.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus =
+      selectedStatus === "" || message.status === selectedStatus;
+
+    const matchesType =
+      selectedType === "" || message.messageType === selectedType;
+
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
+  const getStatusColor = (status: string) => {
+    return status === "UNREAD"
+      ? "bg-blue-100 text-blue-800"
+      : "bg-gray-100 text-gray-800";
   };
 
-  const filteredConversations = conversations.filter((conv) =>
-    conv.participantName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case "ADMIN":
-        return "bg-blue-100 text-blue-800";
-      case "TUTOR":
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case "BOOKING_INQUIRY":
         return "bg-green-100 text-green-800";
-      case "STUDENT":
-        return "bg-purple-100 text-purple-800";
+      case "FEEDBACK":
+        return "bg-yellow-100 text-yellow-800";
+      case "CANCELLATION_REQUEST":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
 
-  const getRoleText = (role: string) => {
-    switch (role) {
-      case "ADMIN":
-        return "Admin";
-      case "TUTOR":
-        return "Gia sư";
-      case "STUDENT":
-        return "Học viên";
-      default:
-        return role;
-    }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("vi-VN");
+  };
+
+  const truncateContent = (content: string, maxLength: number = 100) => {
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + "...";
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-3 text-gray-600">Đang tải tin nhắn...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto border-blue-600"></div>
+          <p className="mt-3 text-gray-600">{t("loading")}</p>
         </div>
       </div>
     );
@@ -157,322 +125,344 @@ export const AdminMessages: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Quản lý cuộc trò chuyện
+                {t("adminMessages.title")}
               </h1>
               <p className="text-gray-600 mt-1">
-                Xem chi tiết cuộc trò chuyện giữa gia sư và học viên (chỉ khi đã
-                booking thành công và thanh toán)
+                {t("adminMessages.subtitle")}
               </p>
             </div>
           </div>
         </div>
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-4">
-            {error}
+        {/* Statistics Cards */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="flex items-center">
+                <div className="p-2 rounded-lg bg-blue-100">
+                  <svg
+                    className="w-6 h-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    {t("adminMessages.totalMessages")}
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {stats.totalMessages}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="flex items-center">
+                <div className="p-2 rounded-lg bg-blue-100">
+                  <svg
+                    className="w-6 h-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 17h5l-5 5v-5zM4.828 7l2.586-2.586a2 2 0 012.828 0L12 6l-1.414 1.414a2 2 0 01-2.828 0L4.828 7z"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    {t("adminMessages.unreadMessages")}
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {stats.unreadMessages}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="flex items-center">
+                <div className="p-2 rounded-lg bg-gray-100">
+                  <svg
+                    className="w-6 h-6 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    {t("adminMessages.readMessages")}
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {stats.readMessages}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="flex items-center">
+                <div className="p-2 rounded-lg bg-green-100">
+                  <svg
+                    className="w-6 h-6 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    {t("adminMessages.bookingInquiries")}
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {stats.bookingInquiries}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="flex items-center">
+                <div className="p-2 rounded-lg bg-yellow-100">
+                  <svg
+                    className="w-6 h-6 text-yellow-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    {t("adminMessages.feedbacks")}
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {stats.feedbacks}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="flex items-center">
+                <div className="p-2 rounded-lg bg-red-100">
+                  <svg
+                    className="w-6 h-6 text-red-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    {t("adminMessages.cancellationRequests")}
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {stats.cancellationRequests}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-xl shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 rounded-lg bg-blue-100">
-                <svg
-                  className="w-5 h-5 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-600">
-                  Tổng cuộc trò chuyện
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {conversations.length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-xl shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 rounded-lg bg-green-100">
-                <svg
-                  className="w-5 h-5 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-600">
-                  Tin nhắn đã đọc
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {messages.filter((msg) => msg.isRead).length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-xl shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 rounded-lg bg-yellow-100">
-                <svg
-                  className="w-5 h-5 text-yellow-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-600">
-                  Tin nhắn chưa đọc
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {messages.filter((msg) => !msg.isRead).length}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="bg-white p-4 rounded-xl shadow-sm mb-6">
-          <div className="flex items-center space-x-3">
+        {/* Filters */}
+        <div className="bg-white p-4 rounded-lg shadow mb-6">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Tìm kiếm cuộc trò chuyện..."
+                placeholder={t("adminMessages.searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+            <div className="sm:w-48">
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">{t("adminMessages.status")}</option>
+                <option value="UNREAD">{t("adminMessages.unread")}</option>
+                <option value="READ">{t("adminMessages.read")}</option>
+              </select>
+            </div>
+            <div className="sm:w-48">
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">{t("adminMessages.messageType")}</option>
+                <option value="BOOKING_INQUIRY">
+                  {t("adminMessages.bookingInquiry")}
+                </option>
+                <option value="FEEDBACK">{t("adminMessages.feedback")}</option>
+                <option value="CANCELLATION_REQUEST">
+                  {t("adminMessages.cancellationRequest")}
+                </option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="flex h-96">
-            {/* Conversations List */}
-            <div className="w-1/3 border-r border-gray-200">
-              <div className="p-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Danh sách cuộc trò chuyện
-                </h3>
-              </div>
-              <div className="overflow-y-auto h-full">
-                {filteredConversations.length > 0 ? (
-                  filteredConversations.map((conversation) => (
-                    <div
-                      key={conversation.id}
-                      onClick={() => handleConversationSelect(conversation)}
-                      className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                        selectedConversation?.id === conversation.id
-                          ? "bg-blue-50 border-l-4 border-l-blue-500"
-                          : ""
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-600">
-                              {conversation.participantName.charAt(0)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {conversation.participantName}
-                            </p>
-                            <span
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(
-                                conversation.participantRole
-                              )}`}
-                            >
-                              {getRoleText(conversation.participantRole)}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-500 truncate">
-                            {conversation.lastMessage}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {new Date(
-                              conversation.lastMessageTime
-                            ).toLocaleString("vi-VN")}
-                          </p>
-                        </div>
-                        {conversation.unreadCount > 0 && (
-                          <div className="flex-shrink-0">
-                            <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
-                              {conversation.unreadCount}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex-1 flex items-center justify-center bg-gray-50">
-                    <div className="text-center">
-                      <div className="mb-4">
-                        <svg
-                          className="w-16 h-16 mx-auto text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                          />
-                        </svg>
-                      </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        Chưa có cuộc trò chuyện nào
-                      </h3>
-                      <p className="text-gray-400 text-xs">
-                        Chỉ hiển thị cuộc trò chuyện giữa gia sư và học viên đã
-                        booking thành công
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Messages Area */}
-            <div className="flex-1 flex flex-col">
-              {selectedConversation ? (
-                <div className="flex-1 flex flex-col">
-                  {/* Conversation Header */}
-                  <div className="p-4 border-b border-gray-200 bg-gray-50">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-sm font-medium text-gray-600">
-                          {selectedConversation.participantName.charAt(0)}
-                        </span>
-                      </div>
+        {/* Messages Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("adminMessages.senderName")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("adminMessages.recipientName")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("adminMessages.subject")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("adminMessages.content")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("adminMessages.messageType")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("adminMessages.status")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("adminMessages.createdAt")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("adminMessages.actions")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredMessages.map((message) => (
+                  <tr key={message.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <h4 className="text-sm font-medium text-gray-900">
-                          {selectedConversation.participantName}
-                        </h4>
-                        <p className="text-xs text-gray-500">
-                          {getRoleText(selectedConversation.participantRole)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {messages
-                      .filter(
-                        (msg) =>
-                          (msg.senderId ===
-                            selectedConversation.participantId ||
-                            msg.receiverId ===
-                              selectedConversation.participantId) &&
-                          (msg.senderId !==
-                            selectedConversation.participantId ||
-                            msg.receiverId !==
-                              selectedConversation.participantId)
-                      )
-                      .map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex ${
-                            message.senderId ===
-                            selectedConversation.participantId
-                              ? "justify-start"
-                              : "justify-end"
-                          }`}
-                        >
-                          <div
-                            className={`max-w-xs px-4 py-2 rounded-lg ${
-                              message.senderId ===
-                              selectedConversation.participantId
-                                ? "bg-gray-200 text-gray-900"
-                                : "bg-blue-500 text-white"
-                            }`}
-                          >
-                            <p className="text-sm">{message.content}</p>
-                            <p
-                              className={`text-xs mt-1 ${
-                                message.senderId ===
-                                selectedConversation.participantId
-                                  ? "text-gray-500"
-                                  : "text-blue-100"
-                              }`}
-                            >
-                              {new Date(message.createdAt).toLocaleString(
-                                "vi-VN"
-                              )}
-                            </p>
-                          </div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {message.senderName}
                         </div>
-                      ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex-1 flex items-center justify-center bg-gray-50">
-                  <div className="text-center">
-                    <div className="mb-4">
-                      <svg
-                        className="w-16 h-16 mx-auto text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                        <div className="text-sm text-gray-500">
+                          {message.senderEmail}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {message.recipientName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {message.recipientEmail}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {message.subject}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        {truncateContent(message.content)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(
+                          message.messageType
+                        )}`}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      Chọn cuộc trò chuyện để xem
-                    </h3>
-                    <p className="text-gray-400 text-xs">
-                      Chỉ hiển thị cuộc trò chuyện giữa gia sư và học viên đã
-                      booking thành công
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+                        {message.messageType}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                          message.status
+                        )}`}
+                      >
+                        {message.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {formatDate(message.createdAt)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button className="text-blue-600 hover:text-blue-900 mr-3">
+                        {t("adminMessages.markAsRead")}
+                      </button>
+                      <button className="text-green-600 hover:text-green-900 mr-3">
+                        {t("adminMessages.reply")}
+                      </button>
+                      <button className="text-red-600 hover:text-red-900">
+                        {t("adminMessages.delete")}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
+
+        {filteredMessages.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-500">{t("loading")}</p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
+
+export default AdminMessages;

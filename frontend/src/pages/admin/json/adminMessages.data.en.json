@@ -1,0 +1,51 @@
+{
+    "messages": [
+        {
+            "id": 1,
+            "senderName": "John Smith",
+            "senderEmail": "johnsmith@email.com",
+            "recipientName": "Sarah Johnson",
+            "recipientEmail": "sarahjohnson@email.com",
+            "subject": "Question about class schedule",
+            "content": "Hello teacher, I have a question about next week's class schedule. Can I have class on Tuesday?",
+            "messageType": "BOOKING_INQUIRY",
+            "status": "UNREAD",
+            "createdAt": "2024-01-15T10:30:00Z",
+            "updatedAt": "2024-01-15T10:30:00Z"
+        },
+        {
+            "id": 2,
+            "senderName": "Michael Brown",
+            "senderEmail": "michaelbrown@email.com",
+            "recipientName": "Emily Davis",
+            "recipientEmail": "emilydavis@email.com",
+            "subject": "Feedback about today's class",
+            "content": "Thank you teacher for today's class. I understand algebra much better now.",
+            "messageType": "FEEDBACK",
+            "status": "READ",
+            "createdAt": "2024-01-14T16:45:00Z",
+            "updatedAt": "2024-01-14T17:00:00Z"
+        },
+        {
+            "id": 3,
+            "senderName": "Lisa Wilson",
+            "senderEmail": "lisawilson@email.com",
+            "recipientName": "David Miller",
+            "recipientEmail": "davidmiller@email.com",
+            "subject": "Request to cancel class",
+            "content": "Teacher, I have an emergency and cannot attend tomorrow's class. I apologize.",
+            "messageType": "CANCELLATION_REQUEST",
+            "status": "UNREAD",
+            "createdAt": "2024-01-13T09:15:00Z",
+            "updatedAt": "2024-01-13T09:15:00Z"
+        }
+    ],
+    "stats": {
+        "totalMessages": 3,
+        "unreadMessages": 2,
+        "readMessages": 1,
+        "bookingInquiries": 1,
+        "feedbacks": 1,
+        "cancellationRequests": 1
+    }
+}

@@ -40,8 +40,8 @@ public class BookingStatusServiceImpl implements BookingStatusService {
             throw new IllegalArgumentException("Cannot accept this booking");
         }
         
-        // Update status
-        booking.setStatus(BookingStatus.CONFIRMED);
+        // Update status -> tutor approved
+        booking.setStatus(BookingStatus.TUTOR_APPROVED);
         
         return bookingRepository.save(booking);
     }
@@ -117,9 +117,15 @@ public class BookingStatusServiceImpl implements BookingStatusService {
         
         // Define valid status transitions
         switch (currentStatus) {
-            case PENDING:
-                return newStatus == BookingStatus.CONFIRMED || newStatus == BookingStatus.CANCELLED;
-            case CONFIRMED:
+            case PAYMENT_PENDING:
+                return newStatus == BookingStatus.PAYMENT_COMPLETED || newStatus == BookingStatus.CANCELLED;
+            case PAYMENT_COMPLETED:
+                return newStatus == BookingStatus.TUTOR_APPROVED || newStatus == BookingStatus.CANCELLED;
+            case TUTOR_APPROVED:
+                return newStatus == BookingStatus.UPCOMING || newStatus == BookingStatus.CANCELLED;
+            case UPCOMING:
+                return newStatus == BookingStatus.IN_PROGRESS || newStatus == BookingStatus.CANCELLED;
+            case IN_PROGRESS:
                 return newStatus == BookingStatus.COMPLETED || newStatus == BookingStatus.CANCELLED;
             case COMPLETED:
                 return false; // No transitions from completed

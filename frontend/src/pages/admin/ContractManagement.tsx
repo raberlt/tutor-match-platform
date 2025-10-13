@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+// import { Link } from "react-router-dom";
 
 // Types based on backend entities
 interface Contract {
@@ -41,8 +41,8 @@ const ContractManagement: React.FC = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [stats, setStats] = useState<ContractStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+  // const [currentPage, setCurrentPage] = useState(0);
+  // const [totalPages, setTotalPages] = useState(0);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -414,8 +414,8 @@ const ContractManagement: React.FC = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8 pr-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200 w-full sm:w-64"
                   style={{
-                    borderColor: "rgba(148, 204, 230, 0.3)",
-                    focusRingColor: "rgb(148, 204, 230)",
+                    borderColor: "rgba(148, 204, 230, 0.3)"
+                    // focusRingColor: "rgb(148, 204, 230)",
                   }}
                 />
                 <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
@@ -440,8 +440,8 @@ const ContractManagement: React.FC = () => {
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-700 font-medium transition-colors duration-200"
                 style={{
-                  borderColor: "rgba(148, 204, 230, 0.3)",
-                  focusRingColor: "rgb(148, 204, 230)",
+                  borderColor: "rgba(148, 204, 230, 0.3)"
+                  // focusRingColor: "rgb(148, 204, 230)",
                 }}
               >
                 <option value="">Tất cả trạng thái</option>

@@ -397,10 +397,11 @@ public class ProfileApplicationService {
             for (ApplicationEducation appEdu : application.getEducations()) {
                 Education education = new Education();
                 education.setProfile(tutor);
-                education.setSchoolName(appEdu.getSchoolName());
-                education.setDegree(appEdu.getDegree());
-                education.setFromTime(appEdu.getFromTime());
-                education.setToTime(appEdu.getToTime());
+                education.setSchoolName(appEdu.getSchoolName() != null ? appEdu.getSchoolName() : "N/A");
+                education.setDegree(appEdu.getDegree() != null ? appEdu.getDegree() : "N/A");
+                education.setMajor(appEdu.getMajor() != null ? appEdu.getMajor() : "N/A");
+                education.setFromTime(appEdu.getFromTime() != null ? appEdu.getFromTime() : 2020);
+                education.setToTime(appEdu.getToTime() != null ? appEdu.getToTime() : 2024);
                 education.setDegreeFileUrl(appEdu.getDegreeFileUrl());
                 education.setDegreeFileName(appEdu.getDegreeFileName());
                 education.setVerified(false); // Default to false for new educations
@@ -413,8 +414,8 @@ public class ProfileApplicationService {
             for (ApplicationCertificate appCert : application.getCertificates()) {
                 Certificate certificate = new Certificate();
                 certificate.setProfile(tutor);
-                certificate.setName(appCert.getName());
-                certificate.setIssuedBy(appCert.getIssuedBy());
+                certificate.setName(appCert.getName() != null ? appCert.getName() : "N/A");
+                certificate.setIssuedBy(appCert.getIssuedBy() != null ? appCert.getIssuedBy() : "N/A");
                 certificate.setCertFileUrl(appCert.getCertFileUrl());
                 certificate.setCertFileName(appCert.getCertFileName());
                 certificate.setVerified(false); // Default to false for new certificates

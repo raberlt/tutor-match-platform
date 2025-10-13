@@ -1,0 +1,51 @@
+{
+    "messages": [
+        {
+            "id": 1,
+            "senderName": "Nguyễn Văn A",
+            "senderEmail": "nguyenvana@email.com",
+            "recipientName": "Trần Thị B",
+            "recipientEmail": "tranthib@email.com",
+            "subject": "Thắc mắc về lịch học",
+            "content": "Chào cô, em có thắc mắc về lịch học tuần tới. Em có thể học vào thứ 3 không ạ?",
+            "messageType": "BOOKING_INQUIRY",
+            "status": "UNREAD",
+            "createdAt": "2024-01-15T10:30:00Z",
+            "updatedAt": "2024-01-15T10:30:00Z"
+        },
+        {
+            "id": 2,
+            "senderName": "Lê Văn C",
+            "senderEmail": "levanc@email.com",
+            "recipientName": "Phạm Thị D",
+            "recipientEmail": "phamthid@email.com",
+            "subject": "Phản hồi về buổi học",
+            "content": "Cảm ơn thầy về buổi học hôm nay. Em đã hiểu rõ hơn về phần đại số.",
+            "messageType": "FEEDBACK",
+            "status": "READ",
+            "createdAt": "2024-01-14T16:45:00Z",
+            "updatedAt": "2024-01-14T17:00:00Z"
+        },
+        {
+            "id": 3,
+            "senderName": "Hoàng Thị E",
+            "senderEmail": "hoangthie@email.com",
+            "recipientName": "Nguyễn Văn F",
+            "recipientEmail": "nguyenvang@email.com",
+            "subject": "Yêu cầu hủy buổi học",
+            "content": "Thầy ơi, em có việc đột xuất nên không thể học buổi học ngày mai. Em xin lỗi thầy.",
+            "messageType": "CANCELLATION_REQUEST",
+            "status": "UNREAD",
+            "createdAt": "2024-01-13T09:15:00Z",
+            "updatedAt": "2024-01-13T09:15:00Z"
+        }
+    ],
+    "stats": {
+        "totalMessages": 3,
+        "unreadMessages": 2,
+        "readMessages": 1,
+        "bookingInquiries": 1,
+        "feedbacks": 1,
+        "cancellationRequests": 1
+    }
+}

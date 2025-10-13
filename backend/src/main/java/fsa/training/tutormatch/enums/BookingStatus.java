@@ -1,12 +1,11 @@
 package fsa.training.tutormatch.enums;
 
 public enum BookingStatus {
-    PENDING("Chờ xử lý"),
     PAYMENT_PENDING("Chờ thanh toán"),
     PAYMENT_COMPLETED("Đã thanh toán"),
-    TUTOR_APPROVED("Giảng viên đã chấp nhận"),
-    TUTOR_REJECTED("Giảng viên đã từ chối"),
-    CONFIRMED("Đã xác nhận"),
+    TUTOR_APPROVED("Gia sư đã chấp nhận"),
+    TUTOR_REJECTED("Gia sư đã từ chối"),
+    UPCOMING("Sắp diễn ra"),
     IN_PROGRESS("Đang diễn ra"),
     COMPLETED("Hoàn thành"),
     CANCELLED("Đã hủy"),
@@ -23,5 +22,4 @@ public enum BookingStatus {
     }
 }
 
-
-//student -> single ->chờ thanh toán -> thanh toán -> confirmed -> in progress -> COMPLETED or CANCELLED -> REFUNDED
+//student -> single -> chờ thanh toán -> đã thanh toán -> gia sư chấp nhận -> sắp diễn ra (48h trước) -> đang diễn ra -> hoàn thành hoặc đã hủy -> đã hoàn tiền

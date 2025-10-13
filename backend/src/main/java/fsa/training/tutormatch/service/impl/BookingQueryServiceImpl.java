@@ -43,13 +43,13 @@ public class BookingQueryServiceImpl implements BookingQueryService {
     @Override
     public List<Booking> getPendingBookings(String tutorUsername) {
         User tutor = findUserByUsername(tutorUsername);
-        return bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.PENDING);
+        return bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.PAYMENT_PENDING);
     }
     
     @Override
     public List<Booking> getConfirmedBookings(String tutorUsername) {
         User tutor = findUserByUsername(tutorUsername);
-        return bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.CONFIRMED);
+        return bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.TUTOR_APPROVED);
     }
     
     @Override
@@ -67,7 +67,9 @@ public class BookingQueryServiceImpl implements BookingQueryService {
         User tutor = findUserByUsername(tutorUsername);
         return bookingRepository.findByTutorUserAndDate(tutor, date)
                 .stream()
-                .filter(booking -> booking.getStatus() == BookingStatus.CONFIRMED)
+                .filter(booking -> booking.getStatus() == BookingStatus.TUTOR_APPROVED || 
+                                   booking.getStatus() == BookingStatus.UPCOMING || 
+                                   booking.getStatus() == BookingStatus.IN_PROGRESS)
                 .toList();
     }
     
@@ -80,7 +82,7 @@ public class BookingQueryServiceImpl implements BookingQueryService {
     @Override
     public long countPendingBookings(String tutorUsername) {
         User tutor = findUserByUsername(tutorUsername);
-        return bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.PENDING).size();
+        return bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.PAYMENT_PENDING).size();
     }
     
     @Override
@@ -95,7 +97,9 @@ public class BookingQueryServiceImpl implements BookingQueryService {
         LocalDate today = LocalDate.now();
         return bookingRepository.findByTutorUserAndDate(tutor, today)
                 .stream()
-                .filter(booking -> booking.getStatus() == BookingStatus.CONFIRMED)
+                .filter(booking -> booking.getStatus() == BookingStatus.TUTOR_APPROVED || 
+                                   booking.getStatus() == BookingStatus.UPCOMING || 
+                                   booking.getStatus() == BookingStatus.IN_PROGRESS)
                 .count();
     }
     

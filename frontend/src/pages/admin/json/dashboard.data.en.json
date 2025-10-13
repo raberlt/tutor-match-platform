@@ -1,0 +1,79 @@
+{
+    "stats": {
+        "totalUsers": 1250,
+        "totalTutors": 89,
+        "totalBookings": 3420,
+        "totalRevenue": 125000000,
+        "pendingApplications": 12,
+        "activeCoupons": 8, 
+        "averageRating": 4.6,
+        "monthlyGrowth": {
+            "users": 15.2,
+            "bookings": 23.8,
+            "revenue": 18.5 
+        }
+    },
+    "activities": [
+        {
+            "id": 1,
+            "type": "booking",
+            "description": "User A booked Math with Tutor B",
+            "timestamp": "2024-01-25T10:30:00Z",
+            "status": "success"
+        },
+        {
+            "id": 2,
+            "type": "application",
+            "description": "New tutor application from User C",
+            "timestamp": "2024-01-25T09:15:00Z",
+            "status": "info"
+        },
+        {
+            "id": 3,
+            "type": "payment",
+            "description": "Payment success for session #1234 - 500,000 VND",
+            "timestamp": "2024-01-25T08:45:00Z",
+            "status": "success"
+        },
+        {
+            "id": 4,
+            "type": "review",
+            "description": "New 5-star review from User D",
+            "timestamp": "2024-01-25T07:20:00Z",
+            "status": "success"
+        },
+        {
+            "id": 5,
+            "type": "booking",
+            "description": "Cancelled session #1233 - Reason: Tutor unavailable",
+            "timestamp": "2024-01-24T16:30:00Z",
+            "status": "warning"
+        }
+    ],
+    "topTutors": [
+        {
+            "id": 1,
+            "name": "Tutor B",
+            "subject": "Math",
+            "rating": 4.9,
+            "totalBookings": 156,
+            "revenue": 12500000
+        },
+        {
+            "id": 2,
+            "name": "Tutor C",
+            "subject": "Physics",
+            "rating": 4.8,
+            "totalBookings": 134,
+            "revenue": 10800000
+        },
+        {
+            "id": 3,
+            "name": "Tutor D",
+            "subject": "Chemistry",
+            "rating": 4.7,
+            "totalBookings": 98,
+            "revenue": 8900000
+        }
+    ]
+}

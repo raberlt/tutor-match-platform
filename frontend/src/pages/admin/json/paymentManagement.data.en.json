@@ -1,0 +1,51 @@
+{
+    "payments": [
+        {
+            "id": 1,
+            "bookingId": 1,
+            "studentName": "John Smith",
+            "tutorName": "Sarah Johnson",
+            "amount": 500000,
+            "paymentMethod": "VNPay",
+            "paymentStatus": "COMPLETED",
+            "paymentReference": "TXN123456",
+            "paymentDate": "2024-01-12T10:00:00Z",
+            "createdAt": "2024-01-12T09:30:00Z",
+            "updatedAt": "2024-01-12T10:00:00Z"
+        },
+        {
+            "id": 2,
+            "bookingId": 2,
+            "studentName": "Michael Brown",
+            "tutorName": "Emily Davis",
+            "amount": 2000000,
+            "paymentMethod": "Bank Transfer",
+            "paymentStatus": "PENDING",
+            "paymentReference": "",
+            "paymentDate": "",
+            "createdAt": "2024-01-11T15:20:00Z",
+            "updatedAt": "2024-01-11T15:20:00Z"
+        },
+        {
+            "id": 3,
+            "bookingId": 3,
+            "studentName": "Lisa Wilson",
+            "tutorName": "David Miller",
+            "amount": 750000,
+            "paymentMethod": "Credit Card",
+            "paymentStatus": "FAILED",
+            "paymentReference": "TXN789012",
+            "paymentDate": "2024-01-10T14:30:00Z",
+            "createdAt": "2024-01-10T14:00:00Z",
+            "updatedAt": "2024-01-10T14:30:00Z"
+        }
+    ],
+    "stats": {
+        "totalPayments": 3,
+        "completedPayments": 1,
+        "pendingPayments": 1,
+        "failedPayments": 1,
+        "totalRevenue": 500000,
+        "pendingRevenue": 2000000
+    }
+}

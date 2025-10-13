@@ -109,7 +109,8 @@ const TutorSearch: React.FC = () => {
         );
         console.log(
           "🔍 First tutor profileSubjects:",
-          (tutorsData[0] as any).profileSubjects
+          (tutorsData[0] as ProcessedTutor & { profileSubjects?: unknown[] })
+            .profileSubjects
         );
         console.log("🔍 First tutor subjectNames:", tutorsData[0].subjectNames);
         console.log("🔍 First tutor fees:", tutorsData[0].fees);
@@ -119,87 +120,98 @@ const TutorSearch: React.FC = () => {
 
       // Xử lý dữ liệu từ API - sử dụng subjects trực tiếp từ API
       if (tutorsData.length > 0) {
-        tutorsData = tutorsData.map((tutor: any) => {
-          // Ưu tiên sử dụng subjects từ API trước
-          if (
-            tutor.subjects &&
-            Array.isArray(tutor.subjects) &&
-            tutor.subjects.length > 0
-          ) {
-            // API đã trả về subjects với đầy đủ thông tin, sử dụng trực tiếp
-            console.log(
-              "✅ Using subjects from API for tutor",
-              tutor.id,
-              ":",
-              tutor.subjects
-            );
-            // Không cần làm gì thêm, tutor.subjects đã có sẵn
-          } else if (tutor.subjectNames && Array.isArray(tutor.subjectNames)) {
-            // Fallback: chuyển đổi subjectNames thành subjects format
-            console.log(
-              "⚠️ Fallback: Using subjectNames for tutor",
-              tutor.id,
-              ":",
-              tutor.subjectNames
-            );
-            tutor.subjects = tutor.subjectNames.map(
-              (subjectName: string, idx: number) => ({
-                id: idx + 1,
-                name: subjectName,
-                hourlyRate:
-                  tutor.fees &&
-                  typeof tutor.fees === "object" &&
-                  tutor.fees[subjectName]
-                    ? (tutor.fees[subjectName] as number)
-                    : 200000,
-              })
-            );
-          } else {
-            // Nếu không có subjectNames, tạo subjects từ fees
-            if (tutor.fees && typeof tutor.fees === "object") {
-              // fees là object
-              tutor.subjects = Object.entries(tutor.fees).map(
-                ([subjectName, price], idx) => ({
+        tutorsData = tutorsData.map(
+          (
+            tutor: ProcessedTutor & {
+              profileSubjects?: unknown[];
+              subjectNames?: string[];
+              fees?: number | Record<string, number>;
+            }
+          ) => {
+            // Ưu tiên sử dụng subjects từ API trước
+            if (
+              tutor.subjects &&
+              Array.isArray(tutor.subjects) &&
+              tutor.subjects.length > 0
+            ) {
+              // API đã trả về subjects với đầy đủ thông tin, sử dụng trực tiếp
+              console.log(
+                "✅ Using subjects from API for tutor",
+                tutor.id,
+                ":",
+                tutor.subjects
+              );
+              // Không cần làm gì thêm, tutor.subjects đã có sẵn
+            } else if (
+              tutor.subjectNames &&
+              Array.isArray(tutor.subjectNames)
+            ) {
+              // Fallback: chuyển đổi subjectNames thành subjects format
+              console.log(
+                "⚠️ Fallback: Using subjectNames for tutor",
+                tutor.id,
+                ":",
+                tutor.subjectNames
+              );
+              tutor.subjects = tutor.subjectNames.map(
+                (subjectName: string, idx: number) => ({
                   id: idx + 1,
                   name: subjectName,
-                  hourlyRate: price as number,
+                  hourlyRate:
+                    tutor.fees &&
+                    typeof tutor.fees === "object" &&
+                    tutor.fees[subjectName]
+                      ? (tutor.fees[subjectName] as number)
+                      : 200000,
                 })
               );
-            } else if (tutor.fees && typeof tutor.fees === "number") {
-              // fees là số - tạo subjects với giá chung
-              tutor.subjects = [
-                { id: 1, name: "Toán học", hourlyRate: tutor.fees },
-                { id: 2, name: "Vật lý", hourlyRate: tutor.fees },
-              ];
             } else {
-              // Không có dữ liệu, dùng mock data
-              console.log("❌ Using mock data for tutor", tutor.id);
+              // Nếu không có subjectNames, tạo subjects từ fees
+              if (tutor.fees && typeof tutor.fees === "object") {
+                // fees là object
+                tutor.subjects = Object.entries(tutor.fees).map(
+                  ([subjectName, price], idx) => ({
+                    id: idx + 1,
+                    name: subjectName,
+                    hourlyRate: price as number,
+                  })
+                );
+              } else if (tutor.fees && typeof tutor.fees === "number") {
+                // fees là số - tạo subjects với giá chung
+                tutor.subjects = [
+                  { id: 1, name: "Toán học", hourlyRate: tutor.fees },
+                  { id: 2, name: "Vật lý", hourlyRate: tutor.fees },
+                ];
+              } else {
+                // Không có dữ liệu, dùng mock data
+                console.log("❌ Using mock data for tutor", tutor.id);
+                tutor.subjects = [
+                  { id: 1, name: "Toán học", hourlyRate: 200000 },
+                  { id: 2, name: "Vật lý", hourlyRate: 180000 },
+                ];
+              }
+            }
+
+            // Nếu vẫn không có subjects, thêm mock data
+            if (!tutor.subjects || tutor.subjects.length === 0) {
+              console.log(
+                "❌ Final fallback: Using mock data for tutor",
+                tutor.id
+              );
               tutor.subjects = [
                 { id: 1, name: "Toán học", hourlyRate: 200000 },
                 { id: 2, name: "Vật lý", hourlyRate: 180000 },
               ];
             }
-          }
 
-          // Nếu vẫn không có subjects, thêm mock data
-          if (!tutor.subjects || tutor.subjects.length === 0) {
-            console.log(
-              "❌ Final fallback: Using mock data for tutor",
-              tutor.id
-            );
-            tutor.subjects = [
-              { id: 1, name: "Toán học", hourlyRate: 200000 },
-              { id: 2, name: "Vật lý", hourlyRate: 180000 },
-            ];
-          }
+            // Thêm bio nếu thiếu
+            if (!tutor.bio) {
+              tutor.bio = "";
+            }
 
-          // Thêm bio nếu thiếu
-          if (!tutor.bio) {
-            tutor.bio = "";
+            return tutor;
           }
-
-          return tutor;
-        });
+        );
 
         // Debug: Log dữ liệu sau khi xử lý
         console.log(
@@ -320,28 +332,14 @@ const TutorSearch: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const handleSingleBooking = (tutor: ProcessedTutor) => {
+  const handleBooking = (tutor: ProcessedTutor) => {
     if (!isAuthenticated) {
       navigate("/login");
       return;
     }
 
-    // Redirect to single booking with tutor info
-    navigate("/single-booking-new", {
-      state: {
-        selectedTutor: tutor,
-      },
-    });
-  };
-
-  const handlePackageBooking = (tutor: ProcessedTutor) => {
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-
-    // Redirect to package booking with tutor info
-    navigate("/package-booking-new", {
+    // Redirect to unified booking page with tutor info
+    navigate("/booking", {
       state: {
         selectedTutor: tutor,
       },
@@ -388,20 +386,23 @@ const TutorSearch: React.FC = () => {
     }
 
     // Xử lý profileSubjects cũ (fallback)
+    const tutorWithProfileSubjects = tutor as ProcessedTutor & {
+      profileSubjects?: Array<{ subject: { id: number }; fees: number }>;
+    };
     if (
-      (tutor as any).profileSubjects &&
-      (tutor as any).profileSubjects.length > 0
+      tutorWithProfileSubjects.profileSubjects &&
+      tutorWithProfileSubjects.profileSubjects.length > 0
     ) {
       // If a subject is selected, return its price
       if (selectedId) {
-        const subject = (tutor as any).profileSubjects.find(
-          (ps: any) => ps.subject.id === selectedId
+        const subject = tutorWithProfileSubjects.profileSubjects.find(
+          (ps) => ps.subject.id === selectedId
         );
         return subject ? subject.fees : null;
       }
       // If no subject selected, return price of first subject (default)
-      return (tutor as any).profileSubjects.length > 0
-        ? (tutor as any).profileSubjects[0].fees
+      return tutorWithProfileSubjects.profileSubjects.length > 0
+        ? tutorWithProfileSubjects.profileSubjects[0].fees
         : null;
     }
     return null;
@@ -702,33 +703,19 @@ const TutorSearch: React.FC = () => {
                   >
                     {/* Book Button - Top Right */}
                     <div className="absolute top-4 right-4 z-10">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => {
-                            if (isAuthenticated) {
-                              handleSingleBooking(tutor);
-                            } else {
-                              navigate("/login");
-                            }
-                          }}
-                          className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-xs font-medium"
-                        >
-                          Học đơn
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (isAuthenticated) {
-                              handlePackageBooking(tutor);
-                            } else {
-                              navigate("/login");
-                            }
-                          }}
-                          className="text-white px-3 py-2 rounded-lg hover:opacity-90 transition-all duration-200 text-xs font-semibold shadow-lg hover:shadow-xl"
-                          style={{ backgroundColor: "#94cce6" }}
-                        >
-                          Đặt gói
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          if (isAuthenticated) {
+                            handleBooking(tutor);
+                          } else {
+                            navigate("/login");
+                          }
+                        }}
+                        className="text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-xl"
+                        style={{ backgroundColor: "#94cce6" }}
+                      >
+                        Đặt lịch học
+                      </button>
                     </div>
 
                     <div className="p-4">

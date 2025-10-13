@@ -22,15 +22,15 @@ export interface AuthContextType {
 
 // Booking Types - Cập nhật theo API mới
 export type BookingStatus =
-  | "PENDING"
-  | "TUTOR_APPROVED"
   | "PAYMENT_PENDING"
-  | "PAID"
-  | "CONFIRMED"
+  | "PAYMENT_COMPLETED"
+  | "TUTOR_APPROVED"
+  | "TUTOR_REJECTED"
+  | "UPCOMING"
   | "IN_PROGRESS"
   | "COMPLETED"
   | "CANCELLED"
-  | "REJECTED";
+  | "REFUNDED";
 
 export type BookingType = "TRIAL" | "SINGLE_SESSION" | "PACKAGE";
 

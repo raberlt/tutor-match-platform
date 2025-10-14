@@ -158,8 +158,20 @@ const PaymentPage: React.FC = () => {
   // Xử lý dữ liệu cho single session booking
   const isSingleSession = bookingData.bookingType === "SINGLE_SESSION";
   const displaySessions = isSingleSession
-    ? [{ date: bookingData.session?.date, time: bookingData.session?.time }]
-    : bookingData.sessions;
+    ? [
+        {
+          date: bookingData.session?.date,
+          time: bookingData.session?.time,
+          subjectName: bookingData.session?.subject,
+          fee: bookingData.session?.fee,
+        },
+      ]
+    : bookingData.sessions?.map((session: any) => ({
+        date: session.date,
+        time: session.timeSlot,
+        subjectName: session.subjectName,
+        fee: session.fee,
+      })) || [];
 
   const displayPackageInfo = isSingleSession
     ? {
@@ -404,35 +416,64 @@ const PaymentPage: React.FC = () => {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                   Lịch học đã chọn
                 </h2>
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-96 overflow-y-auto">
                   {displaySessions.map(
                     (
-                      session: { date: string; time: string },
+                      session: {
+                        date: string;
+                        time: string;
+                        subjectName?: string;
+                        fee?: number;
+                      },
                       index: number
                     ) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        className="p-3 bg-gray-50 rounded-lg border border-gray-200"
                       >
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className="w-6 h-6 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                          >
-                            <span className="text-white text-xs font-medium">
-                              {index + 1}
-                            </span>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-3">
+                            <div
+                              className="w-6 h-6 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                            >
+                              <span className="text-white text-xs font-medium">
+                                {index + 1}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900 text-sm">
+                                {session.date
+                                  ? new Date(session.date).toLocaleDateString(
+                                      "vi-VN"
+                                    )
+                                  : "Chưa xác định"}
+                              </p>
+                              <p className="text-xs text-gray-600">
+                                {session.time}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium text-gray-900 text-sm">
-                              {session.date}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              {session.time}
-                            </p>
-                          </div>
+                          <CheckIcon />
                         </div>
-                        <CheckIcon />
+
+                        {/* Additional session details for package booking */}
+                        {bookingData.bookingType === "PACKAGE" && (
+                          <div className="ml-9 space-y-1">
+                            {session.subjectName && (
+                              <p className="text-xs text-gray-600">
+                                <span className="font-medium">Môn học:</span>{" "}
+                                {session.subjectName}
+                              </p>
+                            )}
+                            {session.fee && (
+                              <p className="text-xs text-gray-600">
+                                <span className="font-medium">Học phí:</span>{" "}
+                                {session.fee.toLocaleString("vi-VN")} VNĐ
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )
                   )}

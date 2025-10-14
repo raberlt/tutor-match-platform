@@ -21,6 +21,9 @@ interface PackageSchedule {
   dayOfWeek: string;
   timeSlot: string;
   date?: string;
+  subjectId?: number;
+  subjectName?: string;
+  fee?: number;
 }
 
 const UnifiedBookingNew: React.FC = () => {
@@ -56,17 +59,32 @@ const UnifiedBookingNew: React.FC = () => {
   const [packageFormData, setPackageFormData] = useState({
     subjectId: "",
     totalSessions: 12,
-    sessionsPerWeek: 2,
     note: "",
     startDate: "",
+    endDate: "",
     selectedDays: [] as string[],
     timeSlot: "",
     selectedSessions: [] as PackageSchedule[],
+    selectedSubjects: [] as { id: number; name: string; fees: number }[],
+    tempChoices: [] as any[],
+  });
+
+  // Temporary choices before adding to session list
+  const [tempChoices, setTempChoices] = useState({
+    selectedDay: "",
+    selectedTimeSlot: "",
+    selectedSubject: null as { id: number; name: string; fees: number } | null,
   });
 
   const [scheduleType, setScheduleType] = useState<"fixed" | "flexible">(
     "fixed"
   );
+
+  // Modal hiển thị lịch dạy của gia sư
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+
+  // Form tạm cho lịch tự do
+  const [flexibleForm, setFlexibleForm] = useState({ date: "", subjectId: "" });
 
   // Get tomorrow's date as minimum selectable date
   const tomorrow = new Date();
@@ -221,11 +239,10 @@ const UnifiedBookingNew: React.FC = () => {
   };
 
   const handleDaySelection = (day: string, checked: boolean) => {
-    setPackageFormData((prev) => ({
+    setTempChoices((prev) => ({
       ...prev,
-      selectedDays: checked
-        ? [...prev.selectedDays, day]
-        : prev.selectedDays.filter((d) => d !== day),
+      selectedDay: checked ? day : "",
+      selectedTimeSlot: "", // Reset time slot when day changes
     }));
   };
 
@@ -242,6 +259,145 @@ const UnifiedBookingNew: React.FC = () => {
         selectedDays: [],
       }));
     }
+  };
+
+  // Get available time slots for selected days
+  const getAvailableTimeSlotsForSelectedDays = () => {
+    if (!tempChoices.selectedDay) return [];
+
+    const timeSlots = new Set<string>();
+    const daySchedules = tutorSchedules.filter(
+      (s) => s.dayOfWeek === tempChoices.selectedDay && s.enable
+    );
+    daySchedules.forEach((schedule) => {
+      timeSlots.add(`${schedule.fromTime}-${schedule.toTime}`);
+    });
+
+    return Array.from(timeSlots);
+  };
+
+  const addTempChoice = () => {
+    if (!tempChoices.selectedDay) {
+      setError("Vui lòng chọn ngày trong tuần");
+      return;
+    }
+
+    if (!tempChoices.selectedTimeSlot) {
+      setError("Vui lòng chọn khung giờ");
+      return;
+    }
+
+    if (!tempChoices.selectedSubject) {
+      setError("Vui lòng chọn môn học");
+      return;
+    }
+
+    if (!packageFormData.startDate || !packageFormData.endDate) {
+      setError("Vui lòng chọn ngày bắt đầu và ngày kết thúc");
+      return;
+    }
+
+    // Add to temp choices list
+    const newChoice = {
+      day: tempChoices.selectedDay,
+      timeSlot: tempChoices.selectedTimeSlot,
+      subject: tempChoices.selectedSubject,
+    };
+
+    const updatedTempChoices = [
+      ...(packageFormData.tempChoices || []),
+      newChoice,
+    ];
+
+    // Generate sessions from all choices including the new one
+    const startDate = new Date(packageFormData.startDate);
+    const endDate = new Date(packageFormData.endDate);
+    const sessions: PackageSchedule[] = [];
+
+    updatedTempChoices.forEach((choice: any) => {
+      let currentDate = new Date(startDate);
+
+      while (currentDate <= endDate) {
+        const dayOfWeek = currentDate
+          .toLocaleDateString("en-US", { weekday: "long" })
+          .toUpperCase();
+
+        if (dayOfWeek === choice.day) {
+          sessions.push({
+            dayOfWeek: choice.day,
+            timeSlot: choice.timeSlot,
+            date: currentDate.toISOString().split("T")[0],
+            subjectId: choice.subject.id,
+            subjectName: choice.subject.name,
+            fee: choice.subject.fees,
+          });
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    });
+
+    setPackageFormData((prev) => ({
+      ...prev,
+      tempChoices: updatedTempChoices,
+      selectedSessions: sessions,
+      totalSessions: sessions.length,
+    }));
+
+    // Reset temp choices
+    setTempChoices({
+      selectedDay: "",
+      selectedTimeSlot: "",
+      selectedSubject: null,
+    });
+  };
+
+  const generateSessionsFromChoices = () => {
+    if (!packageFormData.startDate || !packageFormData.endDate) {
+      setError("Vui lòng chọn ngày bắt đầu và ngày kết thúc");
+      return;
+    }
+
+    const tempChoicesList = packageFormData.tempChoices || [];
+    if (tempChoicesList.length === 0) {
+      setError("Vui lòng thêm ít nhất một lựa chọn thứ/giờ/môn");
+      return;
+    }
+
+    // Calculate sessions based on temp choices and date range
+    const startDate = new Date(packageFormData.startDate);
+    const endDate = new Date(packageFormData.endDate);
+    const sessions: PackageSchedule[] = [];
+
+    tempChoicesList.forEach((choice: any) => {
+      let currentDate = new Date(startDate);
+
+      while (currentDate <= endDate) {
+        const dayOfWeek = currentDate
+          .toLocaleDateString("en-US", { weekday: "long" })
+          .toUpperCase();
+
+        if (dayOfWeek === choice.day) {
+          sessions.push({
+            dayOfWeek: choice.day,
+            timeSlot: choice.timeSlot,
+            date: currentDate.toISOString().split("T")[0],
+            subjectId: choice.subject.id,
+            subjectName: choice.subject.name,
+            fee: choice.subject.fees,
+          });
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    });
+
+    setPackageFormData((prev) => ({
+      ...prev,
+      selectedSessions: sessions,
+      totalSessions: sessions.length,
+      tempChoices: [], // Clear temp choices after generating sessions
+    }));
   };
 
   const addFlexibleSession = () => {
@@ -274,10 +430,68 @@ const UnifiedBookingNew: React.FC = () => {
     }));
   };
 
-  const removeFlexibleSession = (index: number) => {
+  const removeSession = (index: number) => {
+    // Find which temp choice this session belongs to
+    const sessionToRemove = packageFormData.selectedSessions[index];
+
+    // Remove the corresponding temp choice
+    const updatedTempChoices = packageFormData.tempChoices.filter(
+      (choice, i) => {
+        // Find sessions for this choice
+        const startDate = new Date(packageFormData.startDate);
+        const endDate = new Date(packageFormData.endDate);
+        let currentDate = new Date(startDate);
+
+        while (currentDate <= endDate) {
+          const dayOfWeek = currentDate
+            .toLocaleDateString("en-US", { weekday: "long" })
+            .toUpperCase();
+          if (
+            dayOfWeek === choice.day &&
+            choice.timeSlot === sessionToRemove.timeSlot &&
+            choice.subject.id === sessionToRemove.subjectId
+          ) {
+            return false; // This choice should be removed
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        return true;
+      }
+    );
+
+    // Regenerate sessions
+    const startDate = new Date(packageFormData.startDate);
+    const endDate = new Date(packageFormData.endDate);
+    const sessions: PackageSchedule[] = [];
+
+    updatedTempChoices.forEach((choice: any) => {
+      let currentDate = new Date(startDate);
+
+      while (currentDate <= endDate) {
+        const dayOfWeek = currentDate
+          .toLocaleDateString("en-US", { weekday: "long" })
+          .toUpperCase();
+
+        if (dayOfWeek === choice.day) {
+          sessions.push({
+            dayOfWeek: choice.day,
+            timeSlot: choice.timeSlot,
+            date: currentDate.toISOString().split("T")[0],
+            subjectId: choice.subject.id,
+            subjectName: choice.subject.name,
+            fee: choice.subject.fees,
+          });
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    });
+
     setPackageFormData((prev) => ({
       ...prev,
-      selectedSessions: prev.selectedSessions.filter((_, i) => i !== index),
+      tempChoices: updatedTempChoices,
+      selectedSessions: sessions,
+      totalSessions: sessions.length,
     }));
   };
 
@@ -414,52 +628,89 @@ const UnifiedBookingNew: React.FC = () => {
         }
       } else {
         // Package booking
-        if (!packageFormData.subjectId) {
-          setError("Vui lòng chọn môn học");
+        if (packageFormData.selectedSessions.length < 2) {
+          setError("Vui lòng thêm ít nhất 2 buổi học để đặt gói");
           return;
         }
 
-        if (
-          scheduleType === "fixed" &&
-          (!packageFormData.startDate ||
-            packageFormData.selectedDays.length === 0 ||
-            !packageFormData.timeSlot)
-        ) {
-          setError("Vui lòng điền đầy đủ thông tin lịch cố định");
+        if (!packageFormData.startDate || !packageFormData.endDate) {
+          setError("Vui lòng chọn ngày bắt đầu và ngày kết thúc");
           return;
         }
 
-        if (
-          scheduleType === "flexible" &&
-          packageFormData.selectedSessions.length === 0
-        ) {
-          setError("Vui lòng thêm ít nhất một buổi học");
+        if (packageFormData.selectedSubjects.length === 0) {
+          setError("Vui lòng chọn ít nhất một môn học");
           return;
         }
 
-        const [fromTime, toTime] = (
-          packageFormData.timeSlot ||
-          packageFormData.selectedSessions[0]?.timeSlot ||
-          "09:00-10:30"
-        ).split("-");
+        // Calculate total amount
+        const totalAmount = packageFormData.selectedSessions.reduce(
+          (total, session) => total + (session.fee || 0),
+          0
+        );
 
-        const bookingData: BookingRequestCreateDTO = {
+        // Create booking request with sessions
+        const bookingRequest = {
           tutorId: tutorUserId,
-          subjectId: parseInt(packageFormData.subjectId),
+          subjectId: packageFormData.selectedSubjects[0].id, // Use first subject as primary
           date:
-            packageFormData.startDate || new Date().toISOString().split("T")[0],
-          fromTime: fromTime,
-          toTime: toTime,
+            packageFormData.selectedSessions[0].date ||
+            packageFormData.startDate,
+          time: packageFormData.selectedSessions[0].timeSlot,
           bookingType: "PACKAGE",
           note: packageFormData.note,
-          sessionsPerWeek: packageFormData.sessionsPerWeek,
-          contractDuration: 3,
+          totalAmount: totalAmount,
+          paymentMethod: "CREDIT",
+          couponId: null,
+          sessions: packageFormData.selectedSessions.map((session) => ({
+            date: session.date,
+            timeSlot: session.timeSlot,
+            subjectId: session.subjectId,
+            fee: session.fee,
+          })),
         };
 
-        await bookingService.createBooking(bookingData);
-        navigate("/my-sessions", {
-          state: { message: "Đặt gói học thành công!" },
+        const token = localStorage.getItem("token");
+        const response = await fetch("/api/booking/student/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(bookingRequest),
         });
+
+        const result = await response.json();
+
+        if (result.success) {
+          if (result.paymentRequired) {
+            // Navigate to payment with session details
+            navigate("/payment", {
+              state: {
+                bookingId: result.bookingId,
+                paymentId: result.paymentId,
+                bookingType: "PACKAGE",
+                totalAmount: totalAmount,
+                tutor: {
+                  id: selectedTutor.id,
+                  name: `${selectedTutor.firstName} ${selectedTutor.lastName}`,
+                  avatar: selectedTutor.imageAvatar || "/default-avatar.png",
+                },
+                sessions: packageFormData.selectedSessions,
+                note: packageFormData.note,
+              },
+            });
+          } else {
+            navigate("/booking-success", {
+              state: {
+                bookingId: result.bookingId,
+                message: result.message,
+              },
+            });
+          }
+        } else {
+          setError(result.message || "Có lỗi xảy ra khi đặt gói học");
+        }
       }
     } catch (error: unknown) {
       setError((error as Error).message || "Có lỗi xảy ra");
@@ -560,44 +811,47 @@ const UnifiedBookingNew: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Subject Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Chọn môn học
-              </label>
-              <select
-                name="subjectId"
-                value={
-                  bookingType === "single"
-                    ? formData.subjectId
-                    : packageFormData.subjectId
-                }
-                onChange={
-                  bookingType === "single"
-                    ? handleInputChange
-                    : handlePackageInputChange
-                }
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
-              >
-                <option value="">-- Chọn môn học --</option>
-                {tutorSubjects.map((subject) => (
-                  <option key={subject.id} value={subject.id}>
-                    {subject.name} - {subject.fees.toLocaleString()} VNĐ/buổi
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Subject Selection - Only for Single Booking */}
+            {bookingType === "single" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Chọn môn học
+                </label>
+                <select
+                  name="subjectId"
+                  value={formData.subjectId}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading}
+                >
+                  <option value="">-- Chọn môn học --</option>
+                  {tutorSubjects.map((subject) => (
+                    <option key={subject.id} value={subject.id}>
+                      {subject.name} - {subject.fees.toLocaleString()} VNĐ/buổi
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Single Session Form */}
             {bookingType === "single" && (
               <>
                 {/* Date Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Chọn ngày học
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Chọn ngày học
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowScheduleModal(true)}
+                      className="inline-flex items-center px-2 py-1 text-xs border rounded-md text-blue-700 border-blue-300 hover:bg-blue-50"
+                    >
+                      Lịch dạy
+                    </button>
+                  </div>
                   <Calendar
                     selectedDate={formData.date}
                     onDateSelect={(date) => {
@@ -664,41 +918,6 @@ const UnifiedBookingNew: React.FC = () => {
             {/* Package Form */}
             {bookingType === "package" && (
               <>
-                {/* Package Info */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tổng số buổi học
-                    </label>
-                    <input
-                      type="number"
-                      name="totalSessions"
-                      value={packageFormData.totalSessions}
-                      onChange={handlePackageInputChange}
-                      min="12"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={loading}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Số buổi/tuần
-                    </label>
-                    <input
-                      type="number"
-                      name="sessionsPerWeek"
-                      value={packageFormData.sessionsPerWeek}
-                      onChange={handlePackageInputChange}
-                      min="1"
-                      max="7"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-
                 {/* Schedule Type Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-4">
@@ -741,26 +960,52 @@ const UnifiedBookingNew: React.FC = () => {
                 {/* Fixed Schedule */}
                 {scheduleType === "fixed" && (
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Ngày bắt đầu
-                      </label>
-                      <input
-                        type="date"
-                        name="startDate"
-                        value={packageFormData.startDate}
-                        onChange={handlePackageInputChange}
-                        min={minDate}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={loading}
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Ngày bắt đầu
+                        </label>
+                        <input
+                          type="date"
+                          name="startDate"
+                          value={packageFormData.startDate}
+                          onChange={handlePackageInputChange}
+                          min={minDate}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={loading}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Ngày kết thúc
+                        </label>
+                        <input
+                          type="date"
+                          name="endDate"
+                          value={packageFormData.endDate}
+                          onChange={handlePackageInputChange}
+                          min={packageFormData.startDate || minDate}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={loading}
+                        />
+                      </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Chọn các ngày trong tuần
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Chọn ngày trong tuần
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowScheduleModal(true)}
+                          className="inline-flex items-center px-2 py-1 text-xs border rounded-md text-blue-700 border-blue-300 hover:bg-blue-50"
+                        >
+                          Lịch dạy
+                        </button>
+                      </div>
                       <div className="grid grid-cols-7 gap-2">
                         {[
                           "MONDAY",
@@ -774,8 +1019,7 @@ const UnifiedBookingNew: React.FC = () => {
                           const isAvailable = availableDays.some(
                             (d) => d.dayOfWeek === day
                           );
-                          const isSelected =
-                            packageFormData.selectedDays.includes(day);
+                          const isSelected = tempChoices.selectedDay === day;
 
                           return (
                             <label
@@ -789,7 +1033,8 @@ const UnifiedBookingNew: React.FC = () => {
                               }`}
                             >
                               <input
-                                type="checkbox"
+                                type="radio"
+                                name="selectedDay"
                                 checked={isSelected}
                                 onChange={(e) =>
                                   handleDaySelection(day, e.target.checked)
@@ -812,6 +1057,10 @@ const UnifiedBookingNew: React.FC = () => {
                           );
                         })}
                       </div>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Chỉ có thể chọn 1 ngày trong tuần. Sau khi chọn xong,
+                        bấm "Chọn thêm" để thêm buổi học.
+                      </p>
                     </div>
 
                     <div>
@@ -820,19 +1069,156 @@ const UnifiedBookingNew: React.FC = () => {
                       </label>
                       <select
                         name="timeSlot"
-                        value={packageFormData.timeSlot}
-                        onChange={handlePackageInputChange}
+                        value={tempChoices.selectedTimeSlot}
+                        onChange={(e) =>
+                          setTempChoices((prev) => ({
+                            ...prev,
+                            selectedTimeSlot: e.target.value,
+                          }))
+                        }
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={loading}
+                        disabled={loading || !tempChoices.selectedDay}
                       >
                         <option value="">-- Chọn khung giờ --</option>
-                        {availableTimeSlotsPackage.map((timeSlot, idx) => (
-                          <option key={`${timeSlot}-${idx}`} value={timeSlot}>
-                            {timeSlot}
-                          </option>
-                        ))}
+                        {getAvailableTimeSlotsForSelectedDays().map(
+                          (timeSlot, idx) => (
+                            <option key={`${timeSlot}-${idx}`} value={timeSlot}>
+                              {timeSlot}
+                            </option>
+                          )
+                        )}
                       </select>
+                      {!tempChoices.selectedDay && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          Vui lòng chọn ngày trong tuần trước
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Chọn môn học
+                      </label>
+                      <div className="space-y-2">
+                        {tutorSubjects.map((subject) => (
+                          <label
+                            key={subject.id}
+                            className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                          >
+                            <input
+                              type="radio"
+                              name="selectedSubject"
+                              checked={
+                                tempChoices.selectedSubject?.id === subject.id
+                              }
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setTempChoices((prev) => ({
+                                    ...prev,
+                                    selectedSubject: subject,
+                                  }));
+                                }
+                              }}
+                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                            />
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-900">
+                                {subject.name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {subject.fees.toLocaleString("vi-VN")} VNĐ/buổi
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Temp Choices Display */}
+                    {packageFormData.tempChoices.length > 0 && (
+                      <div className="space-y-4">
+                        <h4 className="text-lg font-semibold text-gray-900">
+                          Các lựa chọn đã thêm (
+                          {packageFormData.tempChoices.length} lựa chọn)
+                        </h4>
+                        <div className="space-y-2">
+                          {packageFormData.tempChoices.map((choice, index) => (
+                            <div
+                              key={index}
+                              className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-4">
+                                  <div className="w-6 h-6 rounded-full bg-yellow-500 text-white flex items-center justify-center text-xs font-medium">
+                                    {index + 1}
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">
+                                      {choice.day === "MONDAY" && "Thứ 2"}
+                                      {choice.day === "TUESDAY" && "Thứ 3"}
+                                      {choice.day === "WEDNESDAY" && "Thứ 4"}
+                                      {choice.day === "THURSDAY" && "Thứ 5"}
+                                      {choice.day === "FRIDAY" && "Thứ 6"}
+                                      {choice.day === "SATURDAY" && "Thứ 7"}
+                                      {choice.day === "SUNDAY" && "Chủ nhật"}
+                                    </span>
+                                    <span className="mx-2">•</span>
+                                    <span>{choice.timeSlot}</span>
+                                    <span className="mx-2">•</span>
+                                    <span className="text-blue-600">
+                                      {choice.subject.name}
+                                    </span>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPackageFormData((prev) => ({
+                                      ...prev,
+                                      tempChoices: prev.tempChoices.filter(
+                                        (_, i) => i !== index
+                                      ),
+                                    }));
+                                  }}
+                                  className="text-red-500 hover:text-red-700 p-1"
+                                >
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M6 18L18 6M6 6l12 12"
+                                    />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add Choice Button */}
+                    <div className="flex justify-center">
+                      <button
+                        type="button"
+                        onClick={addTempChoice}
+                        disabled={
+                          loading ||
+                          !tempChoices.selectedDay ||
+                          !tempChoices.selectedTimeSlot ||
+                          !tempChoices.selectedSubject
+                        }
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      >
+                        Lưu
+                      </button>
                     </div>
                   </div>
                 )}
@@ -840,16 +1226,72 @@ const UnifiedBookingNew: React.FC = () => {
                 {/* Flexible Schedule */}
                 {scheduleType === "flexible" && (
                   <div className="space-y-4">
+                    {/* Chọn môn học */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Chọn môn học
+                      </label>
+                      <select
+                        name="subjectId"
+                        value={flexibleForm.subjectId}
+                        onChange={(e) =>
+                          setFlexibleForm((p) => ({
+                            ...p,
+                            subjectId: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={loading}
+                      >
+                        <option value="">-- Chọn môn học --</option>
+                        {tutorSubjects.map((s) => (
+                          <option key={s.id} value={String(s.id)}>
+                            {s.name} - {s.fees.toLocaleString("vi-VN")} VNĐ/buổi
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Chọn ngày và nút lịch dạy */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Chọn ngày học
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowScheduleModal(true)}
+                          className="inline-flex items-center px-2 py-1 text-xs border rounded-md text-blue-700 border-blue-300 hover:bg-blue-50"
+                        >
+                          Lịch dạy
+                        </button>
+                      </div>
+                      <Calendar
+                        selectedDate={flexibleForm.date}
+                        onDateSelect={(date) => {
+                          setFlexibleForm((p) => ({ ...p, date }));
+                        }}
+                        availableDays={availableDays.map(
+                          (day) => day.dayOfWeek
+                        )}
+                        disabled={loading}
+                      />
+                    </div>
+
+                    {/* Chọn khung giờ */}
                     <div className="flex items-center space-x-4">
                       <select
                         name="timeSlot"
                         value={packageFormData.timeSlot}
                         onChange={handlePackageInputChange}
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={loading}
+                        disabled={loading || !flexibleForm.date}
                       >
                         <option value="">-- Chọn khung giờ --</option>
-                        {availableTimeSlotsPackage.map((timeSlot, idx) => (
+                        {(flexibleForm.date
+                          ? getAvailableTimeSlotsForDay(flexibleForm.date)
+                          : []
+                        ).map((timeSlot, idx) => (
                           <option key={`${timeSlot}-${idx}`} value={timeSlot}>
                             {timeSlot}
                           </option>
@@ -857,8 +1299,36 @@ const UnifiedBookingNew: React.FC = () => {
                       </select>
                       <button
                         type="button"
-                        onClick={addFlexibleSession}
-                        disabled={!packageFormData.timeSlot || loading}
+                        onClick={() => {
+                          if (
+                            !flexibleForm.subjectId ||
+                            !flexibleForm.date ||
+                            !packageFormData.timeSlot
+                          ) {
+                            setError("Vui lòng chọn môn, ngày và khung giờ");
+                            return;
+                          }
+                          const subject = tutorSubjects.find(
+                            (s) => String(s.id) === flexibleForm.subjectId
+                          );
+                          const newSession: PackageSchedule = {
+                            dayOfWeek: "",
+                            date: flexibleForm.date,
+                            timeSlot: packageFormData.timeSlot,
+                            subjectId: subject?.id,
+                            subjectName: subject?.name,
+                            fee: subject?.fees,
+                          };
+                          setPackageFormData((prev) => ({
+                            ...prev,
+                            selectedSessions: [
+                              ...prev.selectedSessions,
+                              newSession,
+                            ],
+                          }));
+                          setFlexibleForm((p) => ({ ...p, date: "" }));
+                        }}
+                        disabled={loading}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Thêm buổi
@@ -903,7 +1373,7 @@ const UnifiedBookingNew: React.FC = () => {
                               </span>
                               <button
                                 type="button"
-                                onClick={() => removeFlexibleSession(index)}
+                                onClick={() => removeSession(index)}
                                 className="text-red-600 hover:text-red-800"
                               >
                                 Xóa
@@ -931,16 +1401,193 @@ const UnifiedBookingNew: React.FC = () => {
                     disabled={loading}
                   />
                 </div>
+
+                {/* Selected Sessions Display - Always visible */}
+                {packageFormData.selectedSessions.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-semibold text-gray-900">
+                        Danh sách buổi học đã chọn (
+                        {packageFormData.selectedSessions.length} buổi)
+                      </h4>
+                      {packageFormData.selectedSessions.length < 2 && (
+                        <span className="text-sm text-orange-600 bg-orange-50 px-3 py-1 rounded-full">
+                          Cần ít nhất 2 buổi học
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {packageFormData.selectedSessions.map(
+                        (session, index) => (
+                          <div
+                            key={index}
+                            className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm relative"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => removeSession(index)}
+                              className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1"
+                              title="Xóa buổi học này"
+                            >
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            </button>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pr-8">
+                              <div>
+                                <div className="text-sm font-medium text-gray-500">
+                                  Môn học
+                                </div>
+                                <div className="text-gray-900">
+                                  {session.subjectName || "Chưa chọn"}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-gray-500">
+                                  Ngày
+                                </div>
+                                <div className="text-gray-900">
+                                  {session.date
+                                    ? new Date(session.date).toLocaleDateString(
+                                        "vi-VN"
+                                      )
+                                    : "Chưa chọn"}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-gray-500">
+                                  Giờ học
+                                </div>
+                                <div className="text-gray-900">
+                                  {session.timeSlot}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-gray-500">
+                                  Học phí
+                                </div>
+                                <div className="text-gray-900 font-semibold">
+                                  {session.fee
+                                    ? `${session.fee.toLocaleString(
+                                        "vi-VN"
+                                      )} VNĐ`
+                                    : "Chưa xác định"}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex justify-between items-center">
+                        <div className="text-sm font-medium text-blue-900">
+                          Tổng số buổi học:
+                        </div>
+                        <div className="text-lg font-bold text-blue-900">
+                          {packageFormData.selectedSessions.length} buổi
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center mt-2">
+                        <div className="text-sm font-medium text-blue-900">
+                          Tổng học phí:
+                        </div>
+                        <div className="text-2xl font-bold text-blue-900">
+                          {packageFormData.selectedSessions
+                            .reduce(
+                              (total, session) => total + (session.fee || 0),
+                              0
+                            )
+                            .toLocaleString("vi-VN")}{" "}
+                          VNĐ
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
-            {/* Tutor Schedule Info */}
-            {tutorSchedules.length > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-blue-900 mb-3">
-                  Lịch dạy của gia sư:
-                </h3>
-                <div className="space-y-2">
+            {/* Tutor Schedule Info moved to modal */}
+
+            {/* Submit Button */}
+            <div className="flex space-x-4">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+              >
+                Quay lại
+              </button>
+              <button
+                type="submit"
+                disabled={
+                  loading ||
+                  !selectedTutor ||
+                  (bookingType === "single" &&
+                    (!formData.date ||
+                      !formData.timeSlot ||
+                      !formData.subjectId)) ||
+                  (bookingType === "package" &&
+                    (packageFormData.selectedSessions.length < 2 ||
+                      !packageFormData.startDate ||
+                      !packageFormData.endDate))
+                }
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => {
+                  console.log("Button clicked - Debug info:");
+                  console.log("selectedTutor:", selectedTutor);
+                  console.log(
+                    "selectedTutor.user:",
+                    (selectedTutor as any)?.user
+                  );
+                  console.log("formData:", formData);
+                  console.log("bookingType:", bookingType);
+                }}
+              >
+                {loading
+                  ? "Đang xử lý..."
+                  : bookingType === "single"
+                  ? "Đặt lịch học"
+                  : "Đặt gói học"}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Modal hiển thị lịch dạy của gia sư */}
+        {showScheduleModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setShowScheduleModal(false)}
+            />
+            <div className="relative bg-white rounded-lg shadow-lg w-full max-w-lg p-6 z-10">
+              <button
+                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowScheduleModal(false)}
+                aria-label="Đóng"
+              >
+                ✕
+              </button>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Lịch dạy của gia sư
+              </h3>
+              {availableDays.length === 0 ? (
+                <div className="text-sm text-gray-600">Chưa có lịch dạy.</div>
+              ) : (
+                <div className="space-y-2 max-h-80 overflow-auto pr-1">
                   {availableDays.map((dayGroup) => (
                     <div
                       key={dayGroup.dayOfWeek}
@@ -964,51 +1611,10 @@ const UnifiedBookingNew: React.FC = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <div className="flex space-x-4">
-              <button
-                type="button"
-                onClick={() => navigate(-1)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
-              >
-                Quay lại
-              </button>
-              <button
-                type="submit"
-                disabled={
-                  loading ||
-                  !selectedTutor ||
-                  (bookingType === "single" &&
-                    (!formData.date ||
-                      !formData.timeSlot ||
-                      !formData.subjectId)) ||
-                  (bookingType === "package" && !packageFormData.subjectId)
-                }
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => {
-                  console.log("Button clicked - Debug info:");
-                  console.log("selectedTutor:", selectedTutor);
-                  console.log(
-                    "selectedTutor.user:",
-                    (selectedTutor as any)?.user
-                  );
-                  console.log("formData:", formData);
-                  console.log("bookingType:", bookingType);
-                }}
-              >
-                {loading
-                  ? "Đang xử lý..."
-                  : bookingType === "single"
-                  ? "Đặt lịch học"
-                  : "Đặt gói học"}
-              </button>
+              )}
             </div>
-          </form>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

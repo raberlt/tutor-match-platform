@@ -1,10 +1,22 @@
 import React, { useState } from "react";
 
+interface DayBlock {
+  from?: string; // HH:mm
+  to?: string; // HH:mm
+  status: "AVAILABLE" | "BUSY" | "OFF" | "SELECTED";
+}
+
 interface CalendarProps {
   selectedDate: string;
   onDateSelect: (date: string) => void;
   availableDays: string[]; // Danh sách các ngày trong tuần có lịch (MONDAY, TUESDAY, etc.)
   disabled?: boolean;
+  // Tùy chọn: trả về các block thời gian cho mỗi ngày để hiển thị màu trạng thái
+  getDayBlocks?: (date: Date) => DayBlock[];
+  // Hiển thị lịch inline (không cần dropdown)
+  renderInline?: boolean;
+  // Chế độ chỉ xem (không chọn ngày)
+  readOnly?: boolean;
 }
 
 const Calendar: React.FC<CalendarProps> = ({
@@ -12,6 +24,9 @@ const Calendar: React.FC<CalendarProps> = ({
   onDateSelect,
   availableDays,
   disabled = false,
+  getDayBlocks,
+  renderInline = false,
+  readOnly = false,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isOpen, setIsOpen] = useState(false);
@@ -96,7 +111,17 @@ const Calendar: React.FC<CalendarProps> = ({
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
 
-    const days = [];
+    const days = [] as Array<{
+      date: Date;
+      day: number;
+      isCurrentMonth: boolean;
+      isAvailable: boolean;
+      isValid: boolean;
+      isSelected: boolean;
+      isToday: boolean;
+      canSelect: boolean;
+      blocks?: DayBlock[];
+    }>;
 
     // Tạo 42 ngày (6 tuần)
     for (let i = 0; i < 42; i++) {
@@ -114,7 +139,18 @@ const Calendar: React.FC<CalendarProps> = ({
       const isSelected = selectedDate === dateString;
       const isToday = date.toDateString() === new Date().toDateString();
 
-      const canSelect = isCurrentMonth && isAvailable && isValid;
+      // Lấy blocks trước để quyết định canSelect theo slot
+      const blocks = getDayBlocks ? getDayBlocks(date) : [];
+      const hasSelectableSlot = blocks.some(
+        (b) => b.status === "AVAILABLE" || b.status === "SELECTED"
+      );
+
+      const canSelect =
+        !readOnly &&
+        isCurrentMonth &&
+        isAvailable &&
+        isValid &&
+        hasSelectableSlot;
 
       days.push({
         date,
@@ -125,6 +161,7 @@ const Calendar: React.FC<CalendarProps> = ({
         isSelected,
         isToday,
         canSelect,
+        blocks,
       });
     }
 
@@ -132,6 +169,7 @@ const Calendar: React.FC<CalendarProps> = ({
   };
 
   const handleDateClick = (date: Date) => {
+    if (readOnly) return; // chỉ xem
     if (isDateInTutorSchedule(date) && isDateValid(date)) {
       // Sử dụng local timezone để tránh lỗi timezone
       const year = date.getFullYear();
@@ -159,6 +197,161 @@ const Calendar: React.FC<CalendarProps> = ({
   };
 
   const days = generateCalendarDays();
+
+  const renderBlockRow = (b: DayBlock, i: number) => {
+    if (b.status === "OFF") return null; // không render OFF trong ô ngày
+    const color =
+      b.status === "BUSY"
+        ? "bg-red-50 text-red-700 border border-red-200"
+        : b.status === "AVAILABLE"
+        ? "bg-green-50 text-green-700 border border-green-200"
+        : b.status === "SELECTED"
+        ? "bg-blue-50 text-blue-700 border border-blue-200"
+        : "bg-gray-50 text-gray-600 border border-gray-200";
+    const label = b.from && b.to ? `${b.from}-${b.to}` : "";
+    return (
+      <div
+        key={i}
+        className={`px-1 rounded text-[10px] leading-4 truncate ${color}`}
+      >
+        {label}
+      </div>
+    );
+  };
+
+  const calendarBody = (
+    <>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <button
+          type="button"
+          onClick={goToPreviousMonth}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+        >
+          <svg
+            className="w-5 h-5 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+        <h3 className="text-lg font-semibold text-gray-900">
+          {getVietnameseMonth(currentMonth)} {currentMonth.getFullYear()}
+        </h3>
+        <button
+          type="button"
+          onClick={goToNextMonth}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+        >
+          <svg
+            className="w-5 h-5 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+        </button>
+      </div>
+      {/* Day Headers */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {["CN", "T2", "T3", "T4", "T5", "T6", "T7"].map((day) => (
+          <div
+            key={day}
+            className="text-center text-sm font-medium text-gray-500 py-2"
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+      {/* Calendar Days */}
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day, index) => (
+          <button
+            key={index}
+            type="button"
+            onClick={() => handleDateClick(day.date)}
+            disabled={!day.canSelect}
+            className={`
+              text-left py-2 px-1 text-sm rounded-md transition-colors min-h-[64px]
+              ${
+                !day.isCurrentMonth
+                  ? "text-gray-300 cursor-not-allowed"
+                  : !day.canSelect
+                  ? "text-gray-400 bg-gray-50 cursor-not-allowed"
+                  : day.isSelected
+                  ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200 cursor-pointer"
+                  : day.isToday
+                  ? "bg-blue-50/60 text-blue-700 cursor-pointer"
+                  : "text-gray-700 hover:bg-gray-50 cursor-pointer"
+              }
+            `}
+          >
+            <div className="font-medium mb-0.5">{day.day}</div>
+            {Array.isArray((day as any).blocks) &&
+              (day as any).blocks.length > 0 && (
+                <div className="space-y-0.5">
+                  {((day as any).blocks as DayBlock[])
+                    .filter((b) => b.status !== "OFF")
+                    .slice(0, 3)
+                    .map((b, i) => renderBlockRow(b, i))}
+                  {((day as any).blocks as DayBlock[]).filter(
+                    (b) => b.status !== "OFF"
+                  ).length > 3 && (
+                    <div className="text-[10px] text-gray-500">
+                      +
+                      {((day as any).blocks as DayBlock[]).filter(
+                        (b) => b.status !== "OFF"
+                      ).length - 3}{" "}
+                      nữa
+                    </div>
+                  )}
+                </div>
+              )}
+          </button>
+        ))}
+      </div>
+      {/* Footer legend */}
+      <div className="mt-4 pt-3 border-t border-gray-200">
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-blue-600 rounded-full mr-1"></div>
+              <span>Ngày đã chọn</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-blue-100 rounded-full mr-1"></div>
+              <span>Hôm nay</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div>
+              <span>Trống</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-red-500 rounded-full mr-1"></div>
+              <span>Đã kín</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  if (renderInline) {
+    return <div className="bg-white">{calendarBody}</div>;
+  }
 
   return (
     <div className="relative">
@@ -196,122 +389,20 @@ const Calendar: React.FC<CalendarProps> = ({
       {/* Calendar Dropdown */}
       {isOpen && (
         <>
-          {/* Backdrop */}
           <div
             className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
-
-          {/* Calendar */}
           <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 p-4 min-w-[320px]">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
+            {calendarBody}
+            <div className="mt-2 text-right">
               <button
                 type="button"
-                onClick={goToPreviousMonth}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                onClick={() => setIsOpen(false)}
+                className="text-xs text-gray-500 hover:text-gray-700"
               >
-                <svg
-                  className="w-5 h-5 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
+                Đóng
               </button>
-
-              <h3 className="text-lg font-semibold text-gray-900">
-                {getVietnameseMonth(currentMonth)} {currentMonth.getFullYear()}
-              </h3>
-
-              <button
-                type="button"
-                onClick={goToNextMonth}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <svg
-                  className="w-5 h-5 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Day Headers */}
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {["CN", "T2", "T3", "T4", "T5", "T6", "T7"].map((day) => (
-                <div
-                  key={day}
-                  className="text-center text-sm font-medium text-gray-500 py-2"
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            {/* Calendar Days */}
-            <div className="grid grid-cols-7 gap-1">
-              {days.map((day, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => handleDateClick(day.date)}
-                  disabled={!day.canSelect}
-                  className={`
-                    text-center py-2 text-sm rounded-md transition-colors
-                    ${
-                      !day.isCurrentMonth
-                        ? "text-gray-300 cursor-not-allowed"
-                        : !day.canSelect
-                        ? "text-gray-400 bg-gray-100 cursor-not-allowed"
-                        : day.isSelected
-                        ? "bg-blue-600 text-white hover:bg-blue-700"
-                        : day.isToday
-                        ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }
-                  `}
-                >
-                  {day.day}
-                </button>
-              ))}
-            </div>
-
-            {/* Footer */}
-            <div className="mt-4 pt-3 border-t border-gray-200">
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-blue-600 rounded-full mr-1"></div>
-                    <span>Đã chọn</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-blue-100 rounded-full mr-1"></div>
-                    <span>Hôm nay</span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  Đóng
-                </button>
-              </div>
             </div>
           </div>
         </>

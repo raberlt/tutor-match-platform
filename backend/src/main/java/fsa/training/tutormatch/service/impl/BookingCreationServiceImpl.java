@@ -4,7 +4,9 @@ import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.entity.*;
 import fsa.training.tutormatch.enums.BookingStatus;
 import fsa.training.tutormatch.enums.BookingType;
+import fsa.training.tutormatch.enums.SessionStatus;
 import fsa.training.tutormatch.repository.BookingRepository;
+import fsa.training.tutormatch.repository.SessionRepository;
 import fsa.training.tutormatch.repository.SubjectRepository;
 import fsa.training.tutormatch.repository.TutorProfileRepository;
 import fsa.training.tutormatch.repository.UserRepository;
@@ -36,12 +38,15 @@ public class BookingCreationServiceImpl implements BookingCreationService {
     private SubjectRepository subjectRepository;
     
     @Autowired
+    private SessionRepository sessionRepository;
+    
+    @Autowired
     private BookingValidationService validationService;
     
     @Override
     @PreAuthorize("hasRole('STUDENT')")
     @Transactional
-    public Booking createTrialBooking(String studentUsername, BookingRequestCreateDTO request) {
+    public Booking createSingleBooking(String studentUsername, BookingRequestCreateDTO request) {
         validationService.validateBookingRequest(request);
         
         Booking booking = createBaseBooking(studentUsername, request);
@@ -53,36 +58,14 @@ public class BookingCreationServiceImpl implements BookingCreationService {
     @Override
     @PreAuthorize("hasRole('STUDENT')")
     @Transactional
-    public Booking createMonthlyBooking(String studentUsername, BookingRequestCreateDTO request) {
-        validationService.validateBookingRequest(request);
-        
-        Booking booking = createBaseBooking(studentUsername, request);
-        booking.setBookingType(BookingType.SINGLE);
-        
-        return bookingRepository.save(booking);
-    }
-    
-    @Override
-    @PreAuthorize("hasRole('STUDENT')")
-    @Transactional
-    public Booking createContractBooking(String studentUsername, BookingRequestCreateDTO request) {
+    public Booking createPackageBooking(String studentUsername, BookingRequestCreateDTO request) {
         validationService.validateBookingRequest(request);
         
         Booking booking = createBaseBooking(studentUsername, request);
         
-        // Set contract-specific details
+        // Set package-specific details
         booking.setBookingType(BookingType.PACKAGE);
-        if (request.getContractDuration() != null) {
-            if (request.getContractDuration() != 3 && request.getContractDuration() != 6) {
-                throw new IllegalArgumentException("Contract duration must be 3 or 6 months");
-            }
-        }
-        
-        booking.setContractDuration(request.getContractDuration());
-        booking.setSessionsPerWeek(request.getSessionsPerWeek());
         booking.setTotalSessions(request.getTotalSessions());
-        booking.setHourlyRate(request.getHourlyRate());
-        booking.setSessionFee(request.getSessionFee());
         booking.setTotalAmount(request.getTotalAmount());
         
         return bookingRepository.save(booking);
@@ -97,13 +80,9 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         
         switch (bookingType) {
             case "SINGLE":
-                return createTrialBooking(studentUsername, request);
-            case "MONTHLY":
-                return createMonthlyBooking(studentUsername, request);
-            case "CONTRACT":
-            case "CONTRACT_3":
-            case "CONTRACT_6":
-                return createContractBooking(studentUsername, request);
+                return createSingleBooking(studentUsername, request);
+            case "PACKAGE":
+                return createPackageBooking(studentUsername, request);
             default:
                 throw new IllegalArgumentException("Unknown booking type: " + bookingType);
         }
@@ -158,21 +137,30 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         booking.setStudent(studentUser);
         booking.setTutor(tutor);
         booking.setSubject(subject);
-        booking.setDate(bookingDate);
-        booking.setFromTime(fromLocalTime);
-        booking.setToTime(toLocalTime);
         booking.setNote(request.getNote());
         booking.setStatus(BookingStatus.PAYMENT_PENDING);
         
         // Set financial fields - required for database constraints
-        booking.setHourlyRate(request.getHourlyRate() != null ? request.getHourlyRate() : BigDecimal.ZERO);
-        booking.setSessionFee(request.getSessionFee() != null ? request.getSessionFee() : BigDecimal.ZERO);
         booking.setTotalAmount(request.getTotalAmount() != null ? request.getTotalAmount() : BigDecimal.ZERO);
         
         System.out.println("=== DEBUG: Booking financial fields ===");
-        System.out.println("hourlyRate: " + booking.getHourlyRate());
-        System.out.println("sessionFee: " + booking.getSessionFee());
         System.out.println("totalAmount: " + booking.getTotalAmount());
+
+        // Save booking first to get ID
+        booking = bookingRepository.save(booking);
+        
+        // Create corresponding session
+        Session session = new Session();
+        session.setBooking(booking);
+        session.setSessionDate(bookingDate);
+        session.setStartTime(fromLocalTime);
+        session.setEndTime(toLocalTime);
+        session.setStatus(SessionStatus.PAYMENT_PENDING);
+        session.setRescheduleCount(0);
+        
+        sessionRepository.save(session);
+        
+        System.out.println("=== DEBUG: Created session for booking " + booking.getId() + " ===");
 
         return booking;
     }

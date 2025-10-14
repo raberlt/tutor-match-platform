@@ -68,11 +68,16 @@ public class AdminDashboardController {
             bookingStats.put("totalBookings", bookingRepository.count());
             bookingStats.put("pendingBookings", bookingRepository.countByStatus(BookingStatus.PAYMENT_PENDING));
             bookingStats.put("confirmedBookings", bookingRepository.countByStatus(BookingStatus.PAYMENT_COMPLETED));
-            bookingStats.put("completedBookings", bookingRepository.countByStatus(BookingStatus.COMPLETED));
+            bookingStats.put("completedBookings", bookingRepository.countByStatus(BookingStatus.TUTOR_APPROVED));
             
-            // Today's bookings
+            // Today's bookings - count bookings with sessions today
             LocalDate today = LocalDate.now();
-            bookingStats.put("todayBookings", bookingRepository.countByDate(today));
+            long todayBookings = bookingRepository.findAll().stream()
+                .filter(booking -> booking.getSessions() != null && 
+                                  booking.getSessions().stream()
+                                          .anyMatch(session -> session.getSessionDate().equals(today)))
+                .count();
+            bookingStats.put("todayBookings", todayBookings);
             
             overview.put("bookings", bookingStats);
 

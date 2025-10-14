@@ -53,10 +53,12 @@ export const getHoursUntilSession = (
       return 0;
     }
 
-    const sessionDateTime = new Date(`${sessionDate}T${startTime}:00`);
+    // startTime có thể đã ở dạng HH:mm hoặc HH:mm:ss -> không thêm ":00"
+    const sessionDateTime = new Date(`${sessionDate}T${startTime}`);
     const now = new Date();
     const diffMs = sessionDateTime.getTime() - now.getTime();
-    return diffMs / (1000 * 60 * 60); // Convert to hours
+    // Số giờ còn lại (làm tròn lên), không âm
+    return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60)));
   } catch (error) {
     console.error("Error calculating hours until session:", error);
     return 0;
@@ -83,10 +85,12 @@ export const getHoursSinceSessionEnd = (
       return 0;
     }
 
-    const sessionDateTime = new Date(`${sessionDate}T${endTime}:00`);
+    // endTime có thể đã ở dạng HH:mm hoặc HH:mm:ss -> không thêm ":00"
+    const sessionDateTime = new Date(`${sessionDate}T${endTime}`);
     const now = new Date();
     const diffMs = now.getTime() - sessionDateTime.getTime();
-    return diffMs / (1000 * 60 * 60); // Convert to hours
+    // Số giờ đã trôi qua (làm tròn xuống, không âm)
+    return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)));
   } catch (error) {
     console.error("Error calculating hours since session end:", error);
     return 0;
@@ -131,10 +135,14 @@ export const getBookingActions = (booking: any): BookingActionConfig => {
 
   // Handle missing date/time gracefully
   const sessionDate = booking.date || booking.sessionDate || "";
-  const sessionTime =
-    booking.time || booking.sessionTime || (booking.fromTime && booking.toTime)
-      ? `${booking.fromTime}-${booking.toTime}`
-      : "";
+  // Ưu tiên: booking.time -> booking.sessionTime -> kết hợp fromTime-toTime
+  const sessionTime = booking.time
+    ? booking.time
+    : booking.sessionTime
+    ? booking.sessionTime
+    : booking.fromTime && booking.toTime
+    ? `${booking.fromTime}-${booking.toTime}`
+    : "";
 
   const hoursUntilSession = getHoursUntilSession(sessionDate, sessionTime);
   const hoursSinceEnd = getHoursSinceSessionEnd(sessionDate, sessionTime);

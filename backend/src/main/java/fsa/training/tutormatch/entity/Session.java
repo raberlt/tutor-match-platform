@@ -11,12 +11,13 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 @Entity
 @Data
 @Table(name = "sessions")
-@EqualsAndHashCode(exclude = {"booking"})
-@ToString(exclude = {"booking"})
+@EqualsAndHashCode(exclude = {"booking", "changeHistory"})
+@ToString(exclude = {"booking", "changeHistory"})
 public class Session {
     
     @Id
@@ -41,7 +42,7 @@ public class Session {
     // Status
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private SessionStatus status = SessionStatus.SCHEDULED;
+    private SessionStatus status = SessionStatus.PAYMENT_PENDING;
     
     // Timestamps
     @CreationTimestamp
@@ -52,6 +53,10 @@ public class Session {
     @Column(name = "updated_at")
     private ZonedDateTime updatedAt;
     
-    @Column(name = "completed_at")
-    private ZonedDateTime completedAt;
+    @Column(name = "reschedule_count", nullable = false)
+    private Integer rescheduleCount = 0;
+    
+    // One-to-Many relationship with session change history
+    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<SessionChangeHistory> changeHistory;
 }

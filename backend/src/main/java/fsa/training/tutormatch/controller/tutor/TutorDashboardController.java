@@ -55,8 +55,13 @@ public class TutorDashboardController {
             // Today's date
             LocalDate today = LocalDate.now();
 
-            // Count statistics
-            long todayClasses = bookingRepository.countByDate(today);
+            // Count statistics - sử dụng sessions thay vì booking date
+            long todayClasses = bookingRepository.findByTutor(tutor, org.springframework.data.domain.Pageable.unpaged()).getContent()
+                .stream()
+                .filter(booking -> booking.getSessions() != null && 
+                                  booking.getSessions().stream()
+                                          .anyMatch(session -> session.getSessionDate().equals(today)))
+                .count();
             long pendingRequests = bookingRepository.findByTutorAndStatus(tutor, BookingStatus.PAYMENT_PENDING).size();
             long confirmedClasses = bookingRepository.findByTutorAndStatus(tutor, BookingStatus.PAYMENT_COMPLETED).size();
 
@@ -190,7 +195,14 @@ public class TutorDashboardController {
             if (fromDate != null && toDate != null) {
                 LocalDate startDate = LocalDate.parse(fromDate);
                 LocalDate endDate = LocalDate.parse(toDate);
-                schedule = bookingRepository.findByTutorAndDateBetween(tutor, startDate, endDate);
+                // Filter bookings by session date range
+                schedule = bookingRepository.findByTutor(tutor, org.springframework.data.domain.Pageable.unpaged()).getContent()
+                    .stream()
+                    .filter(booking -> booking.getSessions() != null && 
+                                      booking.getSessions().stream()
+                                              .anyMatch(session -> !session.getSessionDate().isBefore(startDate) && 
+                                                                  !session.getSessionDate().isAfter(endDate)))
+                    .collect(Collectors.toList());
             } else {
                 schedule = bookingRepository.findByTutorAndStatus(tutor, BookingStatus.TUTOR_APPROVED);
             }
@@ -221,13 +233,20 @@ public class TutorDashboardController {
         bookingMap.put("id", booking.getId());
         bookingMap.put("status", booking.getStatus().toString());
         bookingMap.put("bookingType", booking.getBookingType().toString());
-        bookingMap.put("date", booking.getDate());
-        bookingMap.put("fromTime", booking.getFromTime());
-        bookingMap.put("toTime", booking.getToTime());
+        // Get date/time from first session if available
+        if (booking.getSessions() != null && !booking.getSessions().isEmpty()) {
+            var firstSession = booking.getSessions().get(0);
+            bookingMap.put("date", firstSession.getSessionDate());
+            bookingMap.put("fromTime", firstSession.getStartTime());
+            bookingMap.put("toTime", firstSession.getEndTime());
+        } else {
+            bookingMap.put("date", null);
+            bookingMap.put("fromTime", null);
+            bookingMap.put("toTime", null);
+        }
         bookingMap.put("note", booking.getNote());
         bookingMap.put("totalAmount", booking.getTotalAmount());
-        bookingMap.put("contractDuration", booking.getContractDuration());
-        bookingMap.put("sessionsPerWeek", booking.getSessionsPerWeek());
+        bookingMap.put("totalSessions", booking.getTotalSessions());
 
         // Student info (minimal)
         Map<String, Object> studentInfo = new HashMap<>();

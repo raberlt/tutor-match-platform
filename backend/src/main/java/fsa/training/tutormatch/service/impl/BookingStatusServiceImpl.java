@@ -97,7 +97,7 @@ public class BookingStatusServiceImpl implements BookingStatusService {
         validationService.validateBookingStatusForAction(booking, "complete");
         
         // Update status
-        booking.setStatus(BookingStatus.COMPLETED);
+        booking.setStatus(BookingStatus.TUTOR_APPROVED);
         
         return bookingRepository.save(booking);
     }
@@ -122,13 +122,11 @@ public class BookingStatusServiceImpl implements BookingStatusService {
             case PAYMENT_COMPLETED:
                 return newStatus == BookingStatus.TUTOR_APPROVED || newStatus == BookingStatus.CANCELLED;
             case TUTOR_APPROVED:
-                return newStatus == BookingStatus.UPCOMING || newStatus == BookingStatus.CANCELLED;
-            case UPCOMING:
-                return newStatus == BookingStatus.IN_PROGRESS || newStatus == BookingStatus.CANCELLED;
-            case IN_PROGRESS:
-                return newStatus == BookingStatus.COMPLETED || newStatus == BookingStatus.CANCELLED;
-            case COMPLETED:
-                return false; // No transitions from completed
+                return newStatus == BookingStatus.TUTOR_APPROVED || newStatus == BookingStatus.CANCELLED;
+            case TUTOR_REJECTED:
+                return false; // No transitions from rejected
+            case REFUNDED:
+                return false; // No transitions from refunded
             case CANCELLED:
                 return false; // No transitions from cancelled
             default:

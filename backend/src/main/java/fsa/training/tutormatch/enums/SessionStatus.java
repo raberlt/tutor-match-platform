@@ -1,11 +1,14 @@
 package fsa.training.tutormatch.enums;
 
 public enum SessionStatus {
-    SCHEDULED("Đã lên lịch"),
+    PAYMENT_PENDING("Chờ thanh toán"),
+    PAYMENT_COMPLETED("Đã thanh toán"),
+    UPCOMING("Sắp diễn ra"),
     IN_PROGRESS("Đang diễn ra"),
-    COMPLETED("Đã hoàn thành"),
+    COMPLETED("Hoàn thành"),
     CANCELLED("Đã hủy"),
-    NO_SHOW("Vắng mặt");
+    REFUNDED("Đã hoàn tiền"),
+    RESCHEDULED("Đã đổi lịch");
     
     private final String displayName;
     

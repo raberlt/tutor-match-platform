@@ -26,15 +26,47 @@ export type BookingStatus =
   | "PAYMENT_COMPLETED"
   | "TUTOR_APPROVED"
   | "TUTOR_REJECTED"
+  | "CANCELLED"
+  | "REFUNDED";
+
+export type BookingType = "SINGLE" | "PACKAGE";
+
+// Session Types - Mới
+export type SessionStatus =
+  | "PAYMENT_PENDING"
+  | "PAYMENT_COMPLETED"
   | "UPCOMING"
   | "IN_PROGRESS"
   | "COMPLETED"
   | "CANCELLED"
-  | "REFUNDED";
-
-export type BookingType = "TRIAL" | "SINGLE_SESSION" | "PACKAGE";
+  | "REFUNDED"
+  | "RESCHEDULED";
 
 export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+
+// Session interfaces
+export interface Session {
+  id: number;
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
+  status: SessionStatus;
+  rescheduleCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SessionChangeHistory {
+  id: number;
+  sessionId: number;
+  oldDate: string;
+  newDate: string;
+  oldStartTime: string;
+  newStartTime: string;
+  changedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface BookingRequestCreateDTO {
   bookingType: BookingType;
@@ -301,16 +333,22 @@ export interface BookingRequestDTO {
   id: number;
   status: BookingStatus;
   bookingType: BookingType;
-  date: string;
-  fromTime: string;
-  toTime: string;
   note?: string;
   totalAmount?: number;
-  contractDuration?: number;
-  sessionsPerWeek?: number;
+  totalSessions?: number;
   student: StudentInfo;
   tutor: TutorInfo;
   subject: SubjectInfo;
+  sessions: SessionInfo[];
+}
+
+export interface SessionInfo {
+  id: number;
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
+  status: SessionStatus;
+  rescheduleCount: number;
 }
 
 // Tutor Search Types

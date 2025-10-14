@@ -35,7 +35,7 @@ public class SessionServiceImpl implements SessionService {
         session.setSessionDate(sessionDTO.getSessionDate());
         session.setStartTime(sessionDTO.getStartTime());
         session.setEndTime(sessionDTO.getEndTime());
-        session.setStatus(sessionDTO.getStatus() != null ? sessionDTO.getStatus() : SessionStatus.SCHEDULED);
+        session.setStatus(sessionDTO.getStatus() != null ? sessionDTO.getStatus() : SessionStatus.PAYMENT_PENDING);
         
         // Set booking reference
         if (sessionDTO.getBookingId() != null) {
@@ -61,7 +61,7 @@ public class SessionServiceImpl implements SessionService {
             session.setSessionDate(sessionDTO.getSessionDate());
             session.setStartTime(sessionDTO.getStartTime());
             session.setEndTime(sessionDTO.getEndTime());
-            session.setStatus(sessionDTO.getStatus() != null ? sessionDTO.getStatus() : SessionStatus.SCHEDULED);
+            session.setStatus(sessionDTO.getStatus() != null ? sessionDTO.getStatus() : SessionStatus.PAYMENT_PENDING);
             return session;
         }).toList();
         
@@ -81,9 +81,9 @@ public class SessionServiceImpl implements SessionService {
         
         session.setStatus(status);
         
-        // Set completed_at timestamp if status is COMPLETED
-        if (status == SessionStatus.COMPLETED) {
-            session.setCompletedAt(ZonedDateTime.now());
+        // Update reschedule count if status is RESCHEDULED
+        if (status == SessionStatus.RESCHEDULED) {
+            session.setRescheduleCount(session.getRescheduleCount() + 1);
         }
         
         Session updatedSession = sessionRepository.save(session);

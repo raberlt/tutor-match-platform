@@ -350,8 +350,6 @@ const UnifiedBookingNew: React.FC = () => {
           time: formData.timeSlot,
           bookingType: "SINGLE",
           note: formData.note,
-          hourlyRate: Number(selectedSubject?.fees || 0),
-          sessionFee: Number(selectedSubject?.fees || 0),
           totalAmount: Number(selectedSubject?.fees || 0),
           paymentMethod: "CREDIT", // Default payment method
           couponId: null,

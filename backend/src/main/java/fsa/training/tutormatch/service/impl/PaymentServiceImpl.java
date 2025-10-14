@@ -3,6 +3,7 @@ package fsa.training.tutormatch.service.impl;
 import fsa.training.tutormatch.entity.*;
 import fsa.training.tutormatch.enums.PaymentMethod;
 import fsa.training.tutormatch.enums.PaymentStatus;
+import fsa.training.tutormatch.enums.SessionStatus;
 import fsa.training.tutormatch.repository.*;
 import fsa.training.tutormatch.service.*;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final CreditService creditService;
     private final SePayService sePayService;
     private final TransactionService transactionService;
+    private final SessionService sessionService;
     
     @Override
     @Transactional
@@ -125,6 +127,9 @@ public class PaymentServiceImpl implements PaymentService {
             // Nếu muốn hiển thị rõ đã thanh toán, có thể đặt trạng thái nghiệp vụ tương ứng
             booking.setStatus(fsa.training.tutormatch.enums.BookingStatus.PAYMENT_COMPLETED);
             bookingRepository.save(booking);
+            
+            // Update all sessions status to PAYMENT_COMPLETED
+            updateSessionsStatusAfterPayment(booking);
         }
 
         Payment savedPayment = paymentRepository.save(payment);
@@ -209,6 +214,9 @@ public class PaymentServiceImpl implements PaymentService {
                 booking.setStatus(fsa.training.tutormatch.enums.BookingStatus.PAYMENT_COMPLETED);
                 bookingRepository.save(booking);
                 
+                // Update all sessions status to PAYMENT_COMPLETED
+                updateSessionsStatusAfterPayment(booking);
+                
             } else if ("FAILED".equals(statusResponse.getStatus())) {
                 payment.setStatus(PaymentStatus.FAILED);
                 payment.setGatewayResponse("Payment failed via SePay: " + statusResponse.getMessage());
@@ -249,6 +257,9 @@ public class PaymentServiceImpl implements PaymentService {
             booking.setPaymentStatus(PaymentStatus.COMPLETED);
             booking.setStatus(fsa.training.tutormatch.enums.BookingStatus.PAYMENT_COMPLETED);
             bookingRepository.save(booking);
+            
+            // Update all sessions status to PAYMENT_COMPLETED
+            updateSessionsStatusAfterPayment(booking);
             
         } else if ("FAILED".equals(status)) {
             payment.setStatus(PaymentStatus.FAILED);
@@ -396,5 +407,22 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public BigDecimal sumAmountByStatus(PaymentStatus status) {
         return paymentRepository.sumAmountByStatus(status);
+    }
+    
+    /**
+     * Update all sessions status to PAYMENT_COMPLETED when payment is completed
+     */
+    private void updateSessionsStatusAfterPayment(Booking booking) {
+        if (booking.getSessions() != null && !booking.getSessions().isEmpty()) {
+            log.info("Updating {} sessions status to PAYMENT_COMPLETED for booking ID: {}", 
+                    booking.getSessions().size(), booking.getId());
+            
+            for (Session session : booking.getSessions()) {
+                if (session.getStatus() == SessionStatus.PAYMENT_PENDING) {
+                    sessionService.updateSessionStatus(session.getId(), SessionStatus.PAYMENT_COMPLETED);
+                    log.info("Updated session ID: {} status to PAYMENT_COMPLETED", session.getId());
+                }
+            }
+        }
     }
 }

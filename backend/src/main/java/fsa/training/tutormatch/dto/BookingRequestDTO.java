@@ -3,6 +3,7 @@ package fsa.training.tutormatch.dto;
 import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Data
 public class BookingRequestDTO {
@@ -14,8 +15,7 @@ public class BookingRequestDTO {
     private LocalTime toTime;
     private String note;
     private Double totalAmount;
-    private Integer contractDuration;
-    private Integer sessionsPerWeek;
+    private Integer totalSessions;
     
     // Student info (minimal)
     private StudentInfo student;
@@ -25,6 +25,9 @@ public class BookingRequestDTO {
     
     // Subject info
     private SubjectInfo subject;
+    
+    // Sessions info
+    private List<SessionInfo> sessions;
     
     @Data
     public static class StudentInfo {
@@ -49,5 +52,15 @@ public class BookingRequestDTO {
     public static class SubjectInfo {
         private Integer id;
         private String name;
+    }
+    
+    @Data
+    public static class SessionInfo {
+        private Long id;
+        private LocalDate sessionDate;
+        private LocalTime startTime;
+        private LocalTime endTime;
+        private String status;
+        private Integer rescheduleCount;
     }
 } 

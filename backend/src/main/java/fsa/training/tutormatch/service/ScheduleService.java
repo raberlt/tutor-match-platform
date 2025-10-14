@@ -77,14 +77,15 @@ public class ScheduleService {
         }
 
         // Get existing bookings for this date and tutor (CONFIRMED or PENDING status)
-        List<Booking> existingBookings = bookingRepository.findByTutorUserAndDate(tutor, bookingDate)
+        List<Booking> existingBookings = bookingRepository.findByTutorUser(tutor, org.springframework.data.domain.Pageable.unpaged()).getContent()
             .stream()
             .filter(booking -> 
-                booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || 
-                booking.getStatus() == BookingStatus.TUTOR_APPROVED ||
-                booking.getStatus() == BookingStatus.UPCOMING ||
-                booking.getStatus() == BookingStatus.IN_PROGRESS ||
-                booking.getStatus() == BookingStatus.PAYMENT_PENDING
+                booking.getSessions() != null && 
+                booking.getSessions().stream()
+                        .anyMatch(session -> session.getSessionDate().equals(bookingDate)) &&
+                (booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || 
+                 booking.getStatus() == BookingStatus.TUTOR_APPROVED ||
+                 booking.getStatus() == BookingStatus.PAYMENT_PENDING)
             )
             .toList();
 
@@ -93,8 +94,13 @@ public class ScheduleService {
         for (ApplicationSchedule schedule : daySchedules) {
             boolean isBooked = existingBookings.stream()
                 .anyMatch(booking -> 
-                    booking.getFromTime().equals(schedule.getFromTime()) &&
-                    booking.getToTime().equals(schedule.getToTime())
+                    // Check if any session conflicts with this schedule
+                    booking.getSessions() != null && booking.getSessions().stream()
+                        .anyMatch(session -> 
+                            session.getSessionDate().equals(bookingDate) &&
+                            session.getStartTime().equals(schedule.getFromTime()) &&
+                            session.getEndTime().equals(schedule.getToTime())
+                        )
                 );
             
             if (!isBooked) {

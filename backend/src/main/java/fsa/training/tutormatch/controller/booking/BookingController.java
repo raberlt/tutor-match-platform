@@ -15,6 +15,11 @@ import fsa.training.tutormatch.enums.PaymentMethod;
 import fsa.training.tutormatch.enums.PaymentStatus;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -609,18 +614,33 @@ public class BookingController {
         dto.setId(booking.getId());
         dto.setStatus(booking.getStatus() != null ? booking.getStatus().toString() : "UNKNOWN");
         dto.setBookingType(booking.getBookingType() != null ? booking.getBookingType().toString() : "UNKNOWN");
-        dto.setDate(booking.getDate());
-        dto.setFromTime(booking.getFromTime());
-        dto.setToTime(booking.getToTime());
+        // Get date/time from first session if available
+        if (booking.getSessions() != null && !booking.getSessions().isEmpty()) {
+            var firstSession = booking.getSessions().get(0);
+            dto.setDate(firstSession.getSessionDate());
+            dto.setFromTime(firstSession.getStartTime());
+            dto.setToTime(firstSession.getEndTime());
+        } else {
+            dto.setDate(null);
+            dto.setFromTime(null);
+            dto.setToTime(null);
+        }
         dto.setNote(booking.getNote());
         
-        // Safe conversion for totalAmount
+        // Set financial fields
         if (booking.getTotalAmount() != null) {
             dto.setTotalAmount(booking.getTotalAmount().doubleValue());
         } else {
             System.out.println("Warning: totalAmount is null for booking " + booking.getId());
             dto.setTotalAmount(0.0);
         }
+        
+        if (booking.getTotalSessions() != null) {
+            dto.setTotalSessions(booking.getTotalSessions());
+        } else {
+            dto.setTotalSessions(booking.getSessions() != null ? booking.getSessions().size() : 0);
+        }
+        
 
         // Student info (minimal)
         if (booking.getStudent() != null) {
@@ -665,6 +685,27 @@ public class BookingController {
             dto.setSubject(subjectInfo);
         } else {
             System.out.println("Warning: Subject is null for booking " + booking.getId());
+        }
+
+        // Sessions info
+        if (booking.getSessions() != null && !booking.getSessions().isEmpty()) {
+            System.out.println("Processing " + booking.getSessions().size() + " sessions for booking " + booking.getId());
+            List<BookingRequestDTO.SessionInfo> sessionInfos = booking.getSessions().stream()
+                    .map(session -> {
+                        BookingRequestDTO.SessionInfo sessionInfo = new BookingRequestDTO.SessionInfo();
+                        sessionInfo.setId(session.getId());
+                        sessionInfo.setSessionDate(session.getSessionDate());
+                        sessionInfo.setStartTime(session.getStartTime());
+                        sessionInfo.setEndTime(session.getEndTime());
+                        sessionInfo.setStatus(session.getStatus() != null ? session.getStatus().toString() : "UNKNOWN");
+                        sessionInfo.setRescheduleCount(session.getRescheduleCount());
+                        return sessionInfo;
+                    })
+                    .collect(Collectors.toList());
+            dto.setSessions(sessionInfos);
+        } else {
+            System.out.println("Warning: No sessions found for booking " + booking.getId());
+            dto.setSessions(new ArrayList<>());
         }
 
         System.out.println("Successfully created DTO for booking " + booking.getId());

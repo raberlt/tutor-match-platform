@@ -2,8 +2,7 @@ package fsa.training.tutormatch.enums;
 
 public enum BookingType {
     SINGLE("Học đơn"), 
-    PACKAGE("Học theo gói"),
-    TRIAL("Học thử");
+    PACKAGE("Học theo gói");
     
     private final String displayName;
     
@@ -22,9 +21,5 @@ public enum BookingType {
     
     public boolean isPackage() {
         return this == PACKAGE;
-    }
-    
-    public boolean isTrial() {
-        return this == TRIAL;
     }
 }

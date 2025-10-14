@@ -2,7 +2,8 @@ package fsa.training.tutormatch.service.impl;
 
 import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.entity.Booking;
-import fsa.training.tutormatch.enums.BookingStatus;import fsa.training.tutormatch.entity.User;
+import fsa.training.tutormatch.enums.BookingStatus;
+import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.enums.BookingType;
 import fsa.training.tutormatch.service.BookingValidationService;
 import org.springframework.stereotype.Service;
@@ -31,9 +32,8 @@ public class BookingValidationServiceImpl implements BookingValidationService {
         validateTimeSlot(request.getTime());
         validateBookingType(request.getBookingType());
         
-        if ("CONTRACT".equals(request.getBookingType()) || 
-            request.getBookingType().startsWith("CONTRACT")) {
-            validateContractDetails(request);
+        if ("PACKAGE".equals(request.getBookingType())) {
+            validatePackageDetails(request);
         }
     }
     
@@ -93,12 +93,12 @@ public class BookingValidationServiceImpl implements BookingValidationService {
                 }
                 break;
             case "cancel":
-                if (booking.getStatus() == BookingStatus.COMPLETED) {
+                if (booking.getStatus() == BookingStatus.TUTOR_APPROVED) {
                     throw new IllegalArgumentException("Cannot cancel completed bookings");
                 }
                 break;
             case "complete":
-                if (booking.getStatus() != BookingStatus.PAYMENT_COMPLETED && booking.getStatus() != BookingStatus.TUTOR_APPROVED && booking.getStatus() != BookingStatus.UPCOMING && booking.getStatus() != BookingStatus.IN_PROGRESS) {
+                if (booking.getStatus() != BookingStatus.PAYMENT_COMPLETED && booking.getStatus() != BookingStatus.TUTOR_APPROVED && booking.getStatus() != BookingStatus.TUTOR_APPROVED && booking.getStatus() != BookingStatus.TUTOR_APPROVED) {
                     throw new IllegalArgumentException("Can only complete confirmed/in-progress bookings");
                 }
                 break;
@@ -142,13 +142,9 @@ public class BookingValidationServiceImpl implements BookingValidationService {
         }
     }
     
-    private void validateContractDetails(BookingRequestCreateDTO request) {
-        if (request.getContractDuration() == null || request.getContractDuration() <= 0) {
-            throw new IllegalArgumentException("Contract duration must be positive");
-        }
-        
-        if (request.getSessionsPerWeek() == null || request.getSessionsPerWeek() <= 0) {
-            throw new IllegalArgumentException("Sessions per week must be positive");
+    private void validatePackageDetails(BookingRequestCreateDTO request) {
+        if (request.getTotalSessions() == null || request.getTotalSessions() <= 0) {
+            throw new IllegalArgumentException("Total sessions must be positive");
         }
         
         if (request.getTotalAmount() == null || request.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {

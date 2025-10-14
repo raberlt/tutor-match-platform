@@ -33,9 +33,12 @@ public class StatisticsService {
         LocalDate today = LocalDate.now();
 
         // Count today's confirmed bookings
-        long todayCount = bookingRepository.findByTutorUserAndDate(tutor, today)
+        long todayCount = bookingRepository.findByTutorUser(tutor, org.springframework.data.domain.Pageable.unpaged()).getContent()
             .stream()
-            .filter(booking -> booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || booking.getStatus() == BookingStatus.TUTOR_APPROVED || booking.getStatus() == BookingStatus.UPCOMING)
+            .filter(booking -> booking.getSessions() != null && 
+                              booking.getSessions().stream()
+                                      .anyMatch(session -> session.getSessionDate().equals(today)) &&
+                              (booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || booking.getStatus() == BookingStatus.TUTOR_APPROVED))
             .count();
 
         // Count pending bookings
@@ -46,9 +49,13 @@ public class StatisticsService {
         cal.add(Calendar.DAY_OF_YEAR, 7);
         LocalDate nextWeek = LocalDate.now().plusWeeks(1);
         
-        long upcomingCount = bookingRepository.findByTutorUserAndDateBetween(tutor, today, nextWeek)
+        long upcomingCount = bookingRepository.findByTutorUser(tutor, org.springframework.data.domain.Pageable.unpaged()).getContent()
             .stream()
-            .filter(booking -> booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || booking.getStatus() == BookingStatus.TUTOR_APPROVED || booking.getStatus() == BookingStatus.UPCOMING)
+            .filter(booking -> booking.getSessions() != null && 
+                              booking.getSessions().stream()
+                                      .anyMatch(session -> !session.getSessionDate().isBefore(today) && 
+                                                          !session.getSessionDate().isAfter(nextWeek)) &&
+                              (booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || booking.getStatus() == BookingStatus.TUTOR_APPROVED))
             .count();
 
         // Calculate monthly earnings (mock for now - should implement real calculation)

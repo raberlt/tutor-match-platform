@@ -39,12 +39,6 @@ public class Booking {
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
 
-    private LocalDate date;
-    private LocalTime fromTime;
-    private LocalTime toTime;
-    
-    @Column(columnDefinition = "NVARCHAR(100)")
-    private String time;
 
     @Enumerated(EnumType.STRING)
     private BookingStatus status = BookingStatus.PAYMENT_PENDING;
@@ -56,24 +50,12 @@ public class Booking {
     private String note;
 
     // Financial fields
-    @Column(name = "hourly_rate", nullable = false, precision = 10, scale = 2)
-    private BigDecimal hourlyRate;
-    
-    @Column(name = "session_fee", nullable = false, precision = 10, scale = 2)
-    private BigDecimal sessionFee;
-    
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
     
-    // Package/Trial specific fields
+    // Package specific fields
     @Column(name = "total_sessions")
     private Integer totalSessions;
-    
-    @Column(name = "sessions_per_week")
-    private Integer sessionsPerWeek;
-    
-    @Column(name = "contract_duration")
-    private Integer contractDuration;
     
     @Column(name = "payment_status")
     @Enumerated(EnumType.STRING)

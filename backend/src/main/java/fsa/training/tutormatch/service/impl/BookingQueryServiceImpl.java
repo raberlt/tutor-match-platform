@@ -8,6 +8,7 @@ import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.UserRepository;
 import fsa.training.tutormatch.service.BookingQueryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -31,13 +32,13 @@ public class BookingQueryServiceImpl implements BookingQueryService {
     @Override
     public List<Booking> findByStudent(String studentUsername) {
         User student = findUserByUsername(studentUsername);
-        return bookingRepository.findByStudentUser(student, org.springframework.data.domain.Pageable.unpaged()).getContent();
+        return bookingRepository.findByStudentUser(student, Pageable.unpaged()).getContent();
     }
     
     @Override
     public List<Booking> findByTutor(String tutorUsername) {
         User tutor = findUserByUsername(tutorUsername);
-        return bookingRepository.findByTutorUser(tutor, org.springframework.data.domain.Pageable.unpaged()).getContent();
+        return bookingRepository.findByTutorUser(tutor, Pageable.unpaged()).getContent();
     }
     
     @Override
@@ -58,25 +59,34 @@ public class BookingQueryServiceImpl implements BookingQueryService {
         if (user.getRole() == UserRole.TUTOR) {
             return bookingRepository.findByTutorUserAndStatus(user, BookingStatus.CANCELLED);
         } else {
-            return bookingRepository.findByStudentUserAndStatus(user, BookingStatus.CANCELLED, org.springframework.data.domain.Pageable.unpaged()).getContent();
+            return bookingRepository.findByStudentUserAndStatus(user, BookingStatus.CANCELLED, Pageable.unpaged()).getContent();
         }
     }
     
     @Override
     public List<Booking> getConfirmedBookingsByLocalDate(String tutorUsername, LocalDate date) {
         User tutor = findUserByUsername(tutorUsername);
-        return bookingRepository.findByTutorUserAndDate(tutor, date)
+        // Lấy tất cả booking của tutor và filter theo session date
+        return bookingRepository.findByTutorUser(tutor, Pageable.unpaged()).getContent()
                 .stream()
-                .filter(booking -> booking.getStatus() == BookingStatus.TUTOR_APPROVED || 
-                                   booking.getStatus() == BookingStatus.UPCOMING || 
-                                   booking.getStatus() == BookingStatus.IN_PROGRESS)
+                .filter(booking -> booking.getSessions() != null && 
+                                  booking.getSessions().stream()
+                                          .anyMatch(session -> session.getSessionDate().equals(date)) &&
+                                  booking.getStatus() == BookingStatus.TUTOR_APPROVED)
                 .toList();
     }
     
     @Override
     public List<Booking> getBookingsBetweenLocalDates(String tutorUsername, LocalDate startLocalDate, LocalDate endLocalDate) {
         User tutor = findUserByUsername(tutorUsername);
-        return bookingRepository.findByTutorUserAndDateBetween(tutor, startLocalDate, endLocalDate);
+        // Lấy tất cả booking của tutor và filter theo session date range
+        return bookingRepository.findByTutorUser(tutor, Pageable.unpaged()).getContent()
+                .stream()
+                .filter(booking -> booking.getSessions() != null && 
+                                  booking.getSessions().stream()
+                                          .anyMatch(session -> !session.getSessionDate().isBefore(startLocalDate) && 
+                                                              !session.getSessionDate().isAfter(endLocalDate)))
+                .toList();
     }
     
     @Override
@@ -88,18 +98,20 @@ public class BookingQueryServiceImpl implements BookingQueryService {
     @Override
     public long countCompletedBookings(String tutorUsername) {
         User tutor = findUserByUsername(tutorUsername);
-        return bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.COMPLETED).size();
+        return bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.TUTOR_APPROVED).size();
     }
     
     @Override
     public long countTodayBookings(String tutorUsername) {
         User tutor = findUserByUsername(tutorUsername);
         LocalDate today = LocalDate.now();
-        return bookingRepository.findByTutorUserAndDate(tutor, today)
+        // Lấy tất cả booking của tutor và filter theo session date hôm nay
+        return bookingRepository.findByTutorUser(tutor, Pageable.unpaged()).getContent()
                 .stream()
-                .filter(booking -> booking.getStatus() == BookingStatus.TUTOR_APPROVED || 
-                                   booking.getStatus() == BookingStatus.UPCOMING || 
-                                   booking.getStatus() == BookingStatus.IN_PROGRESS)
+                .filter(booking -> booking.getSessions() != null && 
+                                  booking.getSessions().stream()
+                                          .anyMatch(session -> session.getSessionDate().equals(today)) &&
+                                  booking.getStatus() == BookingStatus.TUTOR_APPROVED)
                 .count();
     }
     

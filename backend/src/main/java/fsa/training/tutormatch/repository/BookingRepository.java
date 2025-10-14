@@ -19,15 +19,12 @@ import java.util.List;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Integer> {
     
-    // ✅ Update để match với entity field types
-    
     // Methods với User và TutorProfile
     Page<Booking> findByStudent(User student, Pageable pageable);
     Page<Booking> findByStudentAndStatus(User student, BookingStatus status, Pageable pageable);
     Page<Booking> findByTutor(TutorProfile tutor, Pageable pageable);
     Page<Booking> findByTutorAndStatus(TutorProfile tutor, BookingStatus status, Pageable pageable);
     List<Booking> findByTutorAndStatus(TutorProfile tutor, BookingStatus status);
-    List<Booking> findByTutorAndDateBetween(TutorProfile tutor, LocalDate startDate, LocalDate endDate);
     
     // Methods với User để backward compatibility
     @Query("SELECT b FROM Booking b WHERE b.student = :user")
@@ -45,12 +42,6 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     @Query("SELECT b FROM Booking b WHERE b.tutor.user = :user AND b.status = :status")
     List<Booking> findByTutorUserAndStatus(@Param("user") User user, @Param("status") BookingStatus status);
     
-    @Query("SELECT b FROM Booking b WHERE b.tutor.user = :user AND b.date = :date")
-    List<Booking> findByTutorUserAndDate(@Param("user") User user, @Param("date") LocalDate date);
-    
-    @Query("SELECT b FROM Booking b WHERE b.tutor.user = :user AND b.date BETWEEN :startDate AND :endDate")
-    List<Booking> findByTutorUserAndDateBetween(@Param("user") User user, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
-    
     // Basic find methods
     List<Booking> findByStudentId(Integer studentId);
     List<Booking> findByTutorId(Integer tutorId);
@@ -61,7 +52,6 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     // Count methods for statistics
     long countByStatus(BookingStatus status);
     long countByBookingType(BookingType bookingType);
-    long countByDate(LocalDate date);
     long countByCreatedAtAfter(ZonedDateTime date);
     long countByTutor(TutorProfile tutor);
     long countByTutorAndStatus(TutorProfile tutor, BookingStatus status);

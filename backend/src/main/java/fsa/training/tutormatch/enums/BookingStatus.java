@@ -5,9 +5,6 @@ public enum BookingStatus {
     PAYMENT_COMPLETED("Đã thanh toán"),
     TUTOR_APPROVED("Gia sư đã chấp nhận"),
     TUTOR_REJECTED("Gia sư đã từ chối"),
-    UPCOMING("Sắp diễn ra"),
-    IN_PROGRESS("Đang diễn ra"),
-    COMPLETED("Hoàn thành"),
     CANCELLED("Đã hủy"),
     REFUNDED("Đã hoàn tiền");
     
@@ -22,4 +19,4 @@ public enum BookingStatus {
     }
 }
 
-//student -> single -> chờ thanh toán -> đã thanh toán -> gia sư chấp nhận -> sắp diễn ra (48h trước) -> đang diễn ra -> hoàn thành hoặc đã hủy -> đã hoàn tiền
+//student -> single -> chờ thanh toán -> đã thanh toán -> gia sư chấp nhận -> đã hủy -> đã hoàn tiền

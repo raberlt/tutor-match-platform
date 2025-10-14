@@ -141,9 +141,7 @@ const Calendar: React.FC<CalendarProps> = ({
 
       // Lấy blocks trước để quyết định canSelect theo slot
       const blocks = getDayBlocks ? getDayBlocks(date) : [];
-      const hasSelectableSlot = blocks.some(
-        (b) => b.status === "AVAILABLE" || b.status === "SELECTED"
-      );
+      const hasSelectableSlot = blocks.some((b) => b.status === "AVAILABLE");
 
       const canSelect =
         !readOnly &&

@@ -503,7 +503,8 @@ const Messages: React.FC = () => {
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             e.currentTarget.style.display = "none";
-                            e.currentTarget.nextElementSibling!.style.display =
+                            (e.currentTarget
+                              .nextElementSibling as HTMLElement)!.style.display =
                               "flex";
                           }}
                         />

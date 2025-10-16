@@ -71,8 +71,32 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         booking.setBookingType(BookingType.PACKAGE);
         booking.setTotalSessions(request.getTotalSessions());
         booking.setTotalAmount(request.getTotalAmount());
-        
-        return bookingRepository.save(booking);
+        // Gói học chờ gia sư đồng ý trước khi thanh toán
+        booking.setStatus(BookingStatus.AWAITING_TUTOR_ACCEPT);
+
+        booking = bookingRepository.save(booking);
+
+        // Tạo toàn bộ sessions từ request.sessions
+        if (request.getSessions() != null && !request.getSessions().isEmpty()) {
+            for (var s : request.getSessions()) {
+                Session session = new Session();
+                session.setBooking(booking);
+                session.setSessionDate(java.time.LocalDate.parse(s.getDate()));
+                session.setStartTime(java.time.LocalTime.parse(s.getFromTime() + ":00"));
+                session.setEndTime(java.time.LocalTime.parse(s.getToTime() + ":00"));
+                session.setStatus(SessionStatus.PAYMENT_PENDING);
+                session.setRescheduleCount(0);
+                try {
+                    session.setSubject(findSubjectById(s.getSubjectId() != null ? s.getSubjectId() : request.getSubjectId()));
+                } catch (Exception ignored) {}
+                if (s.getFee() != null) {
+                    session.setFee(s.getFee());
+                }
+                sessionRepository.save(session);
+            }
+        }
+
+        return booking;
     }
     
     @Override
@@ -130,13 +154,6 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         System.out.println("Final TutorProfile ID: " + tutor.getId());
         System.out.println("Final TutorUser ID: " + tutorUser.getId());
 
-        // Parse time từ fromTime/toTime
-        String timeCombined = request.getFromTime() + "-" + request.getToTime();
-        String[] timeRange = timeCombined.split("-");
-        LocalTime fromLocalTime = LocalTime.parse(timeRange[0] + ":00");
-        LocalTime toLocalTime = LocalTime.parse(timeRange[1] + ":00");
-        LocalDate bookingDate = LocalDate.parse(request.getDate());
-
         // Create booking
         Booking booking = new Booking();
         booking.setStudent(studentUser);
@@ -150,30 +167,8 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         System.out.println("=== DEBUG: Booking financial fields ===");
         System.out.println("totalAmount: " + booking.getTotalAmount());
 
-        // Save booking first to get ID
-        booking = bookingRepository.save(booking);
-        
-        // Create corresponding session
-        Session session = new Session();
-        session.setBooking(booking);
-        session.setSessionDate(bookingDate);
-        session.setStartTime(fromLocalTime);
-        session.setEndTime(toLocalTime);
-        session.setStatus(SessionStatus.PAYMENT_PENDING);
-        session.setRescheduleCount(0);
-        // Gán môn học và học phí cho session (nếu có)
-        try {
-            session.setSubject(subject);
-        } catch (Exception ignored) {}
-        if (request.getTotalAmount() != null) {
-            session.setFee(request.getTotalAmount());
-        }
-        
-        sessionRepository.save(session);
-        
-        System.out.println("=== DEBUG: Created session for booking " + booking.getId() + " ===");
-
-        return booking;
+        // Lưu booking, KHÔNG tạo session ở đây (SINGLE tạo trong createSingleBooking, PACKAGE tạo từ request.sessions)
+        return bookingRepository.save(booking);
     }
 
 
@@ -194,3 +189,4 @@ public class BookingCreationServiceImpl implements BookingCreationService {
 } 
  
  
+

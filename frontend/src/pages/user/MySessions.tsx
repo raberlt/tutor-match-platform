@@ -127,21 +127,7 @@ const ChevronUpIcon = () => (
   </svg>
 );
 
-const MoneyIcon = () => (
-  <svg
-    className="w-5 h-5"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-    />
-  </svg>
-);
+// MoneyIcon removed (table layout shows fee inline)
 
 const MySessions: React.FC = () => {
   const navigate = useNavigate();
@@ -413,6 +399,45 @@ const MySessions: React.FC = () => {
   const renderBookingActions = (booking: Booking) => {
     const actions: React.ReactElement[] = [];
     const isPackage = booking.bookingType === "PACKAGE";
+
+    // Tính giờ còn lại đến buổi học gần nhất (SINGLE)
+    const getNextSessionHoursLeft = (): number | null => {
+      try {
+        if (!booking.sessions || booking.sessions.length === 0) return null;
+        const sorted = [...booking.sessions].sort(
+          (
+            a: { sessionDate?: string; date?: string; startTime?: string },
+            b: { sessionDate?: string; date?: string; startTime?: string }
+          ) => {
+            const ad = new Date(
+              (a.sessionDate || a.date || "1970-01-01") as string
+            ).getTime();
+            const bd = new Date(
+              (b.sessionDate || b.date || "1970-01-01") as string
+            ).getTime();
+            const at = (a.startTime || "00:00").substring(0, 5);
+            const bt = (b.startTime || "00:00").substring(0, 5);
+            return ad !== bd ? ad - bd : at.localeCompare(bt);
+          }
+        );
+        const now = new Date();
+        for (const s of sorted) {
+          const d = new Date(
+            (s.sessionDate || s.date || "1970-01-01") as string
+          );
+          const [hh, mm] = String(s.startTime || "00:00")
+            .substring(0, 5)
+            .split(":");
+          d.setHours(Number(hh) || 0, Number(mm) || 0, 0, 0);
+          const diffMs = d.getTime() - now.getTime();
+          const hours = Math.floor(diffMs / (1000 * 60 * 60));
+          if (diffMs > 0) return hours;
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    };
     switch (String(booking.status)) {
       case "AWAITING_TUTOR_ACCEPT":
         if (isPackage) {
@@ -463,7 +488,7 @@ const MySessions: React.FC = () => {
             className="px-3 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
             onClick={() => openCancelBooking(booking.id)}
           >
-            Huỷ booking
+            Huỷ lịch
           </button>
         );
         break;
@@ -477,15 +502,28 @@ const MySessions: React.FC = () => {
             Thanh toán
           </button>
         );
-        actions.push(
-          <button
-            key="cancel-booking"
-            className="px-3 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
-            onClick={() => openCancelBooking(booking.id)}
-          >
-            Huỷ booking
-          </button>
-        );
+        {
+          const hoursLeft = !isPackage ? getNextSessionHoursLeft() : null;
+          let label = "Huỷ lịch";
+          if (hoursLeft !== null && hoursLeft >= 48) label = "Huỷ & hoàn 100%";
+          else if (hoursLeft !== null && hoursLeft >= 24)
+            label = "Huỷ & hoàn 50%";
+          actions.push(
+            <div key="cancel-wrap" className="flex items-center gap-2">
+              <button
+                className="px-3 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
+                onClick={() => openCancelBooking(booking.id)}
+              >
+                {label}
+              </button>
+              {hoursLeft !== null && (
+                <span className="text-xs text-gray-500">
+                  Còn {hoursLeft}h tới buổi học
+                </span>
+              )}
+            </div>
+          );
+        }
         break;
       case "PAYMENT_EXPIRED":
         actions.push(
@@ -674,6 +712,11 @@ const MySessions: React.FC = () => {
     id: number;
   } | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [cancelHoursLeft, setCancelHoursLeft] = useState<number | null>(null);
+  const [isRescheduleMode, setIsRescheduleMode] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState<string>("");
+  const [rescheduleTime, setRescheduleTime] = useState<string>("");
+  const [cancelBookingType, setCancelBookingType] = useState<string>("");
 
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundBookingId, setRefundBookingId] = useState<number | null>(null);
@@ -683,12 +726,103 @@ const MySessions: React.FC = () => {
   const openCancelBooking = (bookingId: number) => {
     setCancelTarget({ type: "booking", id: bookingId });
     setCancelReason("");
+    setIsRescheduleMode(false);
+    setRescheduleDate("");
+    setRescheduleTime("");
+    // Tính giờ còn lại tới buổi gần nhất của booking
+    try {
+      const b = bookings.find((bk) => bk.id === bookingId);
+      if (!b || !b.sessions || b.sessions.length === 0) {
+        setCancelHoursLeft(null);
+        setCancelBookingType("");
+      } else {
+        setCancelBookingType(b.bookingType || "");
+        const sorted = [...b.sessions].sort(
+          (
+            a: { sessionDate?: string; date?: string; startTime?: string },
+            b: { sessionDate?: string; date?: string; startTime?: string }
+          ) => {
+            const ad = new Date(
+              (a.sessionDate || a.date || "1970-01-01") as string
+            ).getTime();
+            const bd = new Date(
+              (b.sessionDate || b.date || "1970-01-01") as string
+            ).getTime();
+            const at = (a.startTime || "00:00").substring(0, 5);
+            const bt = (b.startTime || "00:00").substring(0, 5);
+            return ad !== bd ? ad - bd : at.localeCompare(bt);
+          }
+        );
+        const now = new Date();
+        let hours: number | null = null;
+        for (const s of sorted) {
+          const d = new Date(
+            (s.sessionDate || s.date || "1970-01-01") as string
+          );
+          const [hh, mm] = String(s.startTime || "00:00")
+            .substring(0, 5)
+            .split(":");
+          d.setHours(Number(hh) || 0, Number(mm) || 0, 0, 0);
+          const diffMs = d.getTime() - now.getTime();
+          if (diffMs > 0) {
+            hours = Math.floor(diffMs / (1000 * 60 * 60));
+            break;
+          }
+        }
+        setCancelHoursLeft(hours);
+      }
+    } catch {
+      setCancelHoursLeft(null);
+    }
     setShowCancelModal(true);
   };
 
   const openCancelSession = (sessionId: number) => {
     setCancelTarget({ type: "session", id: sessionId });
     setCancelReason("");
+    setIsRescheduleMode(false);
+    setRescheduleDate("");
+    setRescheduleTime("");
+    // Tính giờ còn lại cho session
+    try {
+      let found: {
+        sessionDate?: string;
+        date?: string;
+        startTime?: string;
+      } | null = null;
+      let parentBookingType = "";
+      for (const bk of bookings) {
+        const s = bk.sessions?.find(
+          (x: {
+            id: number;
+            sessionDate?: string;
+            date?: string;
+            startTime?: string;
+          }) => x.id === sessionId
+        );
+        if (s) {
+          found = s;
+          parentBookingType = bk.bookingType || "";
+          break;
+        }
+      }
+      setCancelBookingType(parentBookingType);
+      if (!found) {
+        setCancelHoursLeft(null);
+      } else {
+        const d = new Date(
+          (found.sessionDate || found.date || "1970-01-01") as string
+        );
+        const [hh, mm] = String(found.startTime || "00:00")
+          .substring(0, 5)
+          .split(":");
+        d.setHours(Number(hh) || 0, Number(mm) || 0, 0, 0);
+        const diffMs = d.getTime() - new Date().getTime();
+        setCancelHoursLeft(Math.floor(diffMs / (1000 * 60 * 60)));
+      }
+    } catch {
+      setCancelHoursLeft(null);
+    }
     setShowCancelModal(true);
   };
 
@@ -773,11 +907,11 @@ const MySessions: React.FC = () => {
     if (!cancelTarget) return;
     try {
       if (cancelTarget.type === "booking") {
-        await api.post(`/api/booking/${cancelTarget.id}/cancel`, null, {
+        await api.post(`/booking/${cancelTarget.id}/cancel`, null, {
           params: { actor: "STUDENT", reason: cancelReason },
         });
       } else {
-        await api.post(`/api/session/${cancelTarget.id}/cancel`, null, {
+        await api.post(`/session/${cancelTarget.id}/cancel`, null, {
           params: { actor: "STUDENT", reason: cancelReason },
         });
       }
@@ -1023,12 +1157,9 @@ const MySessions: React.FC = () => {
                     </button>
                   </div>
 
-                  {/* Booking actions theo trạng thái (giữ chỗ cho PACKAGE) */}
-                  {booking.bookingType === "PACKAGE" && (
-                    <div className="mt-2">{renderBookingActions(booking)}</div>
-                  )}
+                  {/* Actions: giữ cùng bố cục cho cả SINGLE và PACKAGE */}
 
-                  {/* Thông tin booking cơ bản: avatar + tên giảng viên + note (trái) và action (đơn) bên phải */}
+                  {/* Thông tin booking cơ bản: avatar + tên giảng viên + note (trái) và actions (phải) */}
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 min-w-0 flex-1">
                       <div
@@ -1080,11 +1211,9 @@ const MySessions: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    {booking.bookingType === "SINGLE" && (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {renderBookingActions(booking)}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {renderBookingActions(booking)}
+                    </div>
                   </div>
                 </div>
 
@@ -1120,158 +1249,211 @@ const MySessions: React.FC = () => {
                         </div>
                       </div>
 
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                        Chi tiết từng buổi học ({booking.sessions?.length || 0}{" "}
-                        buổi)
-                      </h4>
-
                       {booking.sessions && booking.sessions.length > 0 ? (
-                        <div className="space-y-3">
-                          {booking.sessions.map(
-                            (session: Session, index: number) => (
-                              <div
-                                key={session.id}
-                                className="bg-white rounded-lg p-4 border border-gray-200"
-                              >
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="flex items-center space-x-4">
-                                    <div className="text-sm font-medium text-gray-900">
-                                      Buổi {index + 1}
-                                    </div>
-                                    <span
-                                      className={`px-2 py-1 rounded-full text-xs font-medium ${getSessionStatusColor(
-                                        session.status
-                                      )}`}
-                                    >
-                                      {getSessionStatusDisplayName(
-                                        session.status
-                                      )}
-                                    </span>
-                                    {session.rescheduleCount > 0 && (
-                                      <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
-                                        Đã đổi lịch {session.rescheduleCount}{" "}
-                                        lần
-                                      </span>
-                                    )}
-                                  </div>
+                        <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                          <table className="min-w-full text-sm">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-3 py-2 text-left text-gray-700 font-medium border-b">
+                                  Buổi
+                                </th>
+                                <th className="px-3 py-2 text-left text-gray-700 font-medium border-b">
+                                  Trạng thái
+                                </th>
+                                <th className="px-3 py-2 text-left text-gray-700 font-medium border-b">
+                                  Học phí
+                                </th>
+                                <th className="px-3 py-2 text-left text-gray-700 font-medium border-b">
+                                  Ngày
+                                </th>
+                                <th className="px-3 py-2 text-left text-gray-700 font-medium border-b">
+                                  Giờ
+                                </th>
+                                <th className="px-3 py-2 text-left text-gray-700 font-medium border-b">
+                                  Tác vụ
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {booking.sessions
+                                .sort((a: Session, b: Session) => {
+                                  const dateA = new Date(
+                                    a.sessionDate || a.date || "1970-01-01"
+                                  );
+                                  const dateB = new Date(
+                                    b.sessionDate || b.date || "1970-01-01"
+                                  );
+                                  const timeA = (
+                                    a.startTime || "00:00"
+                                  ).substring(0, 5);
+                                  const timeB = (
+                                    b.startTime || "00:00"
+                                  ).substring(0, 5);
 
-                                  {/* Session Actions */}
-                                  <div className="flex items-center gap-2">
-                                    {(session.status === "UPCOMING" ||
-                                      session.status ===
-                                        "PAYMENT_COMPLETED") && (
-                                      <button
-                                        onClick={() =>
-                                          openCancelSession(session.id)
-                                        }
-                                        className="px-3 py-1.5 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
-                                      >
-                                        Huỷ buổi
-                                      </button>
-                                    )}
-                                    <button
-                                      onClick={() =>
-                                        fetchSessionHistory(session.id)
-                                      }
-                                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                                      title="Xem lịch sử thay đổi"
-                                    >
-                                      <svg
-                                        className="w-5 h-5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                                        />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Chi tiết thời gian và học phí */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                  <div className="flex items-center gap-2">
-                                    <BookIcon />
-                                    <span className="font-medium text-gray-700">
-                                      Môn học:
-                                    </span>
-                                    <span className="text-gray-900">
-                                      {session.subject?.name || "Chưa xác định"}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <MoneyIcon />
-                                    <span className="font-medium text-gray-700">
-                                      Học phí:
-                                    </span>
-                                    <span className="text-gray-900">
-                                      {(() => {
-                                        console.log("Session fee debug:", {
-                                          sessionFee: session.fee,
-                                          subjectFees: session.subject?.fees,
-                                          sessionData: session,
-                                        });
-                                        return session.fee && session.fee > 0
-                                          ? `${Number(
-                                              session.fee
-                                            ).toLocaleString("vi-VN")} VNĐ`
-                                          : session.subject?.fees &&
-                                            session.subject.fees > 0
-                                          ? `${Number(
-                                              session.subject.fees
-                                            ).toLocaleString("vi-VN")} VNĐ`
-                                          : "Chưa có";
-                                      })()}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <CalendarIcon />
-                                    <span className="font-medium text-gray-700">
-                                      Ngày giờ:
-                                    </span>
-                                    <span className="text-gray-900">
-                                      {(() => {
-                                        console.log("Session date debug:", {
-                                          sessionDate: session.sessionDate,
-                                          date: session.date,
-                                          startTime: session.startTime,
-                                          endTime: session.endTime,
-                                        });
-                                        try {
-                                          // Sử dụng session.date từ backend thay vì session.sessionDate
-                                          const dateValue =
-                                            session.date || session.sessionDate;
-                                          const d = new Date(dateValue);
-                                          const dateStr = isNaN(d.getTime())
-                                            ? dateValue
-                                            : d.toLocaleDateString("vi-VN");
-                                          const timeStr = `${session.startTime?.substring(
-                                            0,
-                                            5
-                                          )} - ${session.endTime?.substring(
-                                            0,
-                                            5
-                                          )}`;
-                                          return `${dateStr} ${timeStr}`;
-                                        } catch {
-                                          return (
+                                  // Sắp xếp theo ngày trước, sau đó theo giờ
+                                  if (dateA.getTime() !== dateB.getTime()) {
+                                    return dateA.getTime() - dateB.getTime();
+                                  }
+                                  return timeA.localeCompare(timeB);
+                                })
+                                .map((session: Session, index: number) => {
+                                  const dateStr =
+                                    session.sessionDate || session.date
+                                      ? new Date(
+                                          session.sessionDate ||
                                             session.date ||
-                                            session.sessionDate ||
                                             ""
-                                          );
-                                        }
-                                      })()}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            )
-                          )}
+                                        ).toLocaleDateString("vi-VN")
+                                      : "Chưa xác định";
+                                  const timeStr =
+                                    session.startTime && session.endTime
+                                      ? `${String(session.startTime).substring(
+                                          0,
+                                          5
+                                        )} - ${String(
+                                          session.endTime
+                                        ).substring(0, 5)}`
+                                      : "";
+                                  const feeStr =
+                                    session.fee && Number(session.fee) > 0
+                                      ? `${Number(session.fee).toLocaleString(
+                                          "vi-VN"
+                                        )} VNĐ`
+                                      : session.subject?.fees &&
+                                        Number(session.subject.fees) > 0
+                                      ? `${Number(
+                                          session.subject.fees
+                                        ).toLocaleString("vi-VN")} VNĐ`
+                                      : "Chưa có";
+                                  return (
+                                    <tr key={session.id} className="bg-white">
+                                      <td className="px-3 py-2 text-gray-900">
+                                        Buổi {index + 1}
+                                      </td>
+                                      <td className="px-3 py-2">
+                                        <span
+                                          className={`px-2 py-1 rounded-full text-xs font-medium ${getSessionStatusColor(
+                                            session.status
+                                          )}`}
+                                        >
+                                          {getSessionStatusDisplayName(
+                                            session.status
+                                          )}
+                                        </span>
+                                      </td>
+                                      <td className="px-3 py-2 text-gray-700">
+                                        {feeStr}
+                                      </td>
+                                      <td className="px-3 py-2 text-gray-700">
+                                        {dateStr}
+                                      </td>
+                                      <td className="px-3 py-2 text-gray-700">
+                                        {timeStr}
+                                      </td>
+                                      <td className="px-3 py-2">
+                                        <div className="flex items-center gap-2">
+                                          {/* Logic mới:
+                                              - Nút Huỷ: hiện khi session chưa diễn ra hoặc hoàn thành (UPCOMING, PAYMENT_COMPLETED, SCHEDULED)
+                                              - Nút Đổi lịch: chỉ hiện khi còn >= 48h và session chưa diễn ra hoặc hoàn thành
+                                              - Nút Lịch sử: chỉ hiện khi session đã đổi lịch (có reschedule_count > 0) */}
+                                          {/* Nút Huỷ - hiện khi session chưa diễn ra hoặc hoàn thành */}
+                                          {(session.status === "UPCOMING" ||
+                                            session.status ===
+                                              "PAYMENT_COMPLETED" ||
+                                            session.status === "SCHEDULED") && (
+                                            <button
+                                              onClick={() =>
+                                                openCancelSession(session.id)
+                                              }
+                                              className="px-3 py-1.5 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
+                                            >
+                                              Huỷ
+                                            </button>
+                                          )}
+
+                                          {/* Nút Đổi lịch - chỉ hiện khi còn >= 48h và session chưa diễn ra hoặc hoàn thành */}
+                                          {(session.status === "UPCOMING" ||
+                                            session.status ===
+                                              "PAYMENT_COMPLETED" ||
+                                            session.status === "SCHEDULED") &&
+                                            (() => {
+                                              // Tính giờ còn lại
+                                              const sessionDate = new Date(
+                                                session.sessionDate ||
+                                                  session.date ||
+                                                  ""
+                                              );
+                                              const sessionTime = (
+                                                session.startTime || "00:00"
+                                              ).substring(0, 5);
+                                              const [hh, mm] =
+                                                sessionTime.split(":");
+                                              sessionDate.setHours(
+                                                Number(hh) || 0,
+                                                Number(mm) || 0,
+                                                0,
+                                                0
+                                              );
+                                              const diffMs =
+                                                sessionDate.getTime() -
+                                                new Date().getTime();
+                                              const hoursLeft = Math.floor(
+                                                diffMs / (1000 * 60 * 60)
+                                              );
+
+                                              return hoursLeft >= 48 ? (
+                                                <button
+                                                  onClick={() => {
+                                                    // Mở modal đổi lịch trực tiếp
+                                                    setCancelTarget({
+                                                      type: "session",
+                                                      id: session.id,
+                                                    });
+                                                    setCancelBookingType(
+                                                      booking.bookingType || ""
+                                                    );
+                                                    setCancelHoursLeft(
+                                                      hoursLeft
+                                                    );
+                                                    setIsRescheduleMode(true);
+                                                    setRescheduleDate(
+                                                      session.sessionDate ||
+                                                        session.date ||
+                                                        ""
+                                                    );
+                                                    setRescheduleTime(
+                                                      session.startTime || ""
+                                                    );
+                                                    setShowCancelModal(true);
+                                                  }}
+                                                  className="px-3 py-1.5 rounded-md border border-blue-300 text-blue-700 hover:bg-blue-50"
+                                                >
+                                                  Đổi lịch
+                                                </button>
+                                              ) : null;
+                                            })()}
+
+                                          {/* Nút Lịch sử - chỉ hiện khi session đã đổi lịch (reschedule_count > 0) */}
+                                          {session.rescheduleCount &&
+                                            session.rescheduleCount > 0 && (
+                                              <button
+                                                onClick={() =>
+                                                  fetchSessionHistory(
+                                                    session.id
+                                                  )
+                                                }
+                                                className="px-3 py-1.5 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                              >
+                                                Lịch sử
+                                              </button>
+                                            )}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                            </tbody>
+                          </table>
                         </div>
                       ) : (
                         <p className="text-gray-500 text-center py-4">
@@ -1365,6 +1547,11 @@ const MySessions: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
                 Xác nhận huỷ
               </h3>
+              {cancelHoursLeft !== null && (
+                <div className="text-xs text-gray-600 mb-3">
+                  Còn {cancelHoursLeft}h tới buổi học gần nhất
+                </div>
+              )}
               <div className="text-sm text-gray-700 mb-3">
                 {cancelTarget?.type === "booking" ? (
                   <>
@@ -1403,21 +1590,80 @@ const MySessions: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-300"
                 placeholder="Nhập lý do huỷ..."
               />
-              <div className="mt-4 flex justify-end gap-2">
-                <button
-                  onClick={() => setShowCancelModal(false)}
-                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-                >
-                  Đóng
-                </button>
-                <button
-                  onClick={submitCancel}
-                  className="px-4 py-2 rounded-md text-white shadow-lg hover:shadow-xl"
-                  style={{ backgroundColor: "#94cce6" }}
-                >
-                  Xác nhận huỷ
-                </button>
+              <div className="mt-4 flex justify-between gap-2 items-center">
+                {/* Logic hiển thị nút Đổi lịch:
+                    - Booking đơn: hiện khi >= 48h
+                    - Session bất kỳ: hiện khi >= 48h  
+                    - Booking gói: KHÔNG hiện nút đổi lịch */}
+                {cancelHoursLeft !== null &&
+                  cancelHoursLeft >= 48 &&
+                  !(
+                    cancelTarget?.type === "booking" &&
+                    cancelBookingType === "PACKAGE"
+                  ) && (
+                    <button
+                      onClick={() => setIsRescheduleMode((v) => !v)}
+                      className="px-3 py-2 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-50"
+                    >
+                      {isRescheduleMode ? "Huỷ đổi lịch" : "Đổi lịch"}
+                    </button>
+                  )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowCancelModal(false)}
+                    className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    onClick={submitCancel}
+                    className="px-4 py-2 rounded-md text-white shadow-lg hover:shadow-xl"
+                    style={{ backgroundColor: "#94cce6" }}
+                  >
+                    {cancelHoursLeft !== null && cancelHoursLeft >= 48
+                      ? "Huỷ & hoàn 100%"
+                      : cancelHoursLeft !== null && cancelHoursLeft >= 24
+                      ? "Huỷ & hoàn 50%"
+                      : "Huỷ"}
+                  </button>
+                </div>
               </div>
+
+              {isRescheduleMode && (
+                <div className="mt-4 border-t pt-4">
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    Chọn lịch mới
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ngày mới
+                      </label>
+                      <input
+                        type="date"
+                        value={rescheduleDate}
+                        onChange={(e) => setRescheduleDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Giờ mới
+                      </label>
+                      <input
+                        type="time"
+                        value={rescheduleTime}
+                        onChange={(e) => setRescheduleTime(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Lưu ý: Đây là chọn lịch đề xuất. Sau khi xác nhận, hệ thống
+                    sẽ gửi yêu cầu đổi lịch tới giảng viên.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

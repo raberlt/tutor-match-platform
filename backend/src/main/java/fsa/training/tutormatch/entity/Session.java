@@ -81,14 +81,21 @@ public class Session {
         }
     }
     
-    // Helper method để tạo session code
+    // Helper method để tạo session code ngắn gọn (<= 20 ký tự) và vẫn duy nhất
     private String generateSessionCode() {
-        String year = String.valueOf(java.time.LocalDate.now().getYear());
-        String month = String.format("%02d", java.time.LocalDate.now().getMonthValue());
-        String day = String.format("%02d", java.time.LocalDate.now().getDayOfMonth());
-        String time = String.format("%02d%02d", 
-            java.time.LocalTime.now().getHour(), 
-            java.time.LocalTime.now().getMinute());
-        return String.format("SS-%s%s%s-%s", year.substring(2), month, day, time);
+        java.time.LocalDate nowDate = java.time.LocalDate.now();
+        java.time.LocalTime nowTime = java.time.LocalTime.now();
+        String y = String.valueOf(nowDate.getYear()).substring(2);     // YY
+        String m = String.format("%02d", nowDate.getMonthValue());     // MM
+        String d = String.format("%02d", nowDate.getDayOfMonth());     // DD
+        String hh = String.format("%02d", nowTime.getHour());          // HH
+        String mm = String.format("%02d", nowTime.getMinute());        // MM
+        String ss = String.format("%02d", nowTime.getSecond());        // SS
+        // hậu tố ngẫu nhiên 2 ký tự [A-Z0-9]
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        java.util.Random rnd = new java.util.Random();
+        String suffix = "" + chars.charAt(rnd.nextInt(chars.length())) + chars.charAt(rnd.nextInt(chars.length()));
+        // Định dạng: SS + YYMMDD + HHMMSS + 2 ký tự = tối đa 2+6+6+2 = 16 ký tự
+        return "SS" + y + m + d + hh + mm + ss + suffix;
     }
 }

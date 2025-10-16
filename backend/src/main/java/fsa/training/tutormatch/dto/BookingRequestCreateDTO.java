@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class BookingRequestCreateDTO {
@@ -35,5 +36,8 @@ public class BookingRequestCreateDTO {
     // Payment fields
     private String paymentMethod;      // CREDIT, SEPAY_QR
     private Integer couponId;         // Mã giảm giá
+
+    // Danh sách buổi học (áp dụng cho PACKAGE hoặc khi muốn chỉ định rõ các buổi)
+    private List<SessionCreateDTO> sessions;
 
 } 

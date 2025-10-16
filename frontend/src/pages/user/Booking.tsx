@@ -577,7 +577,19 @@ const UnifiedBookingNew: React.FC = () => {
           paymentMethod: "CREDIT",
         };
 
-        const result = await bookingService.createBooking(bookingRequest);
+        const result = await bookingService.createBooking({
+          ...bookingRequest,
+          sessions: packageFormData.selectedSessions.map((session) => {
+            const [f, t] = (session.timeSlot || "-").split("-");
+            return {
+              date: session.date!,
+              fromTime: f,
+              toTime: t,
+              subjectId: session.subjectId,
+              fee: session.fee,
+            };
+          }),
+        });
 
         if (result.success) {
           if (result.paymentCompleted) {
@@ -649,45 +661,37 @@ const UnifiedBookingNew: React.FC = () => {
           toTime: firstTo,
           bookingType: "PACKAGE",
           note: packageFormData.note,
+          totalSessions: packageFormData.selectedSessions.length,
           totalAmount: totalAmount,
+          paymentMethod: "CREDIT",
+        };
+
+        const result = await bookingService.createBooking({
+          ...bookingRequest,
           sessions: packageFormData.selectedSessions.map((session) => {
             const [f, t] = (session.timeSlot || "-").split("-");
             return {
               date: session.date!,
               fromTime: f,
               toTime: t,
+              subjectId: session.subjectId,
+              fee: session.fee,
             };
           }),
-          paymentMethod: "CREDIT",
-        };
-
-        const result = await bookingService.createBooking(bookingRequest);
+        });
 
         if (result.success) {
-          if (result.paymentRequired) {
-            navigate("/payment", {
-              state: {
-                bookingId: result.bookingId,
-                paymentId: result.paymentId,
-                bookingType: "PACKAGE",
-                totalAmount: totalAmount,
-                tutor: {
-                  id: selectedTutor.id,
-                  name: `${selectedTutor.firstName} ${selectedTutor.lastName}`,
-                  avatar: selectedTutor.imageAvatar || "/default-avatar.png",
-                },
-                sessions: packageFormData.selectedSessions,
-                note: packageFormData.note,
-              },
-            });
-          } else {
-            navigate("/booking-success", {
-              state: {
-                bookingId: result.bookingId,
-                message: result.message,
-              },
-            });
-          }
+          // Gói học: luôn chuyển sang trang thành công + hướng dẫn chờ gia sư đồng ý
+          navigate("/booking-success", {
+            state: {
+              bookingId: result.bookingId,
+              message:
+                result.message ||
+                "Đặt gói học thành công! Vui lòng chờ gia sư đồng ý trước khi thanh toán.",
+              bookingType: "PACKAGE",
+              nextStep: "AWAITING_TUTOR_ACCEPT",
+            },
+          });
         } else {
           setError(result.message || "Có lỗi xảy ra khi đặt gói học");
         }

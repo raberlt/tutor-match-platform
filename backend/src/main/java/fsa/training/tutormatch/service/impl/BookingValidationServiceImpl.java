@@ -155,5 +155,15 @@ public class BookingValidationServiceImpl implements BookingValidationService {
         if (request.getTotalAmount() == null || request.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Total amount must be positive");
         }
+
+        // Nếu có danh sách sessions, check sơ bộ định dạng
+        if (request.getSessions() != null) {
+            for (var s : request.getSessions()) {
+                if (s.getDate() == null || s.getFromTime() == null || s.getToTime() == null) {
+                    throw new IllegalArgumentException("Session date/fromTime/toTime cannot be null");
+                }
+                validateTimeSlot(s.getFromTime() + "-" + s.getToTime());
+            }
+        }
     }
 } 

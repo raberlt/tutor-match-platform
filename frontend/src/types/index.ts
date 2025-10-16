@@ -76,18 +76,25 @@ export interface BookingRequestCreateDTO {
   tutorId: number;
   subjectId: number;
   date: string; // YYYY-MM-DD format
-  time: string; // HH:mm-HH:mm format
+  fromTime: string; // HH:mm
+  toTime: string; // HH:mm
   note?: string;
   totalAmount?: number;
   totalSessions?: number; // chỉ cho PACKAGE
   paymentMethod?: string;
   couponId?: number | null;
+  sessions?: SessionCreatePayload[]; // áp dụng cho PACKAGE
 }
 
 export interface PackageSchedule {
   date: string;
   fromTime: string;
   toTime: string;
+}
+
+export interface SessionCreatePayload extends PackageSchedule {
+  subjectId?: number;
+  fee?: number;
 }
 
 export interface PackageInfo {
@@ -449,4 +456,5 @@ export interface BookingCreateResponse {
   status?: string;
   paymentRequired?: boolean;
   paymentId?: number;
+  paymentCompleted?: boolean;
 }

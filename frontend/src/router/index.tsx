@@ -1,56 +1,45 @@
-import React from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { AuthProvider } from "../contexts/AuthContext";
-// i18n removed
-
-// Layouts
+import { createBrowserRouter } from "react-router-dom";
+import { BookingProtectedRoute } from "../components/BookingProtectedRoute";
 import { UserLayout } from "../components/layouts/UserLayout";
 import { TutorLayout } from "../components/layouts/TutorLayout";
-import { AdminLayout } from "../components/layouts/AdminLayout";
-import { BookingProtectedRoute } from "../components/BookingProtectedRoute";
 
-// Pages
+// Public pages
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";
 import { NotFound } from "../pages/NotFound";
 import { Unauthorized } from "../pages/Unauthorized";
-import { DebugLogin } from "../pages/DebugLogin";
-import BookingDemo from "../pages/BookingDemo";
-import CloudinaryDemo from "../pages/CloudinaryDemo";
 
-// User Pages
+// User pages
+import { UserDashboard } from "../pages/user/UserDashboard";
 import TutorSearch from "../pages/user/TutorSearch";
+import Booking from "../pages/user/Booking";
+import { BookingSuccess } from "../pages/user/BookingSuccess";
+import PaymentPage from "../pages/user/PaymentPage";
 import { BecomeTutor } from "../pages/user/BecomeTutor";
 import Messages from "../pages/user/Messages";
 import MySessions from "../pages/user/MySessions";
 import { Settings } from "../pages/user/Settings";
-import BookingDetail from "../pages/user/BookingDetail";
-import Booking from "../pages/user/Booking";
-import PaymentPage from "../pages/user/PaymentPage";
-import PaymentQR from "../pages/user/PaymentQR";
-import BookingSuccess from "../pages/user/BookingSuccess";
 import TutorDetail from "../pages/user/TutorDetail";
-import CreditDemo from "../pages/CreditDemo";
+import BookingDetail from "../pages/user/BookingDetail";
+import PackageBookingForm from "../pages/user/PackageBookingForm";
+import PackagePayment from "../pages/user/PackagePayment";
+import PaymentQR from "../pages/user/PaymentQR";
 
-// Tutor Pages
+// Tutor pages
 import { TutorDashboard } from "../pages/tutor/TutorDashboard";
 import { Schedule } from "../pages/tutor/Schedule";
-import { StudentManagement } from "../pages/tutor/StudentManagement";
 import { ProfileManagement } from "../pages/tutor/ProfileManagement";
 import { TutorInbox } from "../pages/tutor/TutorInbox";
 import TutorBookings from "../pages/tutor/TutorBookings";
 
-// Admin Pages
-import AdminDashboard from "../pages/admin/AdminDashboard";
-import UserManagement from "../pages/admin/UserManagement";
-import { AdminProfileManagement } from "../pages/admin/ProfileManagement";
-import AdminMessages from "../pages/admin/AdminMessages";
-import CouponManagement from "../pages/admin/CouponManagement";
-import PaymentManagement from "../pages/admin/PaymentManagement";
-import BookingManagement from "../pages/admin/BookingManagement";
+// Demo pages
+import BookingDemo from "../pages/BookingDemo";
+import CloudinaryDemo from "../pages/CloudinaryDemo";
+import CreditDemo from "../pages/CreditDemo";
+import { DebugLogin } from "../pages/DebugLogin";
 
-const router = createBrowserRouter([
+export const router = createBrowserRouter([
   // Public routes
   {
     path: "/",
@@ -60,103 +49,39 @@ const router = createBrowserRouter([
         index: true,
         element: <HomePage />,
       },
+    ],
+  },
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
+    path: "/register",
+    element: <RegisterPage />,
+  },
+  {
+    path: "/unauthorized",
+    element: <Unauthorized />,
+  },
+
+  // User routes
+  {
+    path: "/user",
+    element: <UserLayout />,
+    children: [
       {
-        path: "login",
-        element: <LoginPage />,
+        index: true,
+        element: <UserDashboard />,
       },
       {
-        path: "register",
-        element: <RegisterPage />,
-      },
-      {
-        path: "debug-login",
-        element: <DebugLogin />,
-      },
-      {
-        path: "booking-demo",
-        element: <BookingDemo />,
-      },
-      {
-        path: "cloudinary-demo",
-        element: <CloudinaryDemo />,
-      },
-      {
-        path: "unauthorized",
-        element: <Unauthorized />,
-      },
-      // Public routes
-      {
-        path: "find-tutor",
+        path: "search",
         element: <TutorSearch />,
-      },
-      {
-        path: "become-tutor",
-        element: <BecomeTutor />,
-      },
-      {
-        path: "support",
-        element: (
-          <div className="p-8 text-center">
-            <h1 className="text-2xl font-bold">Hỗ trợ</h1>
-            <p className="text-gray-600 mt-2">
-              Trang này đang được phát triển...
-            </p>
-          </div>
-        ),
-      },
-      {
-        path: "register",
-        element: (
-          <div className="p-8 text-center">
-            <h1 className="text-2xl font-bold">Đăng ký tài khoản</h1>
-            <p className="text-gray-600 mt-2">
-              Trang này đang được phát triển...
-            </p>
-          </div>
-        ),
-      },
-      // User routes
-      {
-        path: "messages",
-        element: <Messages />,
-      },
-      {
-        path: "settings",
-        element: <Settings />,
-      },
-      {
-        path: "my-sessions",
-        element: <MySessions />,
       },
       {
         path: "booking",
         element: (
           <BookingProtectedRoute allowedRoles={["STUDENT"]}>
             <Booking />
-          </BookingProtectedRoute>
-        ),
-      },
-      {
-        path: "payment",
-        element: (
-          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
-            <PaymentPage />
-          </BookingProtectedRoute>
-        ),
-      },
-      {
-        path: "payment-qr",
-        element: (
-          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
-            <PaymentQR />
-          </BookingProtectedRoute>
-        ),
-      },
-      {
-        path: "credit-demo",
-        element: (
-          <BookingProtectedRoute allowedRoles={["STUDENT", "TUTOR"]}>
-            <CreditDemo />
           </BookingProtectedRoute>
         ),
       },
@@ -169,27 +94,90 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "booking-detail/:id",
+        path: "payment",
         element: (
           <BookingProtectedRoute allowedRoles={["STUDENT"]}>
-            <BookingDetail />
+            <PaymentPage />
           </BookingProtectedRoute>
         ),
       },
       {
-        path: "tutor/:username",
+        path: "become-tutor",
+        element: <BecomeTutor />,
+      },
+      {
+        path: "messages",
+        element: <Messages />,
+      },
+      {
+        path: "my-sessions",
+        element: <MySessions />,
+      },
+      {
+        path: "settings",
+        element: <Settings />,
+      },
+      {
+        path: "tutor/:id",
         element: <TutorDetail />,
       },
       {
-        path: "payments",
-        element: (
-          <div className="p-8 text-center">
-            <h1 className="text-2xl font-bold">Thanh toán</h1>
-            <p className="text-gray-600 mt-2">
-              Trang này đang được phát triển...
-            </p>
-          </div>
-        ),
+        path: "booking/:id",
+        element: <BookingDetail />,
+      },
+      {
+        path: "package-booking",
+        element: <PackageBookingForm />,
+      },
+      {
+        path: "package-payment",
+        element: <PackagePayment />,
+      },
+      {
+        path: "payment-qr",
+        element: <PaymentQR />,
+      },
+    ],
+  },
+
+  // Additional public routes that might be accessed directly
+  {
+    path: "/find-tutor",
+    element: <UserLayout />,
+    children: [
+      {
+        index: true,
+        element: <TutorSearch />,
+      },
+    ],
+  },
+  {
+    path: "/become-tutor",
+    element: <UserLayout />,
+    children: [
+      {
+        index: true,
+        element: <BecomeTutor />,
+      },
+    ],
+  },
+  {
+    path: "/messages",
+    element: <UserLayout />,
+    children: [
+      {
+        index: true,
+        element: <Messages />,
+      },
+    ],
+  },
+  {
+    path: "/my-sessions",
+    element: <UserLayout />,
+    children: [
+      {
+        index: true,
+        element: <MySessions />,
       },
     ],
   },
@@ -206,10 +194,6 @@ const router = createBrowserRouter([
       {
         path: "schedule",
         element: <Schedule />,
-      },
-      {
-        path: "students",
-        element: <StudentManagement />,
       },
       {
         path: "profile",
@@ -241,65 +225,27 @@ const router = createBrowserRouter([
     ],
   },
 
-  // Admin routes
+  // Demo routes
   {
-    path: "/admin",
-    element: <AdminLayout />,
-    children: [
-      {
-        index: true,
-        element: <AdminDashboard />,
-      },
-      {
-        path: "users",
-        element: <UserManagement />,
-      },
-      {
-        path: "profiles",
-        element: <AdminProfileManagement />,
-      },
-      {
-        path: "messages",
-        element: <AdminMessages />,
-      },
-      {
-        path: "bookings",
-        element: (
-          <BookingProtectedRoute allowedRoles={["ADMIN"]}>
-            <BookingManagement />
-          </BookingProtectedRoute>
-        ),
-      },
-      {
-        path: "coupons",
-        element: (
-          <BookingProtectedRoute allowedRoles={["ADMIN"]}>
-            <CouponManagement />
-          </BookingProtectedRoute>
-        ),
-      },
-      {
-        path: "payments",
-        element: (
-          <BookingProtectedRoute allowedRoles={["ADMIN"]}>
-            <PaymentManagement />
-          </BookingProtectedRoute>
-        ),
-      },
-    ],
+    path: "/demo/booking",
+    element: <BookingDemo />,
+  },
+  {
+    path: "/demo/cloudinary",
+    element: <CloudinaryDemo />,
+  },
+  {
+    path: "/demo/credit",
+    element: <CreditDemo />,
+  },
+  {
+    path: "/debug/login",
+    element: <DebugLogin />,
   },
 
-  // 404 route
+  // Catch all route
   {
     path: "*",
     element: <NotFound />,
   },
 ]);
-
-export const AppRouter: React.FC = () => {
-  return (
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
-  );
-};

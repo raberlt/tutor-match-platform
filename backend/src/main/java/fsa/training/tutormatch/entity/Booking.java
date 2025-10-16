@@ -59,8 +59,7 @@ public class Booking {
     @Column(name = "coupon_code", columnDefinition = "NVARCHAR(50)")
     private String couponCode; // Mã giảm giá đã áp dụng
     
-    @Column(name = "discount_amount", precision = 10, scale = 2)
-    private BigDecimal discountAmount; // Số tiền được giảm
+    // discount_amount removed per new requirement; use finalAmount & couponCode instead
     
     // Package specific fields
     @Column(name = "total_sessions")

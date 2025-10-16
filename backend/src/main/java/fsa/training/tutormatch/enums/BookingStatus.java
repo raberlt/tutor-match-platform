@@ -1,12 +1,15 @@
 package fsa.training.tutormatch.enums;
 
 public enum BookingStatus {
-    PAYMENT_PENDING("Chờ thanh toán"),
-    PAYMENT_COMPLETED("Đã thanh toán"),
-    TUTOR_APPROVED("Gia sư đã chấp nhận"),
+    AWAITING_TUTOR_ACCEPT("Chờ gia sư chấp nhận"),
+    TUTOR_ACCEPTED("Gia sư đã chấp nhận"),
     TUTOR_REJECTED("Gia sư đã từ chối"),
+    PAYMENT_PENDING("Chờ thanh toán"),
+    PAYMENT_EXPIRED("Quá hạn thanh toán"),
+    PAYMENT_COMPLETED("Đã thanh toán"),
     CANCELLED("Đã hủy"),
-    REFUNDED("Đã hoàn tiền");
+    REFUNDED("Đã hoàn tiền"),
+    COMPLETED("Đã hoàn thành");
     
     private final String displayName;
     

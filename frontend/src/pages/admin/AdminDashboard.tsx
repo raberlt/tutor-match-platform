@@ -1,6 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useI18n } from "../../contexts/I18nContext";
 import { useDashboard } from "../../hooks/useDashboard";
 import { DashboardCards } from "./components/DashboardCards";
 import { RecentActivities } from "./components/RecentActivities";
@@ -8,7 +7,6 @@ import { TopTutors } from "./components/TopTutors";
 import { SecondaryStatsCards } from "./components/SecondaryStatsCards";
 
 const AdminDashboard: React.FC = () => {
-  const { t } = useI18n();
   const { loading, error } = useDashboard();
 
   if (loading) {
@@ -33,9 +31,9 @@ const AdminDashboard: React.FC = () => {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          {t("dashboard.title")}
+          Bảng điều khiển
         </h1>
-        <p className="text-gray-600">{t("dashboard.subtitle")}</p>
+        <p className="text-gray-600">Tổng quan nhanh về hệ thống</p>
       </div>
 
       {/* Main Stats Cards */}
@@ -46,7 +44,7 @@ const AdminDashboard: React.FC = () => {
 
       {/* Recent Activities and Top Tutors */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <RecentActivities />  
+        <RecentActivities />
         <TopTutors />
       </div>
 

@@ -34,7 +34,12 @@ public class BookingServiceImpl implements BookingService {
         request.setTutorId(tutorId);
         request.setSubjectId(subjectId);
         request.setDate(date);
-        request.setTime(time);
+        // map sang fromTime/toTime cho API mới
+        if (time != null && time.contains("-")) {
+            String[] parts = time.split("-");
+            request.setFromTime(parts[0]);
+            request.setToTime(parts[1]);
+        }
         request.setNote(note);
         request.setBookingType("SINGLE"); // Default to single
         

@@ -1,5 +1,4 @@
 import React from "react";
-import { useI18n } from "../../../contexts/I18nContext";
 import { useDashboard } from "../../../hooks/useDashboard";
 import { StatCard } from "./StatCard";
 
@@ -7,7 +6,6 @@ import { StatCard } from "./StatCard";
 type GenericStats = Record<string, unknown>;
 
 export const SecondaryStatsCards: React.FC = () => {
-  const { t } = useI18n();
   const { stats } = useDashboard();
 
   if (!stats) {
@@ -18,7 +16,7 @@ export const SecondaryStatsCards: React.FC = () => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
       <StatCard
-        title={t("stats.averageRating")}
+        title={"Điểm đánh giá trung bình"}
         value={stats.averageRating as number}
         icon={
           <svg
@@ -43,7 +41,7 @@ export const SecondaryStatsCards: React.FC = () => {
       />
 
       <StatCard
-        title={t("stats.activeCoupons")}
+        title={"Mã giảm giá đang hoạt động"}
         value={stats.activeCoupons as number}
         icon={
           <svg
@@ -67,7 +65,7 @@ export const SecondaryStatsCards: React.FC = () => {
       />
 
       <StatCard
-        title={t("stats.pendingApplications")}
+        title={"Hồ sơ chờ duyệt"}
         value={stats.pendingApplications as number}
         icon={
           <svg

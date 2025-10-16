@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useI18n } from "../../contexts/I18nContext";
 import viData from "./json/adminMessages.data.vi.json";
 import enData from "./json/adminMessages.data.en.json";
 
@@ -28,7 +27,7 @@ interface MessageStats {
 }
 
 const AdminMessages: React.FC = () => {
-  const { t, locale } = useI18n();
+  const locale = "vi";
   const [messages, setMessages] = useState<Message[]>([]);
   const [stats, setStats] = useState<MessageStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,7 +92,7 @@ const AdminMessages: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto border-blue-600"></div>
-          <p className="mt-3 text-gray-600">{t("loading")}</p>
+          <p className="mt-3 text-gray-600">Đang tải...</p>
         </div>
       </div>
     );
@@ -125,11 +124,9 @@ const AdminMessages: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {t("adminMessages.title")}
+                Tin nhắn hệ thống
               </h1>
-              <p className="text-gray-600 mt-1">
-                {t("adminMessages.subtitle")}
-              </p>
+              <p className="text-gray-600 mt-1">Quản lý tin nhắn và phản hồi</p>
             </div>
           </div>
         </div>
@@ -156,7 +153,7 @@ const AdminMessages: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("adminMessages.totalMessages")}
+                    Tổng số tin nhắn
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.totalMessages}
@@ -183,9 +180,7 @@ const AdminMessages: React.FC = () => {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
-                    {t("adminMessages.unreadMessages")}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Chưa đọc</p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.unreadMessages}
                   </p>
@@ -211,9 +206,7 @@ const AdminMessages: React.FC = () => {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
-                    {t("adminMessages.readMessages")}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Đã đọc</p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.readMessages}
                   </p>
@@ -240,7 +233,7 @@ const AdminMessages: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("adminMessages.bookingInquiries")}
+                    Hỏi đặt lịch
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.bookingInquiries}
@@ -267,9 +260,7 @@ const AdminMessages: React.FC = () => {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
-                    {t("adminMessages.feedbacks")}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Phản hồi</p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.feedbacks}
                   </p>
@@ -296,7 +287,7 @@ const AdminMessages: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("adminMessages.cancellationRequests")}
+                    Yêu cầu hủy
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.cancellationRequests}
@@ -313,7 +304,7 @@ const AdminMessages: React.FC = () => {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder={t("adminMessages.searchPlaceholder")}
+                placeholder={"Tìm kiếm tin nhắn..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -325,9 +316,9 @@ const AdminMessages: React.FC = () => {
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">{t("adminMessages.status")}</option>
-                <option value="UNREAD">{t("adminMessages.unread")}</option>
-                <option value="READ">{t("adminMessages.read")}</option>
+                <option value="">Trạng thái</option>
+                <option value="UNREAD">Chưa đọc</option>
+                <option value="READ">Đã đọc</option>
               </select>
             </div>
             <div className="sm:w-48">
@@ -336,14 +327,10 @@ const AdminMessages: React.FC = () => {
                 onChange={(e) => setSelectedType(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">{t("adminMessages.messageType")}</option>
-                <option value="BOOKING_INQUIRY">
-                  {t("adminMessages.bookingInquiry")}
-                </option>
-                <option value="FEEDBACK">{t("adminMessages.feedback")}</option>
-                <option value="CANCELLATION_REQUEST">
-                  {t("adminMessages.cancellationRequest")}
-                </option>
+                <option value="">Loại tin nhắn</option>
+                <option value="BOOKING_INQUIRY">Hỏi đặt lịch</option>
+                <option value="FEEDBACK">Phản hồi</option>
+                <option value="CANCELLATION_REQUEST">Yêu cầu hủy</option>
               </select>
             </div>
           </div>
@@ -356,28 +343,28 @@ const AdminMessages: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("adminMessages.senderName")}
+                    Người gửi
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("adminMessages.recipientName")}
+                    Người nhận
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("adminMessages.subject")}
+                    Chủ đề
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("adminMessages.content")}
+                    Nội dung
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("adminMessages.messageType")}
+                    Loại
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("adminMessages.status")}
+                    Trạng thái
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("adminMessages.createdAt")}
+                    Ngày tạo
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("adminMessages.actions")}
+                    Thao tác
                   </th>
                 </tr>
               </thead>
@@ -439,13 +426,13 @@ const AdminMessages: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button className="text-blue-600 hover:text-blue-900 mr-3">
-                        {t("adminMessages.markAsRead")}
+                        Đánh dấu đã đọc
                       </button>
                       <button className="text-green-600 hover:text-green-900 mr-3">
-                        {t("adminMessages.reply")}
+                        Trả lời
                       </button>
                       <button className="text-red-600 hover:text-red-900">
-                        {t("adminMessages.delete")}
+                        Xoá
                       </button>
                     </td>
                   </tr>
@@ -457,7 +444,7 @@ const AdminMessages: React.FC = () => {
 
         {filteredMessages.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-gray-500">{t("loading")}</p>
+            <p className="text-gray-500">Không có kết quả</p>
           </div>
         )}
       </div>

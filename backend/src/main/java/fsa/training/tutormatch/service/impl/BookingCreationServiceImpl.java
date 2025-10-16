@@ -51,7 +51,11 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         
         Booking booking = createBaseBooking(studentUsername, request);
         booking.setBookingType(BookingType.SINGLE);
-        
+
+        // single booking luôn có 1 session
+        booking.setTotalSessions(1);
+        // deadline thanh toán 10 phút
+        booking.setPaymentDeadline(java.time.ZonedDateTime.now().plusMinutes(10));
         return bookingRepository.save(booking);
     }
     
@@ -126,8 +130,9 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         System.out.println("Final TutorProfile ID: " + tutor.getId());
         System.out.println("Final TutorUser ID: " + tutorUser.getId());
 
-        // Parse time
-        String[] timeRange = request.getTime().split("-");
+        // Parse time từ fromTime/toTime
+        String timeCombined = request.getFromTime() + "-" + request.getToTime();
+        String[] timeRange = timeCombined.split("-");
         LocalTime fromLocalTime = LocalTime.parse(timeRange[0] + ":00");
         LocalTime toLocalTime = LocalTime.parse(timeRange[1] + ":00");
         LocalDate bookingDate = LocalDate.parse(request.getDate());
@@ -136,7 +141,6 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         Booking booking = new Booking();
         booking.setStudent(studentUser);
         booking.setTutor(tutor);
-        booking.setSubject(subject);
         booking.setNote(request.getNote());
         booking.setStatus(BookingStatus.PAYMENT_PENDING);
         
@@ -157,6 +161,13 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         session.setEndTime(toLocalTime);
         session.setStatus(SessionStatus.PAYMENT_PENDING);
         session.setRescheduleCount(0);
+        // Gán môn học và học phí cho session (nếu có)
+        try {
+            session.setSubject(subject);
+        } catch (Exception ignored) {}
+        if (request.getTotalAmount() != null) {
+            session.setFee(request.getTotalAmount());
+        }
         
         sessionRepository.save(session);
         

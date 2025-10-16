@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useI18n } from "../../contexts/I18nContext";
+// i18n removed
 import { useDashboard } from "../../hooks/useDashboard";
 import viData from "./json/userManagement.data.vi.json";
 import enData from "./json/userManagement.data.en.json";
@@ -37,7 +37,7 @@ interface NewUserForm {
 }
 
 const UserManagement: React.FC = () => {
-  const { t, locale } = useI18n();
+  const locale = "vi";
   const { updateStats } = useDashboard();
 
   const [users, setUsers] = useState<User[]>([]);
@@ -130,7 +130,6 @@ const UserManagement: React.FC = () => {
       if (response.ok) {
         const createdUser = await response.json();
 
-        
         setUsers((prevUsers) => [...prevUsers, createdUser]);
 
         // Cập nhật stats ngay lập tức
@@ -236,9 +235,11 @@ const UserManagement: React.FC = () => {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          {t("userManagement.title")}
+          Quản lý người dùng
         </h1>
-        <p className="text-gray-600">{t("userManagement.subtitle")}</p>
+        <p className="text-gray-600">
+          Xem, tìm kiếm và quản lý tài khoản hệ thống
+        </p>
       </div>
 
       {/* Statistics Cards */}

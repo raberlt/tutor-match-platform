@@ -1,7 +1,7 @@
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AuthProvider } from "../contexts/AuthContext";
-import { I18nProvider } from "../contexts/I18nContext";
+// i18n removed
 
 // Layouts
 import { UserLayout } from "../components/layouts/UserLayout";
@@ -299,9 +299,7 @@ const router = createBrowserRouter([
 export const AppRouter: React.FC = () => {
   return (
     <AuthProvider>
-      <I18nProvider>
-        <RouterProvider router={router} />
-      </I18nProvider>
+      <RouterProvider router={router} />
     </AuthProvider>
   );
 };

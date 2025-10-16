@@ -17,7 +17,9 @@ public class BookingRequestCreateDTO {
     private String date; // YYYY-MM-DD
     
     @NotNull
-    private String time; // HH:mm-HH:mm
+    // Hỗ trợ fromTime/toTime từ frontend
+    private String fromTime; // HH:mm
+    private String toTime;   // HH:mm
     
     @NotNull
     private String bookingType; // SINGLE, PACKAGE

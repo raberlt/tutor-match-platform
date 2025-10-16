@@ -29,7 +29,12 @@ public class BookingValidationServiceImpl implements BookingValidationService {
             throw new IllegalArgumentException("Invalid subject ID");
         }
         
-        validateTimeSlot(request.getTime());
+        // Chỉ dùng fromTime/toTime từ frontend
+        if (request.getFromTime() == null || request.getFromTime().isBlank() ||
+            request.getToTime() == null || request.getToTime().isBlank()) {
+            throw new IllegalArgumentException("Thiếu thời gian học: cần 'fromTime' và 'toTime'");
+        }
+        validateTimeSlot(request.getFromTime().trim() + "-" + request.getToTime().trim());
         validateBookingType(request.getBookingType());
         
         if ("PACKAGE".equals(request.getBookingType())) {
@@ -93,12 +98,12 @@ public class BookingValidationServiceImpl implements BookingValidationService {
                 }
                 break;
             case "cancel":
-                if (booking.getStatus() == BookingStatus.TUTOR_APPROVED) {
+                if (booking.getStatus() == BookingStatus.TUTOR_ACCEPTED) {
                     throw new IllegalArgumentException("Cannot cancel completed bookings");
                 }
                 break;
             case "complete":
-                if (booking.getStatus() != BookingStatus.PAYMENT_COMPLETED && booking.getStatus() != BookingStatus.TUTOR_APPROVED && booking.getStatus() != BookingStatus.TUTOR_APPROVED && booking.getStatus() != BookingStatus.TUTOR_APPROVED) {
+                if (booking.getStatus() != BookingStatus.PAYMENT_COMPLETED && booking.getStatus() != BookingStatus.TUTOR_ACCEPTED) {
                     throw new IllegalArgumentException("Can only complete confirmed/in-progress bookings");
                 }
                 break;

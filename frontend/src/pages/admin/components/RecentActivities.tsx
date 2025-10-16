@@ -1,5 +1,4 @@
 import React from "react";
-import { useI18n } from "../../../contexts/I18nContext";
 import { useDashboard } from "../../../hooks/useDashboard";
 import { formatTimeAgo } from "../../../utils/format";
 
@@ -98,7 +97,7 @@ const getActivityIcon = (type: string) => {
 };
 
 export const RecentActivities: React.FC = () => {
-  const { t, locale } = useI18n();
+  const locale = "vi";
   const { recentActivities } = useDashboard();
   return (
     <div
@@ -111,13 +110,13 @@ export const RecentActivities: React.FC = () => {
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-gray-900">
-          {t("recentActivities")}
+          Hoạt động gần đây
         </h3>
         <a
           className="text-sm font-medium"
           style={{ color: "rgb(148, 204, 230)" }}
         >
-          {t("viewAll")}
+          Xem tất cả
         </a>
       </div>
       <div className="space-y-4">

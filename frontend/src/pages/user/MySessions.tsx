@@ -7,10 +7,13 @@ import api from "../../services/api";
 interface Session {
   id: number;
   sessionDate: string;
+  date?: string; // Field từ backend DTO
   startTime: string;
   endTime: string;
   status: string;
   rescheduleCount: number;
+  fee?: number;
+  subject?: { id?: number; name?: string; fees?: number };
 }
 
 interface Booking {
@@ -20,7 +23,6 @@ interface Booking {
   note?: string;
   totalSessions?: number;
   totalAmount?: number;
-  subject?: { name: string };
   tutor?: {
     id: number;
     firstName?: string;
@@ -32,6 +34,7 @@ interface Booking {
   };
   tutorId?: number;
   sessions?: Session[];
+  paymentDeadline?: string;
 }
 
 interface SessionHistory {
@@ -56,22 +59,6 @@ const CalendarIcon = () => (
       strokeLinejoin="round"
       strokeWidth={2}
       d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-    />
-  </svg>
-);
-
-const ClockIcon = () => (
-  <svg
-    className="w-5 h-5"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
     />
   </svg>
 );
@@ -140,7 +127,7 @@ const ChevronUpIcon = () => (
   </svg>
 );
 
-const DotsVerticalIcon = () => (
+const MoneyIcon = () => (
   <svg
     className="w-5 h-5"
     fill="none"
@@ -151,7 +138,7 @@ const DotsVerticalIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
-      d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
     />
   </svg>
 );
@@ -168,12 +155,13 @@ const MySessions: React.FC = () => {
   });
 
   const [calendarViewType, setCalendarViewType] = useState<
-    "day" | "month" | "year"
+    "day" | "week" | "month" | "year"
   >(() => {
     try {
       return (
         (localStorage.getItem("mysessions_calendar_type") as
           | "day"
+          | "week"
           | "month"
           | "year") || "month"
       );
@@ -183,6 +171,7 @@ const MySessions: React.FC = () => {
   });
 
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [tick, setTick] = useState<number>(0);
 
   // Accordion state for session details
   const [expandedBookings, setExpandedBookings] = useState<Set<number>>(
@@ -208,6 +197,12 @@ const MySessions: React.FC = () => {
       // Ignore localStorage errors
     }
   }, [isCalendarView]);
+
+  // Global ticker for countdown
+  useEffect(() => {
+    const i = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(i);
+  }, []);
 
   useEffect(() => {
     try {
@@ -327,16 +322,22 @@ const MySessions: React.FC = () => {
     switch (status) {
       case "PAYMENT_PENDING":
         return "bg-orange-100 text-orange-800";
+      case "PAYMENT_EXPIRED":
+        return "bg-red-100 text-red-800";
       case "PAYMENT_COMPLETED":
         return "bg-green-100 text-green-800";
-      case "TUTOR_APPROVED":
+      case "TUTOR_ACCEPTED":
         return "bg-blue-100 text-blue-800";
+      case "AWAITING_TUTOR_ACCEPT":
+        return "bg-cyan-100 text-cyan-800";
       case "TUTOR_REJECTED":
         return "bg-red-100 text-red-800";
       case "CANCELLED":
         return "bg-red-100 text-red-800";
       case "REFUNDED":
         return "bg-purple-100 text-purple-800";
+      case "COMPLETED":
+        return "bg-green-100 text-green-800";
       default:
         if (String(status) === "PAYMENT_COMPLETED") {
           return "bg-green-100 text-green-800";
@@ -349,16 +350,22 @@ const MySessions: React.FC = () => {
     switch (status) {
       case "PAYMENT_PENDING":
         return "Chờ thanh toán";
+      case "PAYMENT_EXPIRED":
+        return "Quá hạn thanh toán";
       case "PAYMENT_COMPLETED":
         return "Đã thanh toán";
-      case "TUTOR_APPROVED":
-        return "Giảng viên đã chấp nhận";
+      case "AWAITING_TUTOR_ACCEPT":
+        return "Chờ gia sư chấp nhận";
+      case "TUTOR_ACCEPTED":
+        return "Gia sư đã chấp nhận";
       case "TUTOR_REJECTED":
         return "Giảng viên đã từ chối";
       case "CANCELLED":
         return "Đã hủy";
       case "REFUNDED":
         return "Đã hoàn tiền";
+      case "COMPLETED":
+        return "Đã hoàn thành";
       default:
         if (String(status) === "PAYMENT_COMPLETED") {
           return "Đã thanh toán";
@@ -383,8 +390,9 @@ const MySessions: React.FC = () => {
     switch (status) {
       case "PAYMENT_PENDING":
         return "bg-yellow-100 text-yellow-800";
+      case "PAID":
       case "PAYMENT_COMPLETED":
-        return "bg-blue-100 text-blue-800";
+        return "bg-green-100 text-green-800";
       case "UPCOMING":
         return "bg-indigo-100 text-indigo-800";
       case "IN_PROGRESS":
@@ -400,6 +408,238 @@ const MySessions: React.FC = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+  // Booking action buttons depending on status/type
+  const renderBookingActions = (booking: Booking) => {
+    const actions: React.ReactElement[] = [];
+    const isPackage = booking.bookingType === "PACKAGE";
+    switch (String(booking.status)) {
+      case "AWAITING_TUTOR_ACCEPT":
+        if (isPackage) {
+          actions.push(
+            <button
+              key="chat"
+              className="px-3 py-2 rounded-md text-white shadow-lg hover:shadow-xl"
+              style={{ backgroundColor: "#94cce6" }}
+              onClick={() => handleChat(booking)}
+            >
+              Nhắn tin
+            </button>
+          );
+          actions.push(
+            <button
+              key="cancel-booking"
+              className="px-3 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
+              onClick={() => openCancelBooking(booking.id)}
+            >
+              Huỷ lịch
+            </button>
+          );
+        }
+        break;
+      case "TUTOR_ACCEPTED":
+        actions.push(
+          <button
+            key="chat"
+            className="px-3 py-2 rounded-md text-white shadow-lg hover:shadow-xl"
+            style={{ backgroundColor: "#94cce6" }}
+            onClick={() => handleChat(booking)}
+          >
+            Nhắn tin
+          </button>
+        );
+        actions.push(
+          <button
+            key="pay"
+            className="px-3 py-2 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-50"
+            onClick={() => handlePayment(booking.id)}
+          >
+            Thanh toán
+          </button>
+        );
+        actions.push(
+          <button
+            key="cancel-booking"
+            className="px-3 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
+            onClick={() => openCancelBooking(booking.id)}
+          >
+            Huỷ booking
+          </button>
+        );
+        break;
+      case "PAYMENT_PENDING":
+        actions.push(
+          <button
+            key="pay"
+            className="px-3 py-2 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-50"
+            onClick={() => handlePayment(booking.id)}
+          >
+            Thanh toán
+          </button>
+        );
+        actions.push(
+          <button
+            key="cancel-booking"
+            className="px-3 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
+            onClick={() => openCancelBooking(booking.id)}
+          >
+            Huỷ booking
+          </button>
+        );
+        break;
+      case "PAYMENT_EXPIRED":
+        actions.push(
+          <button
+            key="rebook"
+            className="px-3 py-2 rounded-md text-white shadow-lg hover:shadow-xl"
+            style={{ backgroundColor: "#94cce6" }}
+            onClick={() => navigate("/find-tutor")}
+          >
+            Đặt lịch lại
+          </button>
+        );
+        break;
+      case "PAYMENT_COMPLETED":
+      case "PAID":
+        actions.push(
+          <button
+            key="chat"
+            className="px-3 py-2 rounded-md text-white shadow-lg hover:shadow-xl"
+            style={{ backgroundColor: "#94cce6" }}
+            onClick={() => handleChat(booking)}
+          >
+            Nhắn tin
+          </button>
+        );
+        break;
+      case "CANCELLED":
+        actions.push(
+          <button
+            key="refund"
+            className="px-3 py-2 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-50"
+            onClick={() => console.log("Request refund", booking.id)}
+          >
+            Hoàn tiền
+          </button>
+        );
+        break;
+      case "REFUNDED":
+        actions.push(
+          <span
+            key="refunded"
+            className="px-3 py-2 rounded-md bg-purple-100 text-purple-800"
+          >
+            Đã hoàn tiền
+          </span>
+        );
+        break;
+      case "COMPLETED":
+        actions.push(
+          <button
+            key="chat"
+            className="px-3 py-2 rounded-md text-white shadow-lg hover:shadow-xl"
+            style={{ backgroundColor: "#94cce6" }}
+            onClick={() => handleChat(booking)}
+          >
+            Nhắn tin
+          </button>
+        );
+        actions.push(
+          <button
+            key="rate"
+            className="px-3 py-2 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-50"
+            onClick={() => console.log("Rate tutor", booking.id)}
+          >
+            Đánh giá
+          </button>
+        );
+        actions.push(
+          <button
+            key="rebook"
+            className="px-3 py-2 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-50"
+            onClick={() => navigate("/find-tutor")}
+          >
+            Đặt thêm lịch
+          </button>
+        );
+        actions.push(
+          <button
+            key="tip"
+            className="px-3 py-2 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-50"
+            onClick={() => console.log("Send tip", booking.id)}
+          >
+            Tip
+          </button>
+        );
+        break;
+      case "TUTOR_REJECTED":
+        actions.push(
+          <button
+            key="chat"
+            className="px-3 py-2 rounded-md text-white shadow-lg hover:shadow-xl"
+            style={{ backgroundColor: "#94cce6" }}
+            onClick={() => handleChat(booking)}
+          >
+            Nhắn tin
+          </button>
+        );
+        actions.push(
+          <button
+            key="rebook"
+            className="px-3 py-2 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-50"
+            onClick={() => navigate("/find-tutor")}
+          >
+            Đặt lịch lại
+          </button>
+        );
+        break;
+      default:
+        break;
+    }
+    return <div className="flex items-center gap-2 flex-wrap">{actions}</div>;
+  };
+
+  const renderCountdown = (booking: Booking) => {
+    if (!booking.paymentDeadline) return null;
+
+    // Sử dụng tick để trigger re-render mỗi giây
+    const deadline = new Date(booking.paymentDeadline).getTime();
+    const now = Date.now();
+    const diff = Math.max(0, Math.floor((deadline - now) / 1000));
+
+    // Trigger re-render bằng cách sử dụng tick trong dependency
+    const currentTick = tick;
+
+    // Nếu hết thời gian, không hiển thị countdown
+    if (diff <= 0) {
+      return (
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+          ⏰ Hết hạn
+        </span>
+      );
+    }
+
+    const hh = Math.floor(diff / 3600)
+      .toString()
+      .padStart(2, "0");
+    const mm = Math.floor((diff % 3600) / 60)
+      .toString()
+      .padStart(2, "0");
+    const ss = Math.floor(diff % 60)
+      .toString()
+      .padStart(2, "0");
+    const isUrgent = diff <= 300; // <= 5 phút
+
+    return (
+      <span
+        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+          isUrgent ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
+        }`}
+        title={`Thời gian còn lại để thanh toán (tick: ${currentTick})`}
+      >
+        ⏳ {hh}:{mm}:{ss}
+      </span>
+    );
   };
 
   const getSessionStatusDisplayName = (status: string) => {
@@ -426,6 +666,145 @@ const MySessions: React.FC = () => {
   };
 
   const calendarInfo = getCalendarInfo(currentDate);
+
+  // ====== Cancel & Refund Modals State ======
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<{
+    type: "booking" | "session";
+    id: number;
+  } | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundBookingId, setRefundBookingId] = useState<number | null>(null);
+  const [refundMethod, setRefundMethod] = useState<"BANK" | "CREDIT">("CREDIT");
+
+  // Openers
+  const openCancelBooking = (bookingId: number) => {
+    setCancelTarget({ type: "booking", id: bookingId });
+    setCancelReason("");
+    setShowCancelModal(true);
+  };
+
+  const openCancelSession = (sessionId: number) => {
+    setCancelTarget({ type: "session", id: sessionId });
+    setCancelReason("");
+    setShowCancelModal(true);
+  };
+
+  // ====== Handler Functions ======
+  const handlePayment = async (bookingId: number) => {
+    try {
+      const booking = bookings.find((b) => b.id === bookingId);
+      if (!booking) {
+        alert("Không tìm thấy thông tin booking");
+        return;
+      }
+
+      // Navigate to payment page with booking info
+      console.log("=== Payment Debug Info ===");
+      console.log("Booking found:", booking);
+      console.log("First session:", booking.sessions?.[0]);
+      console.log("Session date field:", booking.sessions?.[0]?.date);
+      console.log(
+        "Session sessionDate field:",
+        booking.sessions?.[0]?.sessionDate
+      );
+      console.log("Session fee:", booking.sessions?.[0]?.fee);
+      console.log(
+        "Session subject fees:",
+        booking.sessions?.[0]?.subject?.fees
+      );
+      console.log("Booking totalAmount:", booking.totalAmount);
+
+      navigate("/payment", {
+        state: {
+          bookingId: bookingId,
+          bookingType:
+            booking.bookingType === "SINGLE" ? "SINGLE_SESSION" : "PACKAGE",
+          totalAmount: booking.totalAmount || 0,
+          tutor: {
+            id: booking.tutor?.id || booking.tutorId,
+            name:
+              `${
+                booking.tutor?.user?.firstName || booking.tutor?.firstName || ""
+              } ${
+                booking.tutor?.user?.lastName || booking.tutor?.lastName || ""
+              }`.trim() || "Gia sư",
+            subject: booking.sessions?.[0]?.subject?.name || "Môn học",
+            avatar: "/default-avatar.png",
+          },
+          session: booking.sessions?.[0]
+            ? {
+                date:
+                  booking.sessions[0].date || booking.sessions[0].sessionDate,
+                time: `${booking.sessions[0].startTime?.substring(
+                  0,
+                  5
+                )} - ${booking.sessions[0].endTime?.substring(0, 5)}`,
+                subject: booking.sessions[0].subject?.name || "Môn học",
+                fee:
+                  booking.sessions[0].fee ||
+                  booking.sessions[0].subject?.fees ||
+                  booking.totalAmount ||
+                  0,
+              }
+            : null,
+          note: booking.note,
+        },
+      });
+    } catch (error) {
+      console.error("Payment navigation error:", error);
+      alert("Không thể chuyển đến trang thanh toán");
+    }
+  };
+
+  const handleChat = (booking: Booking) => {
+    const tutorId = booking.tutor?.id || booking.tutorId;
+    if (tutorId) {
+      navigate(`/messages?tutor=${tutorId}`);
+    } else {
+      alert("Không tìm thấy thông tin giảng viên");
+    }
+  };
+
+  // Call APIs
+  const submitCancel = async () => {
+    if (!cancelTarget) return;
+    try {
+      if (cancelTarget.type === "booking") {
+        await api.post(`/api/booking/${cancelTarget.id}/cancel`, null, {
+          params: { actor: "STUDENT", reason: cancelReason },
+        });
+      } else {
+        await api.post(`/api/session/${cancelTarget.id}/cancel`, null, {
+          params: { actor: "STUDENT", reason: cancelReason },
+        });
+      }
+      setShowCancelModal(false);
+      setCancelTarget(null);
+      setCancelReason("");
+      await loadBookings();
+    } catch (e) {
+      console.error("Cancel error", e);
+      alert("Huỷ không thành công. Vui lòng thử lại.");
+    }
+  };
+
+  const submitRefund = async () => {
+    if (!refundBookingId) return;
+    try {
+      await api.post(`/api/booking/${refundBookingId}/refund`, null, {
+        params: { method: refundMethod, actor: "STUDENT" },
+      });
+      setShowRefundModal(false);
+      setRefundBookingId(null);
+      await loadBookings();
+    } catch (e) {
+      console.error("Refund error", e);
+      alert("Yêu cầu hoàn tiền không thành công. Vui lòng thử lại.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -487,6 +866,16 @@ const MySessions: React.FC = () => {
                     }`}
                   >
                     Ngày
+                  </button>
+                  <button
+                    onClick={() => setCalendarViewType("week")}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      calendarViewType === "week"
+                        ? "bg-blue-100 text-blue-700"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    Tuần
                   </button>
                   <button
                     onClick={() => setCalendarViewType("month")}
@@ -609,6 +998,10 @@ const MySessions: React.FC = () => {
                       >
                         {getStatusText(booking.status)}
                       </span>
+                      {(String(booking.status) === "PAYMENT_PENDING" ||
+                        String(booking.status) === "TUTOR_ACCEPTED") &&
+                        booking.paymentDeadline &&
+                        renderCountdown(booking)}
                       <span
                         className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
                         style={{ backgroundColor: "rgb(148, 204, 230)" }}
@@ -630,31 +1023,17 @@ const MySessions: React.FC = () => {
                     </button>
                   </div>
 
-                  {/* Thông tin booking cơ bản: avatar + tên gia sư + note */}
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer"
-                      style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                      onClick={() => {
-                        const tutorId = booking.tutor?.id || booking.tutorId;
-                        if (tutorId) {
-                          navigate(`/tutor/${tutorId}`);
-                        } else {
-                          alert("Không tìm thấy thông tin giảng viên");
-                        }
-                      }}
-                    >
-                      <span className="text-white font-semibold text-lg">
-                        {(
-                          booking.tutor?.user?.firstName ??
-                          booking.tutor?.firstName ??
-                          "G"
-                        ).charAt(0)}
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3
-                        className="text-lg font-semibold text-gray-900 truncate cursor-pointer hover:underline"
+                  {/* Booking actions theo trạng thái (giữ chỗ cho PACKAGE) */}
+                  {booking.bookingType === "PACKAGE" && (
+                    <div className="mt-2">{renderBookingActions(booking)}</div>
+                  )}
+
+                  {/* Thông tin booking cơ bản: avatar + tên giảng viên + note (trái) và action (đơn) bên phải */}
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      <div
+                        className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer"
+                        style={{ backgroundColor: "rgb(148, 204, 230)" }}
                         onClick={() => {
                           const tutorId = booking.tutor?.id || booking.tutorId;
                           if (tutorId) {
@@ -664,21 +1043,48 @@ const MySessions: React.FC = () => {
                           }
                         }}
                       >
-                        {(booking.tutor?.user?.firstName ??
-                          booking.tutor?.firstName ??
-                          "") +
-                          " " +
-                          (booking.tutor?.user?.lastName ??
-                            booking.tutor?.lastName ??
-                            "")}
-                      </h3>
-                      {booking.note && (
-                        <p className="text-sm text-gray-600 truncate mt-1">
-                          <span className="font-medium">Ghi chú:</span>{" "}
-                          {booking.note}
-                        </p>
-                      )}
+                        <span className="text-white font-semibold text-lg">
+                          {(
+                            booking.tutor?.user?.firstName ??
+                            booking.tutor?.firstName ??
+                            "G"
+                          ).charAt(0)}
+                        </span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3
+                          className="text-lg font-semibold text-gray-900 truncate cursor-pointer hover:underline"
+                          onClick={() => {
+                            const tutorId =
+                              booking.tutor?.id || booking.tutorId;
+                            if (tutorId) {
+                              navigate(`/tutor/${tutorId}`);
+                            } else {
+                              alert("Không tìm thấy thông tin giảng viên");
+                            }
+                          }}
+                        >
+                          {(booking.tutor?.user?.firstName ??
+                            booking.tutor?.firstName ??
+                            "") +
+                            " " +
+                            (booking.tutor?.user?.lastName ??
+                              booking.tutor?.lastName ??
+                              "")}
+                        </h3>
+                        {booking.note && (
+                          <p className="text-sm text-gray-600 truncate mt-1">
+                            <span className="font-medium">Ghi chú:</span>{" "}
+                            {booking.note}
+                          </p>
+                        )}
+                      </div>
                     </div>
+                    {booking.bookingType === "SINGLE" && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {renderBookingActions(booking)}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -689,14 +1095,6 @@ const MySessions: React.FC = () => {
                       {/* Thông tin booking tổng quan */}
                       <div className="bg-blue-50 rounded-lg p-4 mb-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <span className="font-medium text-gray-700">
-                              Môn học:
-                            </span>
-                            <span className="ml-2 text-gray-900">
-                              {booking.subject?.name || "Chưa xác định"}
-                            </span>
-                          </div>
                           <div>
                             <span className="font-medium text-gray-700">
                               Tổng số buổi:
@@ -758,38 +1156,116 @@ const MySessions: React.FC = () => {
                                   </div>
 
                                   {/* Session Actions */}
-                                  <button
-                                    onClick={() =>
-                                      fetchSessionHistory(session.id)
-                                    }
-                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                                    title="Xem lịch sử thay đổi"
-                                  >
-                                    <DotsVerticalIcon />
-                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    {(session.status === "UPCOMING" ||
+                                      session.status ===
+                                        "PAYMENT_COMPLETED") && (
+                                      <button
+                                        onClick={() =>
+                                          openCancelSession(session.id)
+                                        }
+                                        className="px-3 py-1.5 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
+                                      >
+                                        Huỷ buổi
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() =>
+                                        fetchSessionHistory(session.id)
+                                      }
+                                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                      title="Xem lịch sử thay đổi"
+                                    >
+                                      <svg
+                                        className="w-5 h-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                                        />
+                                      </svg>
+                                    </button>
+                                  </div>
                                 </div>
 
                                 {/* Chi tiết thời gian và học phí */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                   <div className="flex items-center gap-2">
-                                    <CalendarIcon />
+                                    <BookIcon />
                                     <span className="font-medium text-gray-700">
-                                      Ngày:
+                                      Môn học:
                                     </span>
                                     <span className="text-gray-900">
-                                      {new Date(
-                                        session.sessionDate
-                                      ).toLocaleDateString("vi-VN")}
+                                      {session.subject?.name || "Chưa xác định"}
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <ClockIcon />
+                                    <MoneyIcon />
                                     <span className="font-medium text-gray-700">
-                                      Giờ:
+                                      Học phí:
                                     </span>
                                     <span className="text-gray-900">
-                                      {session.startTime?.substring(0, 5)} -{" "}
-                                      {session.endTime?.substring(0, 5)}
+                                      {(() => {
+                                        console.log("Session fee debug:", {
+                                          sessionFee: session.fee,
+                                          subjectFees: session.subject?.fees,
+                                          sessionData: session,
+                                        });
+                                        return session.fee && session.fee > 0
+                                          ? `${Number(
+                                              session.fee
+                                            ).toLocaleString("vi-VN")} VNĐ`
+                                          : session.subject?.fees &&
+                                            session.subject.fees > 0
+                                          ? `${Number(
+                                              session.subject.fees
+                                            ).toLocaleString("vi-VN")} VNĐ`
+                                          : "Chưa có";
+                                      })()}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <CalendarIcon />
+                                    <span className="font-medium text-gray-700">
+                                      Ngày giờ:
+                                    </span>
+                                    <span className="text-gray-900">
+                                      {(() => {
+                                        console.log("Session date debug:", {
+                                          sessionDate: session.sessionDate,
+                                          date: session.date,
+                                          startTime: session.startTime,
+                                          endTime: session.endTime,
+                                        });
+                                        try {
+                                          // Sử dụng session.date từ backend thay vì session.sessionDate
+                                          const dateValue =
+                                            session.date || session.sessionDate;
+                                          const d = new Date(dateValue);
+                                          const dateStr = isNaN(d.getTime())
+                                            ? dateValue
+                                            : d.toLocaleDateString("vi-VN");
+                                          const timeStr = `${session.startTime?.substring(
+                                            0,
+                                            5
+                                          )} - ${session.endTime?.substring(
+                                            0,
+                                            5
+                                          )}`;
+                                          return `${dateStr} ${timeStr}`;
+                                        } catch {
+                                          return (
+                                            session.date ||
+                                            session.sessionDate ||
+                                            ""
+                                          );
+                                        }
+                                      })()}
                                     </span>
                                   </div>
                                 </div>
@@ -878,6 +1354,116 @@ const MySessions: React.FC = () => {
                   Chưa có lịch sử thay đổi
                 </p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Cancel Modal */}
+        {showCancelModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                Xác nhận huỷ
+              </h3>
+              <div className="text-sm text-gray-700 mb-3">
+                {cancelTarget?.type === "booking" ? (
+                  <>
+                    <p>Luật hoàn tiền/phạt (đối với học sinh):</p>
+                    <ul className="list-disc list-inside mt-1">
+                      <li>
+                        Huỷ ≥ 48h trước buổi học gần nhất: hoàn 100% tín dụng hệ
+                        thống.
+                      </li>
+                      <li>
+                        Huỷ ≥ 24h và &lt; 48h: hoàn 50% tín dụng hệ thống.
+                      </li>
+                      <li>Huỷ &lt; 24h: không hoàn.</li>
+                    </ul>
+                    <p className="mt-2 text-gray-600">
+                      Lưu ý: Nếu giảng viên là người huỷ, giảng viên sẽ bị phạt
+                      5%/10%/15% theo mốc thời gian và bạn được hoàn 100%.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      Huỷ buổi học sẽ áp dụng luật như trên theo thời gian còn
+                      lại tới buổi học.
+                    </p>
+                  </>
+                )}
+              </div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Lý do huỷ (tuỳ chọn)
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-300"
+                placeholder="Nhập lý do huỷ..."
+              />
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Đóng
+                </button>
+                <button
+                  onClick={submitCancel}
+                  className="px-4 py-2 rounded-md text-white shadow-lg hover:shadow-xl"
+                  style={{ backgroundColor: "#94cce6" }}
+                >
+                  Xác nhận huỷ
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Refund Modal */}
+        {showRefundModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                Chọn phương thức hoàn tiền
+              </h3>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="refundMethod"
+                    checked={refundMethod === "CREDIT"}
+                    onChange={() => setRefundMethod("CREDIT")}
+                  />
+                  <span>Nhận 100% tín dụng hệ thống</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="refundMethod"
+                    checked={refundMethod === "BANK"}
+                    onChange={() => setRefundMethod("BANK")}
+                  />
+                  <span>Hoàn về tài khoản ngân hàng (nếu đã cập nhật)</span>
+                </label>
+              </div>
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  onClick={() => setShowRefundModal(false)}
+                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Đóng
+                </button>
+                <button
+                  onClick={submitRefund}
+                  className="px-4 py-2 rounded-md text-white shadow-lg hover:shadow-xl"
+                  style={{ backgroundColor: "#94cce6" }}
+                >
+                  Xác nhận hoàn tiền
+                </button>
+              </div>
             </div>
           </div>
         )}

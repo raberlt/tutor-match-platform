@@ -21,6 +21,7 @@ interface Conversation {
   participantRole: string;
   lastMessage: string;
   lastMessageTime: string;
+  participantAvatar?: string;
   unreadCount: number;
 }
 
@@ -134,7 +135,19 @@ export const TutorInbox: React.FC = () => {
 
         // Backend returns conversations directly, not messages to process
         if (Array.isArray(data)) {
-          setConversations(data);
+          // Sắp xếp cuộc trò chuyện theo thời gian tin nhắn cuối cùng (mới nhất trước)
+          const sortedConversations = data.sort((a, b) => {
+            const timeA = new Date(a.lastMessageTime || 0).getTime();
+            const timeB = new Date(b.lastMessageTime || 0).getTime();
+            return timeB - timeA;
+          });
+          setConversations(sortedConversations);
+
+          // Tự động chọn cuộc trò chuyện mới nhất nếu chưa có cuộc trò chuyện nào được chọn
+          if (!selectedConversation && sortedConversations.length > 0) {
+            setSelectedConversation(sortedConversations[0]);
+            loadMessages(sortedConversations[0].participantId);
+          }
         } else {
           console.log("Unexpected data format, using mock conversations");
           loadMockConversations();

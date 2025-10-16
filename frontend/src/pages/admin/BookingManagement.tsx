@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useI18n } from "../../contexts/I18nContext";
 import viData from "./json/bookingManagement.data.vi.json";
 import enData from "./json/bookingManagement.data.en.json";
 
@@ -73,7 +72,7 @@ interface BookingStats {
 }
 
 const BookingManagement: React.FC = () => {
-  const { t, locale } = useI18n();
+  const locale = "vi";
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<BookingStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -141,7 +140,7 @@ const BookingManagement: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto border-blue-600"></div>
-          <p className="mt-3 text-gray-600">{t("loading")}</p>
+          <p className="mt-3 text-gray-600">Đang tải...</p>
         </div>
       </div>
     );
@@ -173,11 +172,9 @@ const BookingManagement: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {t("bookingManagement.title")}
+                Quản lý đặt lịch
               </h1>
-              <p className="text-gray-600 mt-1">
-                {t("bookingManagement.subtitle")}
-              </p>
+              <p className="text-gray-600 mt-1">Theo dõi và xử lý lịch học</p>
             </div>
           </div>
         </div>
@@ -204,7 +201,7 @@ const BookingManagement: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("bookingManagement.totalBookings")}
+                    Tổng đặt lịch
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.totalBookings}
@@ -232,7 +229,7 @@ const BookingManagement: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("bookingManagement.pendingBookings")}
+                    Chờ xác nhận
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.pendingBookings}
@@ -260,7 +257,7 @@ const BookingManagement: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("bookingManagement.confirmedBookings")}
+                    Đã xác nhận
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.confirmedBookings}
@@ -288,7 +285,7 @@ const BookingManagement: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("bookingManagement.completedBookings")}
+                    Đã hoàn tất
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.completedBookings}
@@ -315,9 +312,7 @@ const BookingManagement: React.FC = () => {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
-                    {t("bookingManagement.cancelledBookings")}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Đã hủy</p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.cancelledBookings}
                   </p>
@@ -333,7 +328,7 @@ const BookingManagement: React.FC = () => {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder={t("bookingManagement.searchPlaceholder")}
+                placeholder={"Tìm kiếm lịch học..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -345,19 +340,11 @@ const BookingManagement: React.FC = () => {
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">{t("bookingManagement.allStatuses")}</option>
-                <option value="PENDING">
-                  {t("bookingManagement.pending")}
-                </option>
-                <option value="CONFIRMED">
-                  {t("bookingManagement.confirmed")}
-                </option>
-                <option value="COMPLETED">
-                  {t("bookingManagement.completed")}
-                </option>
-                <option value="CANCELLED">
-                  {t("bookingManagement.cancelled")}
-                </option>
+                <option value="">Tất cả trạng thái</option>
+                <option value="PENDING">Chờ xác nhận</option>
+                <option value="CONFIRMED">Đã xác nhận</option>
+                <option value="COMPLETED">Đã hoàn tất</option>
+                <option value="CANCELLED">Đã hủy</option>
               </select>
             </div>
           </div>
@@ -370,28 +357,28 @@ const BookingManagement: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("bookingManagement.student")}
+                    Học sinh
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("bookingManagement.tutor")}
+                    Gia sư
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("bookingManagement.subject")}
+                    Môn học
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("bookingManagement.date")}
+                    Ngày
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("bookingManagement.time")}
+                    Thời gian
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("bookingManagement.status")}
+                    Trạng thái
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("bookingManagement.amount")}
+                    Số tiền
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("bookingManagement.actions")}
+                    Thao tác
                   </th>
                 </tr>
               </thead>
@@ -450,10 +437,10 @@ const BookingManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button className="text-blue-600 hover:text-blue-900 mr-3">
-                        {t("bookingManagement.viewDetails")}
+                        Xem chi tiết
                       </button>
                       <button className="text-green-600 hover:text-green-900">
-                        {t("bookingManagement.updateStatus")}
+                        Cập nhật
                       </button>
                     </td>
                   </tr>
@@ -465,7 +452,7 @@ const BookingManagement: React.FC = () => {
 
         {filteredBookings.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-gray-500">{t("loading")}</p>
+            <p className="text-gray-500">Không có kết quả</p>
           </div>
         )}
       </div>

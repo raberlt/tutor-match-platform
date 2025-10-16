@@ -1,5 +1,4 @@
 import React from "react";
-import { useI18n } from "../../../contexts/I18nContext";
 import { useDashboard } from "../../../hooks/useDashboard";
 
 interface TopTutor {
@@ -12,7 +11,6 @@ interface TopTutor {
 }
 
 export const TopTutors: React.FC = () => {
-  const { t } = useI18n();
   const { topTutors } = useDashboard();
   return (
     <div
@@ -24,14 +22,12 @@ export const TopTutors: React.FC = () => {
       }}
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-gray-900">
-          {t("topTutors")}
-        </h3>
+        <h3 className="text-sm font-semibold text-gray-900">Gia sư nổi bật</h3>
         <a
           className="text-sm font-medium"
           style={{ color: "rgb(148, 204, 230)" }}
         >
-          {t("viewAll")}
+          Xem tất cả
         </a>
       </div>
       <div className="space-y-4">

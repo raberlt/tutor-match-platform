@@ -50,7 +50,7 @@ public class BookingQueryServiceImpl implements BookingQueryService {
     @Override
     public List<Booking> getConfirmedBookings(String tutorUsername) {
         User tutor = findUserByUsername(tutorUsername);
-        return bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.TUTOR_APPROVED);
+        return bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.TUTOR_ACCEPTED);
     }
     
     @Override
@@ -72,7 +72,7 @@ public class BookingQueryServiceImpl implements BookingQueryService {
                 .filter(booking -> booking.getSessions() != null && 
                                   booking.getSessions().stream()
                                           .anyMatch(session -> session.getSessionDate().equals(date)) &&
-                                  booking.getStatus() == BookingStatus.TUTOR_APPROVED)
+                                  booking.getStatus() == BookingStatus.TUTOR_ACCEPTED)
                 .toList();
     }
     
@@ -98,7 +98,7 @@ public class BookingQueryServiceImpl implements BookingQueryService {
     @Override
     public long countCompletedBookings(String tutorUsername) {
         User tutor = findUserByUsername(tutorUsername);
-        return bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.TUTOR_APPROVED).size();
+        return bookingRepository.findByTutorUserAndStatus(tutor, BookingStatus.TUTOR_ACCEPTED).size();
     }
     
     @Override
@@ -111,7 +111,7 @@ public class BookingQueryServiceImpl implements BookingQueryService {
                 .filter(booking -> booking.getSessions() != null && 
                                   booking.getSessions().stream()
                                           .anyMatch(session -> session.getSessionDate().equals(today)) &&
-                                  booking.getStatus() == BookingStatus.TUTOR_APPROVED)
+                                  booking.getStatus() == BookingStatus.TUTOR_ACCEPTED)
                 .count();
     }
     

@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import fsa.training.tutormatch.controller.booking.dto.BookingMyDTO;
+import fsa.training.tutormatch.controller.booking.dto.SessionInfoDTO;
+import fsa.training.tutormatch.controller.booking.dto.TutorInfoDTO;
+import fsa.training.tutormatch.controller.booking.dto.SubjectInfoDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -41,6 +45,52 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/booking")
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:3000"})
 public class BookingController {
+    @Autowired
+    private fsa.training.tutormatch.service.BookingLifecycleService bookingLifecycleService;
+    @Autowired
+    private fsa.training.tutormatch.service.CancellationService cancellationService;
+    @Autowired
+    private fsa.training.tutormatch.service.RefundService refundService;
+
+    @PostMapping("/{id}/accept")
+    public ResponseEntity<?> accept(@PathVariable Integer id, @RequestParam Integer tutorUserId) {
+        bookingLifecycleService.acceptPackageBooking(id, tutorUserId);
+        return ResponseEntity.ok().body(java.util.Map.of("success", true));
+    }
+
+    @PostMapping("/{id}/decline")
+    public ResponseEntity<?> decline(@PathVariable Integer id, @RequestParam Integer tutorUserId, @RequestParam String reason) {
+        bookingLifecycleService.declinePackageBooking(id, tutorUserId, reason);
+        return ResponseEntity.ok().body(java.util.Map.of("success", true));
+    }
+
+    @PostMapping("/{id}/mark-payment-pending")
+    public ResponseEntity<?> markPaymentPending(@PathVariable Integer id) {
+        bookingLifecycleService.markPaymentPending(id);
+        return ResponseEntity.ok().body(java.util.Map.of("success", true));
+    }
+
+    @PostMapping("/{id}/payment-success")
+    public ResponseEntity<?> paymentSuccess(@PathVariable Integer id) {
+        bookingLifecycleService.onPaymentSuccess(id);
+        return ResponseEntity.ok().body(java.util.Map.of("success", true));
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelBooking(@PathVariable Integer id,
+                                           @RequestParam("actor") fsa.training.tutormatch.entity.CancelledBy actor,
+                                           @RequestParam(value = "reason", required = false) String reason) {
+        cancellationService.cancelBooking(id, actor, reason);
+        return ResponseEntity.ok().body(java.util.Map.of("success", true));
+    }
+
+    @PostMapping("/{id}/refund")
+    public ResponseEntity<?> refundBooking(@PathVariable Integer id,
+                                           @RequestParam("method") fsa.training.tutormatch.service.RefundService.RefundMethod method,
+                                           @RequestParam(value = "actor", required = false) String actor) {
+        refundService.computeAndApplyRefundForBooking(id, actor == null ? "SYSTEM" : actor, method);
+        return ResponseEntity.ok().body(java.util.Map.of("success", true));
+    }
 
     @Autowired
     private BookingService bookingService;
@@ -290,28 +340,58 @@ public class BookingController {
             
             System.out.println("Bookings content size: " + bookings.getContent().size());
             
-            List<BookingRequestDTO> bookingDTOs = bookings.getContent().stream()
+            List<BookingMyDTO> bookingDTOs = bookings.getContent().stream()
                     .map(booking -> {
                         try {
-                            System.out.println("Converting booking ID: " + booking.getId());
-                            BookingRequestDTO dto = convertToDTO(booking);
-                            System.out.println("Successfully converted booking ID: " + booking.getId());
+                            BookingMyDTO dto = new BookingMyDTO();
+                            dto.id = booking.getId();
+                            dto.status = booking.getStatus();
+                            dto.bookingType = booking.getBookingType();
+                            dto.note = booking.getNote();
+                            dto.totalSessions = booking.getTotalSessions() != null ? booking.getTotalSessions() : (booking.getSessions() != null ? booking.getSessions().size() : 0);
+                            dto.totalAmount = booking.getTotalAmount();
+                            dto.paymentDeadline = booking.getPaymentDeadline();
+                            dto.cancelledBy = booking.getCancelledBy() != null ? booking.getCancelledBy().name() : null;
+                            dto.cancelReason = booking.getCancelReason();
+
+                            TutorInfoDTO tutorDto = new TutorInfoDTO();
+                            tutorDto.id = booking.getTutor() != null ? booking.getTutor().getId() : null;
+                            tutorDto.firstName = booking.getTutor() != null && booking.getTutor().getUser() != null ? booking.getTutor().getUser().getFirstName() : null;
+                            tutorDto.lastName = booking.getTutor() != null && booking.getTutor().getUser() != null ? booking.getTutor().getUser().getLastName() : null;
+                            dto.tutor = tutorDto;
+
+                            dto.sessions = booking.getSessions() == null ? java.util.Collections.emptyList() : booking.getSessions().stream().map(s -> {
+                                SessionInfoDTO sdto = new SessionInfoDTO();
+                                sdto.id = s.getId();
+                                sdto.date = s.getSessionDate() != null ? s.getSessionDate().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE) : null;
+                                sdto.startTime = s.getStartTime() != null ? s.getStartTime().toString() : null;
+                                sdto.endTime = s.getEndTime() != null ? s.getEndTime().toString() : null;
+                                sdto.status = s.getStatus() != null ? s.getStatus().name() : null;
+                                if (s.getSubject() != null) {
+                                    SubjectInfoDTO sub = new SubjectInfoDTO();
+                                    sub.id = s.getSubject().getId();
+                                    sub.name = s.getSubject().getName();
+                                    sdto.subject = sub;
+                                }
+                                sdto.fee = s.getFee();
+                                return sdto;
+                            }).collect(Collectors.toList());
+
                             return dto;
                         } catch (Exception e) {
-                            System.err.println("Error converting booking ID " + booking.getId() + ": " + e.getMessage());
                             e.printStackTrace();
                             return null;
                         }
                     })
-                    .filter(dto -> dto != null) // Remove null DTOs
+                    .filter(java.util.Objects::nonNull)
                     .collect(Collectors.toList());
                     
             System.out.println("Converted DTOs size: " + bookingDTOs.size());
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("content", bookingDTOs); // Frontend expects 'content'
-            response.put("bookings", bookingDTOs); // Keep for backward compatibility
+            response.put("content", bookingDTOs);
+            response.put("bookings", bookingDTOs);
             response.put("currentPage", bookings.getNumber());
             response.put("totalPages", bookings.getTotalPages());
             response.put("totalElements", bookings.getTotalElements());
@@ -460,8 +540,8 @@ public class BookingController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
             }
             
-            // Update status: tutor chấp nhận -> chuyển sang TUTOR_APPROVED
-            booking.setStatus(BookingStatus.TUTOR_APPROVED);
+            // Update status: tutor chấp nhận -> chuyển sang TUTOR_ACCEPTED
+            booking.setStatus(BookingStatus.TUTOR_ACCEPTED);
             bookingRepository.save(booking);
             
             Map<String, Object> response = new HashMap<>();
@@ -676,16 +756,8 @@ public class BookingController {
             System.out.println("Warning: Tutor or TutorUser is null for booking " + booking.getId());
         }
 
-        // Subject info
-        if (booking.getSubject() != null) {
-            System.out.println("Processing subject info for booking " + booking.getId());
-            BookingRequestDTO.SubjectInfo subjectInfo = new BookingRequestDTO.SubjectInfo();
-            subjectInfo.setId(booking.getSubject().getId());
-            subjectInfo.setName(booking.getSubject().getName());
-            dto.setSubject(subjectInfo);
-        } else {
-            System.out.println("Warning: Subject is null for booking " + booking.getId());
-        }
+        // Subject info: moved to sessions; keep empty for backward compatibility
+        dto.setSubject(null);
 
         // Sessions info
         if (booking.getSessions() != null && !booking.getSessions().isEmpty()) {

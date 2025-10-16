@@ -8,6 +8,7 @@ import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
@@ -24,6 +25,10 @@ public class Session {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    // Mã session duy nhất (SS-2024-001, SS-2024-002, ...)
+    @Column(name = "session_code", unique = true, nullable = false, columnDefinition = "NVARCHAR(20)")
+    private String sessionCode;
+    
     // Foreign Key to Booking
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id", nullable = false)
@@ -39,6 +44,14 @@ public class Session {
     @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
     
+    // Subject & fee for this session
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_id")
+    private Subject subject;
+
+    @Column(name = "fee", precision = 10, scale = 2)
+    private BigDecimal fee;
+
     // Status
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -59,4 +72,23 @@ public class Session {
     // One-to-Many relationship with session change history
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<SessionChangeHistory> changeHistory;
+    
+    @PrePersist
+    public void setDefaultValuesOnCreate() {
+        // Tự động tạo session code nếu chưa có
+        if (this.sessionCode == null || this.sessionCode.isEmpty()) {
+            this.sessionCode = generateSessionCode();
+        }
+    }
+    
+    // Helper method để tạo session code
+    private String generateSessionCode() {
+        String year = String.valueOf(java.time.LocalDate.now().getYear());
+        String month = String.format("%02d", java.time.LocalDate.now().getMonthValue());
+        String day = String.format("%02d", java.time.LocalDate.now().getDayOfMonth());
+        String time = String.format("%02d%02d", 
+            java.time.LocalTime.now().getHour(), 
+            java.time.LocalTime.now().getMinute());
+        return String.format("SS-%s%s%s-%s", year.substring(2), month, day, time);
+    }
 }

@@ -11,23 +11,22 @@ import java.util.List;
 
 @Repository
 public interface SessionChangeHistoryRepository extends JpaRepository<SessionChangeHistory, Long> {
-    
     /**
      * Find all change history for a specific session, ordered by changed date descending
      */
     List<SessionChangeHistory> findBySessionOrderByChangedAtDesc(Session session);
-    
+
     /**
      * Find all change history for a specific session by session ID
      */
     @Query("SELECT sch FROM SessionChangeHistory sch WHERE sch.session.id = :sessionId ORDER BY sch.changedAt DESC")
     List<SessionChangeHistory> findBySessionIdOrderByChangedAtDesc(@Param("sessionId") Long sessionId);
-    
+
     /**
      * Count total reschedules for a session
      */
     long countBySession(Session session);
-    
+
     /**
      * Count total reschedules for a session by session ID
      */

@@ -41,7 +41,13 @@ public class BookingStatusServiceImpl implements BookingStatusService {
         }
         
         // Update status -> tutor approved
-        booking.setStatus(BookingStatus.TUTOR_APPROVED);
+        booking.setStatus(BookingStatus.TUTOR_ACCEPTED);
+        // Nếu là gói học, set deadline thanh toán 24h
+        try {
+            if (booking.getBookingType() != null && String.valueOf(booking.getBookingType()).equals("PACKAGE")) {
+                booking.setPaymentDeadline(java.time.ZonedDateTime.now().plusHours(24));
+            }
+        } catch (Exception ignored) {}
         
         return bookingRepository.save(booking);
     }
@@ -97,7 +103,7 @@ public class BookingStatusServiceImpl implements BookingStatusService {
         validationService.validateBookingStatusForAction(booking, "complete");
         
         // Update status
-        booking.setStatus(BookingStatus.TUTOR_APPROVED);
+        booking.setStatus(BookingStatus.TUTOR_ACCEPTED);
         
         return bookingRepository.save(booking);
     }
@@ -120,9 +126,9 @@ public class BookingStatusServiceImpl implements BookingStatusService {
             case PAYMENT_PENDING:
                 return newStatus == BookingStatus.PAYMENT_COMPLETED || newStatus == BookingStatus.CANCELLED;
             case PAYMENT_COMPLETED:
-                return newStatus == BookingStatus.TUTOR_APPROVED || newStatus == BookingStatus.CANCELLED;
-            case TUTOR_APPROVED:
-                return newStatus == BookingStatus.TUTOR_APPROVED || newStatus == BookingStatus.CANCELLED;
+                return newStatus == BookingStatus.TUTOR_ACCEPTED || newStatus == BookingStatus.CANCELLED;
+            case TUTOR_ACCEPTED:
+                return newStatus == BookingStatus.TUTOR_ACCEPTED || newStatus == BookingStatus.CANCELLED;
             case TUTOR_REJECTED:
                 return false; // No transitions from rejected
             case REFUNDED:

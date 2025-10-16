@@ -204,7 +204,7 @@ public class TutorDashboardController {
                                                                   !session.getSessionDate().isAfter(endDate)))
                     .collect(Collectors.toList());
             } else {
-                schedule = bookingRepository.findByTutorAndStatus(tutor, BookingStatus.TUTOR_APPROVED);
+                schedule = bookingRepository.findByTutorAndStatus(tutor, BookingStatus.TUTOR_ACCEPTED);
             }
 
             // Convert to simplified format using Map
@@ -275,13 +275,8 @@ public class TutorDashboardController {
         }
         bookingMap.put("tutor", tutorInfo);
 
-        // Subject info
-        Map<String, Object> subjectInfo = new HashMap<>();
-        if (booking.getSubject() != null) {
-            subjectInfo.put("id", booking.getSubject().getId());
-            subjectInfo.put("name", booking.getSubject().getName());
-        }
-        bookingMap.put("subject", subjectInfo);
+        // Subject info moved to sessions; keep empty map for compatibility
+        bookingMap.put("subject", new HashMap<>());
 
         return bookingMap;
     }

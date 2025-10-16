@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useI18n } from "../../contexts/I18nContext";
 import viData from "./json/couponManagement.data.vi.json";
 import enData from "./json/couponManagement.data.en.json";
 
@@ -30,7 +29,7 @@ interface CouponStats {
 }
 
 const CouponManagement: React.FC = () => {
-  const { t, locale } = useI18n();
+  const locale = "vi";
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [stats, setStats] = useState<CouponStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -90,7 +89,7 @@ const CouponManagement: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto border-blue-600"></div>
-          <p className="mt-3 text-gray-600">{t("loading")}</p>
+          <p className="mt-3 text-gray-600">Đang tải...</p>
         </div>
       </div>
     );
@@ -123,10 +122,10 @@ const CouponManagement: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {t("couponManagement.title")}
+                  Quản lý mã giảm giá
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  {t("couponManagement.subtitle")}
+                  Tạo và quản lý các mã ưu đãi
                 </p>
               </div>
             </div>
@@ -134,7 +133,7 @@ const CouponManagement: React.FC = () => {
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               style={{ backgroundColor: "rgb(148, 204, 230)" }}
             >
-              {t("couponManagement.createCoupon")}
+              Tạo mã
             </button>
           </div>
         </div>
@@ -161,7 +160,7 @@ const CouponManagement: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("couponManagement.totalCoupons")}
+                    Tổng số mã
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.totalCoupons}
@@ -189,7 +188,7 @@ const CouponManagement: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("couponManagement.activeCoupons")}
+                    Đang hoạt động
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.activeCoupons}
@@ -216,9 +215,7 @@ const CouponManagement: React.FC = () => {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
-                    {t("couponManagement.expiredCoupons")}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Hết hạn</p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.expiredCoupons}
                   </p>
@@ -245,7 +242,7 @@ const CouponManagement: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("couponManagement.totalUsage")}
+                    Tổng lượt dùng
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.totalUsage}
@@ -273,7 +270,7 @@ const CouponManagement: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("couponManagement.totalDiscount")}
+                    Tổng chiết khấu
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {formatCurrency(stats.totalDiscount)}
@@ -290,7 +287,7 @@ const CouponManagement: React.FC = () => {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder={t("couponManagement.code")}
+                placeholder={"Mã giảm giá hoặc mô tả..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -302,11 +299,9 @@ const CouponManagement: React.FC = () => {
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">{t("couponManagement.status")}</option>
-                <option value="active">{t("couponManagement.active")}</option>
-                <option value="inactive">
-                  {t("couponManagement.inactive")}
-                </option>
+                <option value="">Trạng thái</option>
+                <option value="active">Đang hoạt động</option>
+                <option value="inactive">Không hoạt động</option>
               </select>
             </div>
             <div className="sm:w-48">
@@ -315,11 +310,9 @@ const CouponManagement: React.FC = () => {
                 onChange={(e) => setSelectedType(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">{t("couponManagement.discountType")}</option>
-                <option value="PERCENTAGE">
-                  {t("couponManagement.percentage")}
-                </option>
-                <option value="FIXED">{t("couponManagement.fixed")}</option>
+                <option value="">Loại chiết khấu</option>
+                <option value="PERCENTAGE">Phần trăm</option>
+                <option value="FIXED">Cố định</option>
               </select>
             </div>
           </div>
@@ -332,31 +325,31 @@ const CouponManagement: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("couponManagement.code")}
+                    Mã
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("couponManagement.description")}
+                    Mô tả
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("couponManagement.discountType")}
+                    Loại
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("couponManagement.discountValue")}
+                    Giá trị
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("couponManagement.usedCount")}
+                    Lượt dùng
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("couponManagement.startDate")}
+                    Bắt đầu
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("couponManagement.endDate")}
+                    Kết thúc
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("couponManagement.status")}
+                    Trạng thái
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("couponManagement.actions")}
+                    Thao tác
                   </th>
                 </tr>
               </thead>
@@ -376,8 +369,8 @@ const CouponManagement: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                         {coupon.discountType === "PERCENTAGE"
-                          ? t("couponManagement.percentage")
-                          : t("couponManagement.fixed")}
+                          ? "Phần trăm"
+                          : "Cố định"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -406,17 +399,15 @@ const CouponManagement: React.FC = () => {
                           coupon.isActive
                         )}`}
                       >
-                        {coupon.isActive
-                          ? t("couponManagement.active")
-                          : t("couponManagement.inactive")}
+                        {coupon.isActive ? "Đang hoạt động" : "Không hoạt động"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button className="text-blue-600 hover:text-blue-900 mr-3">
-                        {t("couponManagement.editCoupon")}
+                        Sửa
                       </button>
                       <button className="text-red-600 hover:text-red-900">
-                        {t("couponManagement.deleteCoupon")}
+                        Xoá
                       </button>
                     </td>
                   </tr>
@@ -428,7 +419,7 @@ const CouponManagement: React.FC = () => {
 
         {filteredCoupons.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-gray-500">{t("loading")}</p>
+            <p className="text-gray-500">Không có kết quả</p>
           </div>
         )}
       </div>

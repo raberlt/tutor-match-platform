@@ -84,7 +84,7 @@ public class ScheduleService {
                 booking.getSessions().stream()
                         .anyMatch(session -> session.getSessionDate().equals(bookingDate)) &&
                 (booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || 
-                 booking.getStatus() == BookingStatus.TUTOR_APPROVED ||
+                 booking.getStatus() == BookingStatus.TUTOR_ACCEPTED ||
                  booking.getStatus() == BookingStatus.PAYMENT_PENDING)
             )
             .toList();

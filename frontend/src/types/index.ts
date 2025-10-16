@@ -23,11 +23,14 @@ export interface AuthContextType {
 // Booking Types - Cập nhật theo API mới
 export type BookingStatus =
   | "PAYMENT_PENDING"
+  | "PAYMENT_EXPIRED"
   | "PAYMENT_COMPLETED"
-  | "TUTOR_APPROVED"
+  | "AWAITING_TUTOR_ACCEPT"
+  | "TUTOR_ACCEPTED"
   | "TUTOR_REJECTED"
   | "CANCELLED"
-  | "REFUNDED";
+  | "REFUNDED"
+  | "COMPLETED";
 
 export type BookingType = "SINGLE" | "PACKAGE";
 
@@ -73,21 +76,12 @@ export interface BookingRequestCreateDTO {
   tutorId: number;
   subjectId: number;
   date: string; // YYYY-MM-DD format
-  fromTime: string; // HH:mm format
-  toTime: string; // HH:mm format
+  time: string; // HH:mm-HH:mm format
   note?: string;
-  sessionsPerWeek?: number; // chỉ cho PACKAGE
-  contractDuration?: number; // chỉ cho PACKAGE (tháng)
   totalAmount?: number;
-  sessions?: PackageSchedule[];
+  totalSessions?: number; // chỉ cho PACKAGE
   paymentMethod?: string;
-  studentInfo?: {
-    fullName: string;
-    email: string;
-    phone: string;
-    address?: string;
-  };
-  paymentNote?: string;
+  couponId?: number | null;
 }
 
 export interface PackageSchedule {
@@ -336,6 +330,9 @@ export interface BookingRequestDTO {
   note?: string;
   totalAmount?: number;
   totalSessions?: number;
+  paymentDeadline?: string;
+  cancelledBy?: "STUDENT" | "TUTOR" | "ADMIN" | "SYSTEM";
+  cancelReason?: string;
   student: StudentInfo;
   tutor: TutorInfo;
   subject: SubjectInfo;
@@ -349,6 +346,7 @@ export interface SessionInfo {
   endTime: string;
   status: SessionStatus;
   rescheduleCount: number;
+  subject?: { id: number; name: string; fees: number };
 }
 
 // Tutor Search Types
@@ -449,4 +447,6 @@ export interface BookingCreateResponse {
   message: string;
   bookingId?: number;
   status?: string;
+  paymentRequired?: boolean;
+  paymentId?: number;
 }

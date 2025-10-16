@@ -1,5 +1,4 @@
 import React from "react";
-import { useI18n } from "../../../contexts/I18nContext";
 import { formatCurrency, formatNumber } from "../../../utils/format";
 
 interface StatCardProps {
@@ -25,7 +24,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   showGrowth = true,
   showStars = false,
 }) => {
-  const { locale } = useI18n();
+  const locale = "vi";
 
   const formatValue = () => {
     if (formatType === "currency") {

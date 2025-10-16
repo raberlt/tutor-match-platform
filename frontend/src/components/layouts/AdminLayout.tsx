@@ -1,14 +1,11 @@
 import React from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import { useI18n } from "../../contexts/I18nContext";
-import { LanguageSwitcher } from "../LanguageSwitcher";
 
 export const AdminLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { t } = useI18n();
 
   const handleLogout = () => {
     logout();
@@ -17,7 +14,7 @@ export const AdminLayout: React.FC = () => {
 
   const sidebarItems = [
     {
-      name: t("sidebar.overview"),
+      name: "Tổng quan",
       href: "/admin",
       icon: (
         <svg
@@ -36,7 +33,7 @@ export const AdminLayout: React.FC = () => {
       ),
     },
     {
-      name: t("sidebar.userManagement"),
+      name: "Quản lý người dùng",
       href: "/admin/users",
       icon: (
         <svg
@@ -56,7 +53,7 @@ export const AdminLayout: React.FC = () => {
       ),
     },
     {
-      name: t("sidebar.profileManagement"),
+      name: "Quản lý hồ sơ",
       href: "/admin/profiles",
       icon: (
         <svg
@@ -75,7 +72,7 @@ export const AdminLayout: React.FC = () => {
       ),
     },
     {
-      name: t("sidebar.bookingManagement"),
+      name: "Quản lý đặt lịch",
       href: "/admin/bookings",
       icon: (
         <svg
@@ -94,7 +91,7 @@ export const AdminLayout: React.FC = () => {
       ),
     },
     {
-      name: t("sidebar.couponManagement"),
+      name: "Quản lý mã giảm giá",
       href: "/admin/coupons",
       icon: (
         <svg
@@ -113,7 +110,7 @@ export const AdminLayout: React.FC = () => {
       ),
     },
     {
-      name: t("sidebar.paymentManagement"),
+      name: "Quản lý thanh toán",
       href: "/admin/payments",
       icon: (
         <svg
@@ -132,7 +129,7 @@ export const AdminLayout: React.FC = () => {
       ),
     },
     {
-      name: t("sidebar.messageManagement"),
+      name: "Quản lý tin nhắn",
       href: "/admin/messages",
       icon: (
         <svg
@@ -192,22 +189,20 @@ export const AdminLayout: React.FC = () => {
                       `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
                       "Admin"}
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {t("sidebar.adminRole")}
-                  </div>
+                  <div className="text-xs text-gray-500">Quản trị viên</div>
                 </div>
               </div>
               <button
                 onClick={handleLogout}
                 className="text-xs text-red-600 hover:text-red-800 transition-colors"
               >
-                {t("sidebar.logout")}
+                Đăng xuất
               </button>
             </div>
           )}
 
           <h2 className="text-lg font-semibold text-gray-900 mb-6">
-            {t("sidebar.systemManagement")}
+            Quản lý hệ thống
           </h2>
           <nav className="space-y-2">
             {sidebarItems.map((item) => (
@@ -230,23 +225,6 @@ export const AdminLayout: React.FC = () => {
 
       {/* Main content - Offset by sidebar width */}
       <main className="flex-1 ml-64 min-h-screen overflow-x-auto">
-        {/* Header with Language Switcher */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {t("dashboard.title")}
-                </h1>
-                <p className="text-sm text-gray-600">
-                  {t("dashboard.subtitle")}
-                </p>
-              </div>
-              <LanguageSwitcher />
-            </div>
-          </div>
-        </header>
-
         <div className="p-6">
           <Outlet />
         </div>

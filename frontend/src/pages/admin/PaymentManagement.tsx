@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useI18n } from "../../contexts/I18nContext";
 import viData from "./json/paymentManagement.data.vi.json";
 import enData from "./json/paymentManagement.data.en.json";
 
@@ -28,7 +27,7 @@ interface PaymentStats {
 }
 
 const PaymentManagement: React.FC = () => {
-  const { t, locale } = useI18n();
+  const locale = "vi";
   const [payments, setPayments] = useState<Payment[]>([]);
   const [stats, setStats] = useState<PaymentStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,7 +84,7 @@ const PaymentManagement: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto border-blue-600"></div>
-          <p className="mt-3 text-gray-600">{t("loading")}</p>
+          <p className="mt-3 text-gray-600">Đang tải...</p>
         </div>
       </div>
     );
@@ -117,10 +116,10 @@ const PaymentManagement: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {t("paymentManagement.title")}
+                Quản lý thanh toán
               </h1>
               <p className="text-gray-600 mt-1">
-                {t("paymentManagement.subtitle")}
+                Theo dõi giao dịch và doanh thu
               </p>
             </div>
           </div>
@@ -148,7 +147,7 @@ const PaymentManagement: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("paymentManagement.totalPayments")}
+                    Tổng giao dịch
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.totalPayments}
@@ -176,7 +175,7 @@ const PaymentManagement: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("paymentManagement.completedPayments")}
+                    Đã hoàn tất
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.completedPayments}
@@ -203,9 +202,7 @@ const PaymentManagement: React.FC = () => {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
-                    {t("paymentManagement.pendingPayments")}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Đang chờ</p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.pendingPayments}
                   </p>
@@ -231,9 +228,7 @@ const PaymentManagement: React.FC = () => {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
-                    {t("paymentManagement.failedPayments")}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Thất bại</p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {stats.failedPayments}
                   </p>
@@ -260,7 +255,7 @@ const PaymentManagement: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    {t("paymentManagement.totalRevenue")}
+                    Tổng doanh thu
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {formatCurrency(stats.totalRevenue)}
@@ -277,7 +272,7 @@ const PaymentManagement: React.FC = () => {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder={t("paymentManagement.searchPlaceholder")}
+                placeholder={"Tìm giao dịch..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -289,14 +284,10 @@ const PaymentManagement: React.FC = () => {
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">{t("paymentManagement.paymentStatus")}</option>
-                <option value="COMPLETED">
-                  {t("paymentManagement.completed")}
-                </option>
-                <option value="PENDING">
-                  {t("paymentManagement.pending")}
-                </option>
-                <option value="FAILED">{t("paymentManagement.failed")}</option>
+                <option value="">Trạng thái thanh toán</option>
+                <option value="COMPLETED">Hoàn tất</option>
+                <option value="PENDING">Đang chờ</option>
+                <option value="FAILED">Thất bại</option>
               </select>
             </div>
           </div>
@@ -309,31 +300,31 @@ const PaymentManagement: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("paymentManagement.bookingId")}
+                    Mã lịch học
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("paymentManagement.studentName")}
+                    Học sinh
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("paymentManagement.tutorName")}
+                    Gia sư
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("paymentManagement.amount")}
+                    Số tiền
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("paymentManagement.paymentMethod")}
+                    Phương thức
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("paymentManagement.paymentStatus")}
+                    Trạng thái
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("paymentManagement.paymentReference")}
+                    Mã tham chiếu
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("paymentManagement.paymentDate")}
+                    Ngày thanh toán
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("paymentManagement.actions")}
+                    Thao tác
                   </th>
                 </tr>
               </thead>
@@ -386,11 +377,11 @@ const PaymentManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button className="text-blue-600 hover:text-blue-900 mr-3">
-                        {t("paymentManagement.viewDetails")}
+                        Xem chi tiết
                       </button>
                       {payment.paymentStatus === "PENDING" && (
                         <button className="text-green-600 hover:text-green-900">
-                          {t("paymentManagement.processPayment")}
+                          Xử lý thanh toán
                         </button>
                       )}
                     </td>
@@ -403,7 +394,7 @@ const PaymentManagement: React.FC = () => {
 
         {filteredPayments.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-gray-500">{t("loading")}</p>
+            <p className="text-gray-500">Không có kết quả</p>
           </div>
         )}
       </div>

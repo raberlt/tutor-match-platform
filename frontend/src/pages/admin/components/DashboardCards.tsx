@@ -1,5 +1,4 @@
 import React from "react";
-import { useI18n } from "../../../contexts/I18nContext";
 import { useDashboard } from "../../../hooks/useDashboard";
 import { StatCard } from "./StatCard";
 
@@ -12,7 +11,6 @@ type MonthlyGrowth = {
 };
 
 export const DashboardCards: React.FC = () => {
-  const { t } = useI18n();
   const { stats } = useDashboard();
 
   // ✅ DEBUG: Log stats khi component re-render
@@ -33,7 +31,7 @@ export const DashboardCards: React.FC = () => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       <StatCard
-        title={t("stats.totalUsers")}
+        title={"Tổng người dùng"}
         value={stats.totalUsers as number}
         growth={monthlyGrowth.users}
         icon={
@@ -56,7 +54,7 @@ export const DashboardCards: React.FC = () => {
       />
 
       <StatCard
-        title={t("stats.totalTutors")}
+        title={"Tổng gia sư"}
         value={stats.totalTutors as number}
         growth={monthlyGrowth.users}
         icon={
@@ -79,7 +77,7 @@ export const DashboardCards: React.FC = () => {
       />
 
       <StatCard
-        title={t("stats.totalBookings")}
+        title={"Tổng đặt lịch"}
         value={stats.totalBookings as number}
         growth={monthlyGrowth.bookings}
         icon={
@@ -102,7 +100,7 @@ export const DashboardCards: React.FC = () => {
       />
 
       <StatCard
-        title={t("stats.totalRevenue")}
+        title={"Tổng doanh thu"}
         value={stats.totalRevenue as number}
         growth={monthlyGrowth.revenue}
         icon={

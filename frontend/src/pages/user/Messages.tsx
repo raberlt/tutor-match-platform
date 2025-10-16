@@ -21,6 +21,7 @@ interface Conversation {
   participantRole: string;
   lastMessage: string;
   lastMessageTime: string;
+  participantAvatar?: string;
   unreadCount: number;
 }
 
@@ -134,7 +135,19 @@ const Messages: React.FC = () => {
 
         // Backend returns conversations directly, not messages to process
         if (Array.isArray(data)) {
-          setConversations(data);
+          // Sắp xếp cuộc trò chuyện theo thời gian tin nhắn cuối cùng (mới nhất trước)
+          const sortedConversations = data.sort((a, b) => {
+            const timeA = new Date(a.lastMessageTime || 0).getTime();
+            const timeB = new Date(b.lastMessageTime || 0).getTime();
+            return timeB - timeA;
+          });
+          setConversations(sortedConversations);
+
+          // Tự động chọn cuộc trò chuyện mới nhất nếu chưa có cuộc trò chuyện nào được chọn
+          if (!selectedConversation && sortedConversations.length > 0) {
+            setSelectedConversation(sortedConversations[0]);
+            loadMessages(sortedConversations[0].participantId);
+          }
         } else {
           console.log("Unexpected data format, using mock conversations");
           loadMockConversations();
@@ -159,7 +172,8 @@ const Messages: React.FC = () => {
         participantName: "Nguyễn Văn A",
         participantRole: "TUTOR",
         lastMessage: "Chào bạn! Tôi có thể giúp gì cho bạn?",
-        lastMessageTime: "Vừa xong",
+        lastMessageTime: new Date().toISOString(),
+        participantAvatar: "/default-avatar.png",
         unreadCount: 0,
       },
       {
@@ -167,11 +181,28 @@ const Messages: React.FC = () => {
         participantName: "Trần Thị B",
         participantRole: "STUDENT",
         lastMessage: "Em muốn đặt lịch học môn Toán.",
-        lastMessageTime: "Hôm qua",
+        lastMessageTime: new Date(
+          Date.now() - 24 * 60 * 60 * 1000
+        ).toISOString(),
+        participantAvatar: "/default-avatar.png",
         unreadCount: 0,
       },
     ];
-    setConversations(mockConversations);
+
+    // Sắp xếp mock data theo thời gian
+    const sortedConversations = mockConversations.sort((a, b) => {
+      const timeA = new Date(a.lastMessageTime || 0).getTime();
+      const timeB = new Date(b.lastMessageTime || 0).getTime();
+      return timeB - timeA;
+    });
+
+    setConversations(sortedConversations);
+
+    // Tự động chọn cuộc trò chuyện mới nhất
+    if (sortedConversations.length > 0) {
+      setSelectedConversation(sortedConversations[0]);
+      loadMessages(sortedConversations[0].participantId);
+    }
   };
 
   // Create new conversation with tutor
@@ -195,10 +226,8 @@ const Messages: React.FC = () => {
             }`.trim() || "Giảng viên",
           participantRole: "TUTOR",
           lastMessage: "Bắt đầu cuộc trò chuyện",
-          lastMessageTime: new Date().toLocaleTimeString("vi-VN", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          lastMessageTime: new Date().toISOString(),
+          participantAvatar: tutorData.user?.avatar || "/default-avatar.png",
           unreadCount: 0,
         };
 
@@ -324,18 +353,25 @@ const Messages: React.FC = () => {
           // Scroll to bottom only when user sends a message
           setTimeout(scrollToBottom, 100);
 
-          // Cập nhật last message trong conversation
-          setConversations((prev) =>
-            prev.map((conv) =>
+          // Cập nhật last message trong conversation và sắp xếp lại
+          setConversations((prev) => {
+            const updated = prev.map((conv) =>
               conv.participantId === selectedConversation.participantId
                 ? {
                     ...conv,
                     lastMessage: newMessage,
-                    lastMessageTime: "Vừa xong",
+                    lastMessageTime: new Date().toISOString(),
                   }
                 : conv
-            )
-          );
+            );
+
+            // Sắp xếp theo thời gian tin nhắn cuối cùng (mới nhất trước)
+            return updated.sort((a, b) => {
+              const timeA = new Date(a.lastMessageTime || 0).getTime();
+              const timeB = new Date(b.lastMessageTime || 0).getTime();
+              return timeB - timeA;
+            });
+          });
         } else {
           throw new Error("Failed to send message");
         }
@@ -349,6 +385,36 @@ const Messages: React.FC = () => {
   const handleConversationSelect = (conversation: Conversation) => {
     setSelectedConversation(conversation);
     loadMessages(conversation.participantId);
+    // Auto-scroll to bottom after a short delay to ensure messages are loaded
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+  };
+
+  const formatTime = (timeString: string) => {
+    try {
+      const date = new Date(timeString);
+      const now = new Date();
+      const diffInMinutes = Math.floor(
+        (now.getTime() - date.getTime()) / (1000 * 60)
+      );
+
+      if (diffInMinutes < 1) {
+        return "Vừa xong";
+      } else if (diffInMinutes < 60) {
+        return `${diffInMinutes} phút trước`;
+      } else if (diffInMinutes < 1440) {
+        // 24 hours
+        return `${Math.floor(diffInMinutes / 60)} giờ trước`;
+      } else if (diffInMinutes < 10080) {
+        // 7 days
+        return `${Math.floor(diffInMinutes / 1440)} ngày trước`;
+      } else {
+        return date.toLocaleDateString("vi-VN");
+      }
+    } catch {
+      return timeString;
+    }
   };
 
   const getRoleColor = (role: string) => {
@@ -429,8 +495,25 @@ const Messages: React.FC = () => {
                   onClick={() => handleConversationSelect(conv)}
                 >
                   <div className="relative">
-                    <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
-                      <span className="text-gray-600 font-semibold">
+                    <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
+                      {conv.participantAvatar ? (
+                        <img
+                          src={conv.participantAvatar}
+                          alt={conv.participantName}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            e.currentTarget.nextElementSibling!.style.display =
+                              "flex";
+                          }}
+                        />
+                      ) : null}
+                      <span
+                        className="text-gray-600 font-semibold"
+                        style={{
+                          display: conv.participantAvatar ? "none" : "flex",
+                        }}
+                      >
                         {conv.participantName.charAt(0)}
                       </span>
                     </div>
@@ -446,7 +529,7 @@ const Messages: React.FC = () => {
                         {conv.participantName}
                       </p>
                       <span className="text-xs text-gray-500">
-                        {conv.lastMessageTime}
+                        {formatTime(conv.lastMessageTime)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center mt-1">

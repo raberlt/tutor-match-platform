@@ -11,8 +11,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -27,6 +25,10 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    // Mã booking duy nhất (BK-2024-001, BK-2024-002, ...)
+    @Column(name = "booking_code", unique = true, nullable = false, columnDefinition = "NVARCHAR(20)")
+    private String bookingCode;
+
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
     private User student;
@@ -35,13 +37,11 @@ public class Booking {
     @JoinColumn(name = "tutor_id", nullable = false)
     private TutorProfile tutor;
 
-    @ManyToOne
-    @JoinColumn(name = "subject_id", nullable = false)
-    private Subject subject;
+    // subject được đưa xuống từng Session; giữ tương thích nếu cần bằng cách xoá trường này
 
 
     @Enumerated(EnumType.STRING)
-    private BookingStatus status = BookingStatus.PAYMENT_PENDING;
+    private BookingStatus status;
 
     @Enumerated(EnumType.STRING)
     private BookingType bookingType;
@@ -51,11 +51,32 @@ public class Booking {
 
     // Financial fields
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalAmount;
+    private BigDecimal totalAmount; // Tổng học phí gốc (trước giảm giá)
+    
+    @Column(name = "final_amount", precision = 10, scale = 2)
+    private BigDecimal finalAmount; // Học phí cuối cùng (sau giảm giá)
+    
+    @Column(name = "coupon_code", columnDefinition = "NVARCHAR(50)")
+    private String couponCode; // Mã giảm giá đã áp dụng
+    
+    @Column(name = "discount_amount", precision = 10, scale = 2)
+    private BigDecimal discountAmount; // Số tiền được giảm
     
     // Package specific fields
     @Column(name = "total_sessions")
     private Integer totalSessions;
+
+    // Người huỷ booking
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cancelled_by")
+    private CancelledBy cancelledBy;
+
+    @Column(name = "cancel_reason", columnDefinition = "NVARCHAR(500)")
+    private String cancelReason;
+
+    // Deadline thanh toán (single: +10m; package sau accept: +24h)
+    @Column(name = "payment_deadline")
+    private ZonedDateTime paymentDeadline;
     
     @Column(name = "payment_status")
     @Enumerated(EnumType.STRING)
@@ -88,6 +109,38 @@ public class Booking {
     
     public void setAmount(Double amount) {
         this.totalAmount = amount != null ? BigDecimal.valueOf(amount) : null;
+    }
+
+    @PrePersist
+    public void setDefaultStatusOnCreate() {
+        if (this.status == null) {
+            if (this.bookingType == BookingType.PACKAGE) {
+                this.status = BookingStatus.AWAITING_TUTOR_ACCEPT;
+            } else {
+                this.status = BookingStatus.PAYMENT_PENDING;
+            }
+        }
+        
+        // Tự động tạo booking code nếu chưa có
+        if (this.bookingCode == null || this.bookingCode.isEmpty()) {
+            this.bookingCode = generateBookingCode();
+        }
+        
+        // Nếu chưa có finalAmount, mặc định bằng totalAmount
+        if (this.finalAmount == null) {
+            this.finalAmount = this.totalAmount;
+        }
+    }
+    
+    // Helper method để tạo booking code
+    private String generateBookingCode() {
+        String year = String.valueOf(java.time.LocalDate.now().getYear());
+        String month = String.format("%02d", java.time.LocalDate.now().getMonthValue());
+        String day = String.format("%02d", java.time.LocalDate.now().getDayOfMonth());
+        String time = String.format("%02d%02d", 
+            java.time.LocalTime.now().getHour(), 
+            java.time.LocalTime.now().getMinute());
+        return String.format("BK-%s%s%s-%s", year.substring(2), month, day, time);
     }
     
     // Helper methods for timezone handling

@@ -38,7 +38,7 @@ public class StatisticsService {
             .filter(booking -> booking.getSessions() != null && 
                               booking.getSessions().stream()
                                       .anyMatch(session -> session.getSessionDate().equals(today)) &&
-                              (booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || booking.getStatus() == BookingStatus.TUTOR_APPROVED))
+                              (booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || booking.getStatus() == BookingStatus.TUTOR_ACCEPTED))
             .count();
 
         // Count pending bookings
@@ -55,7 +55,7 @@ public class StatisticsService {
                               booking.getSessions().stream()
                                       .anyMatch(session -> !session.getSessionDate().isBefore(today) && 
                                                           !session.getSessionDate().isAfter(nextWeek)) &&
-                              (booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || booking.getStatus() == BookingStatus.TUTOR_APPROVED))
+                              (booking.getStatus() == BookingStatus.PAYMENT_COMPLETED || booking.getStatus() == BookingStatus.TUTOR_ACCEPTED))
             .count();
 
         // Calculate monthly earnings (mock for now - should implement real calculation)

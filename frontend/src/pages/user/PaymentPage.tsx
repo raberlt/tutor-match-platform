@@ -1,54 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // Icons
-const CreditCardIcon = () => (
-  <svg
-    className="w-6 h-6"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-    />
-  </svg>
-);
-
-const BankIcon = () => (
-  <svg
-    className="w-6 h-6"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-    />
-  </svg>
-);
-
-const WalletIcon = () => (
-  <svg
-    className="w-6 h-6"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-    />
-  </svg>
-);
 
 const CreditIcon = () => (
   <svg
@@ -105,6 +58,42 @@ const PaymentPage: React.FC = () => {
     useState<string>("credit");
   const [isProcessing, setIsProcessing] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number>(0);
+  const [couponCode, setCouponCode] = useState<string>("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    description: string;
+    discountAmount: number;
+  } | null>(null);
+  const [couponError, setCouponError] = useState<string>("");
+  const [tick, setTick] = useState<number>(0);
+  const [sepayQrUrl, setSepayQrUrl] = useState<string>("");
+  const [sepayStatus, setSepayStatus] = useState<string>("");
+
+  // Lấy dữ liệu từ booking hoặc sử dụng mock data
+  const bookingData = useMemo(
+    () =>
+      location.state || {
+        tutor: {
+          name: "Nguyễn Văn A",
+          subject: "Toán học",
+          avatar: null,
+        },
+        sessions: [
+          { date: "2024-01-15", time: "14:00 - 15:30" },
+          { date: "2024-01-17", time: "14:00 - 15:30" },
+          { date: "2024-01-19", time: "14:00 - 15:30" },
+        ],
+        packageInfo: {
+          totalDays: 3,
+          packageType: "Gói 12+ buổi",
+          pricePerSession: 200000,
+          totalPrice: 600000,
+          discount: 100000,
+          finalPrice: 500000,
+        },
+      },
+    [location.state]
+  );
 
   // Load credit balance on component mount
   useEffect(() => {
@@ -112,7 +101,15 @@ const PaymentPage: React.FC = () => {
     console.log("location.state:", location.state);
     console.log("bookingData:", bookingData);
     console.log("paymentId:", bookingData?.paymentId);
+    console.log("Session data:", bookingData?.session);
+    console.log("Session date:", bookingData?.session?.date);
     loadCreditBalance();
+  }, [location.state, bookingData]);
+
+  // Countdown timer
+  useEffect(() => {
+    const i = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(i);
   }, []);
 
   const loadCreditBalance = async () => {
@@ -133,26 +130,145 @@ const PaymentPage: React.FC = () => {
     }
   };
 
-  // Lấy dữ liệu từ booking hoặc sử dụng mock data
-  const bookingData = location.state || {
-    tutor: {
-      name: "Nguyễn Văn A",
-      subject: "Toán học",
-      avatar: null,
-    },
-    sessions: [
-      { date: "2024-01-15", time: "14:00 - 15:30" },
-      { date: "2024-01-17", time: "14:00 - 15:30" },
-      { date: "2024-01-19", time: "14:00 - 15:30" },
-    ],
-    packageInfo: {
-      totalDays: 3,
-      packageType: "Gói 12+ buổi",
-      pricePerSession: 200000,
-      totalPrice: 600000,
-      discount: 100000,
-      finalPrice: 500000,
-    },
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError("Vui lòng nhập mã giảm giá");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          code: couponCode.trim(),
+          bookingType: bookingData.bookingType,
+          totalAmount: displayPackageInfo.finalPrice,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setAppliedCoupon(result.coupon);
+        setCouponError("");
+        // Cập nhật giá trị cuối cùng
+        const discountAmount = result.discountAmount || 0;
+        const finalPrice = displayPackageInfo.finalPrice - discountAmount;
+        console.log("Coupon applied:", result.coupon);
+        console.log("Discount amount:", discountAmount);
+        console.log("Final price:", finalPrice);
+      } else {
+        setCouponError(result.message || "Mã giảm giá không hợp lệ");
+        setAppliedCoupon(null);
+      }
+    } catch (error) {
+      console.error("Error applying coupon:", error);
+      setCouponError("Lỗi khi áp dụng mã giảm giá");
+      setAppliedCoupon(null);
+    }
+  };
+
+  const renderCountdown = () => {
+    if (!bookingData.paymentDeadline) return null;
+
+    // Sử dụng tick để trigger re-render mỗi giây
+    const deadline = new Date(bookingData.paymentDeadline).getTime();
+    const now = Date.now();
+    const diff = Math.max(0, Math.floor((deadline - now) / 1000));
+
+    // Trigger re-render bằng cách sử dụng tick trong dependency
+    const currentTick = tick;
+
+    // Nếu hết thời gian, không hiển thị countdown
+    if (diff <= 0) {
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+          <div className="flex items-center">
+            <span className="text-red-800 font-medium text-sm">
+              ⏰ Hết hạn thanh toán
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    const hh = Math.floor(diff / 3600)
+      .toString()
+      .padStart(2, "0");
+    const mm = Math.floor((diff % 3600) / 60)
+      .toString()
+      .padStart(2, "0");
+    const ss = Math.floor(diff % 60)
+      .toString()
+      .padStart(2, "0");
+    const isUrgent = diff <= 300; // <= 5 phút
+
+    return (
+      <div
+        className={`border rounded-lg p-3 mb-4 ${
+          isUrgent
+            ? "bg-red-50 border-red-200"
+            : "bg-yellow-50 border-yellow-200"
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p
+              className={`font-medium text-sm ${
+                isUrgent ? "text-red-800" : "text-yellow-800"
+              }`}
+            >
+              ⏳ Thời gian còn lại để thanh toán (tick: {currentTick})
+            </p>
+            <p
+              className={`text-lg font-bold ${
+                isUrgent ? "text-red-900" : "text-yellow-900"
+              }`}
+            >
+              {hh}:{mm}:{ss}
+            </p>
+          </div>
+          {isUrgent && (
+            <div className="text-red-600">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const generateSepayQr = () => {
+    const finalAmount = appliedCoupon
+      ? displayPackageInfo.finalPrice - appliedCoupon.discountAmount
+      : displayPackageInfo.finalPrice;
+
+    const bookingCode =
+      bookingData.bookingCode ||
+      `BK${String(bookingData.bookingId || 0).padStart(6, "0")}`;
+
+    const qrUrl = `https://qr.sepay.vn/img?acc=VQRQAESPZ4646&bank=MBBank&amount=${Math.round(
+      finalAmount
+    )}&des=${bookingCode}`;
+
+    setSepayQrUrl(qrUrl);
+    setSepayStatus("Đang chờ thanh toán...");
+
+    // Simulate payment status checking
+    setTimeout(() => {
+      setSepayStatus("Vui lòng quét QR để thanh toán");
+    }, 1000);
   };
 
   // Xử lý dữ liệu cho single session booking
@@ -166,12 +282,19 @@ const PaymentPage: React.FC = () => {
           fee: bookingData.session?.fee,
         },
       ]
-    : bookingData.sessions?.map((session: any) => ({
-        date: session.date,
-        time: session.timeSlot,
-        subjectName: session.subjectName,
-        fee: session.fee,
-      })) || [];
+    : bookingData.sessions?.map(
+        (session: {
+          date: string;
+          timeSlot: string;
+          subjectName: string;
+          fee: number;
+        }) => ({
+          date: session.date,
+          time: session.timeSlot,
+          subjectName: session.subjectName,
+          fee: session.fee,
+        })
+      ) || [];
 
   const displayPackageInfo = isSingleSession
     ? {
@@ -205,23 +328,71 @@ const PaymentPage: React.FC = () => {
     setIsProcessing(true);
 
     try {
+      console.log("=== Payment Debug ===");
+      console.log("bookingData:", bookingData);
+      console.log("bookingId:", bookingData.bookingId);
+      console.log("totalAmount:", bookingData.totalAmount);
+      console.log(
+        "displayPackageInfo.finalPrice:",
+        displayPackageInfo.finalPrice
+      );
+
+      // Validate required data
+      if (!bookingData.bookingId) {
+        throw new Error(
+          "Không tìm thấy thông tin booking. Vui lòng thử lại từ trang 'Buổi học của tôi'."
+        );
+      }
+
       const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Vui lòng đăng nhập lại");
+      }
 
       if (selectedPaymentMethod === "credit") {
         // Thanh toán bằng tín dụng
         console.log("Payment data:", bookingData);
         console.log("Payment ID:", bookingData.paymentId);
 
-        if (bookingData.paymentId) {
-          const response = await fetch(
-            `/api/payments/${bookingData.paymentId}/credit`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
+        // Nếu không có paymentId, tạo payment mới với phương thức CREDIT
+        let paymentId = bookingData.paymentId;
+        if (!paymentId && bookingData.bookingId) {
+          console.log(
+            "Creating new CREDIT payment for booking:",
+            bookingData.bookingId
           );
+
+          const createPaymentResponse = await fetch("/api/payments", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              bookingId: bookingData.bookingId,
+              amount: bookingData.totalAmount || displayPackageInfo.finalPrice,
+              paymentMethod: "CREDIT",
+              description: `Payment for booking #${bookingData.bookingId}`,
+            }),
+          });
+
+          if (createPaymentResponse.ok) {
+            const createResult = await createPaymentResponse.json();
+            paymentId = createResult.paymentId;
+            console.log("Created CREDIT payment with ID:", paymentId);
+          } else {
+            const errorData = await createPaymentResponse.json();
+            throw new Error("Failed to create payment: " + errorData.message);
+          }
+        }
+
+        if (paymentId) {
+          const response = await fetch(`/api/payments/${paymentId}/credit`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
           const result = await response.json();
 
@@ -246,63 +417,13 @@ const PaymentPage: React.FC = () => {
             }
           }
         } else {
-          console.error("Payment ID not found:", bookingData);
-          alert(
-            "Không tìm thấy thông tin thanh toán. Payment ID: " +
-              bookingData.paymentId
-          );
+          console.error("Cannot create payment:", bookingData);
+          alert("Không thể tạo thông tin thanh toán. Vui lòng thử lại.");
         }
       } else if (selectedPaymentMethod === "sepay-qr") {
         // Thanh toán QR SePay
-        console.log("SePay QR Payment data:", bookingData);
-        console.log("SePay Payment ID:", bookingData.paymentId);
-
-        if (bookingData.paymentId) {
-          const response = await fetch(
-            `/api/payments/${bookingData.paymentId}/sepay-qr`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          const result = await response.json();
-
-          if (result.success) {
-            // Hiển thị QR code và chờ thanh toán
-            navigate("/payment-qr", {
-              state: {
-                qrCodeUrl: result.qrCodeUrl,
-                paymentId: bookingData.paymentId,
-                amount: displayPackageInfo.finalPrice,
-                bookingId: bookingData.bookingId,
-              },
-            });
-          } else {
-            alert("Tạo QR code thất bại: " + result.message);
-          }
-        } else {
-          console.error("SePay Payment ID not found:", bookingData);
-          alert(
-            "Không tìm thấy thông tin thanh toán SePay. Payment ID: " +
-              bookingData.paymentId
-          );
-        }
-      } else {
-        // Các phương thức thanh toán khác (mock)
-        setTimeout(() => {
-          setIsProcessing(false);
-          navigate("/booking-success", {
-            state: {
-              bookingId: Math.floor(Math.random() * 1000),
-              amount: displayPackageInfo.finalPrice,
-              bookingType: bookingData.bookingType,
-              paymentMethod: selectedPaymentMethod,
-            },
-          });
-        }, 2000);
+        generateSepayQr();
+        return; // Không cần xử lý API, chỉ hiển thị QR
       }
     } catch (error) {
       console.error("Payment error:", error);
@@ -313,8 +434,8 @@ const PaymentPage: React.FC = () => {
   };
 
   return (
-    <div className="h-screen bg-gray-50 overflow-hidden">
-      <div className="h-full flex flex-col">
+    <div className="min-h-screen bg-gray-50 overflow-auto pb-24">
+      <div className="min-h-full flex flex-col">
         {/* Header */}
         <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4">
           <h1 className="text-2xl font-bold text-gray-900">Thanh toán</h1>
@@ -323,11 +444,14 @@ const PaymentPage: React.FC = () => {
           </p>
         </div>
 
+        {/* Countdown Timer */}
+        {renderCountdown()}
+
         {/* Main Content */}
-        <div className="flex-1 overflow-hidden">
-          <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+        <div className="flex-1 overflow-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
             {/* Left Column - Order Info */}
-            <div className="lg:col-span-2 flex flex-col space-y-4 overflow-y-auto">
+            <div className="lg:col-span-2 flex flex-col space-y-4">
               {/* Tutor Info */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -339,16 +463,43 @@ const PaymentPage: React.FC = () => {
                     style={{ backgroundColor: "rgb(148, 204, 230)" }}
                   >
                     <span className="text-white font-semibold text-lg">
-                      {bookingData.tutor.name.charAt(0)}
+                      {(bookingData.tutor?.name || "G").charAt(0)}
                     </span>
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">
-                      {bookingData.tutor.name}
+                      {bookingData.tutor?.name || "Gia sư"}
                     </h3>
-                    <p className="text-sm text-gray-600">
-                      {bookingData.tutor.subject}
-                    </p>
+                    <div className="flex items-center space-x-1">
+                      {bookingData.tutor?.rating &&
+                      bookingData.tutor.rating > 0 ? (
+                        <>
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <svg
+                                key={i}
+                                className={`w-4 h-4 ${
+                                  i < (bookingData.tutor?.rating || 0)
+                                    ? "text-yellow-400"
+                                    : "text-gray-300"
+                                }`}
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-600">
+                            {bookingData.tutor.rating}/5
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-sm text-blue-600 font-medium">
+                          Gia sư mới
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -359,6 +510,16 @@ const PaymentPage: React.FC = () => {
                   {isSingleSession ? "Chi tiết buổi học" : "Chi tiết gói học"}
                 </h2>
                 <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Mã booking:</span>
+                    <span className="font-medium text-blue-600">
+                      {bookingData.bookingCode ||
+                        `BK${String(bookingData.bookingId || 0).padStart(
+                          6,
+                          "0"
+                        )}`}
+                    </span>
+                  </div>
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-gray-600">Loại:</span>
                     <span className="font-medium">
@@ -371,22 +532,7 @@ const PaymentPage: React.FC = () => {
                       {displayPackageInfo.totalDays} buổi
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Giá mỗi buổi:</span>
-                    <span className="font-medium">
-                      {displayPackageInfo.pricePerSession.toLocaleString(
-                        "vi-VN"
-                      )}{" "}
-                      VNĐ
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Tổng tiền:</span>
-                    <span className="font-medium">
-                      {displayPackageInfo.totalPrice.toLocaleString("vi-VN")}{" "}
-                      VNĐ
-                    </span>
-                  </div>
+
                   {displayPackageInfo.discount > 0 && (
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
                       <span className="text-green-600">Giảm giá:</span>
@@ -441,17 +587,33 @@ const PaymentPage: React.FC = () => {
                                 {index + 1}
                               </span>
                             </div>
-                            <div>
-                              <p className="font-medium text-gray-900 text-sm">
-                                {session.date
-                                  ? new Date(session.date).toLocaleDateString(
-                                      "vi-VN"
-                                    )
-                                  : "Chưa xác định"}
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {session.time}
-                              </p>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {session.subjectName || "Môn học"}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    {session.fee
+                                      ? `${session.fee.toLocaleString(
+                                          "vi-VN"
+                                        )} VNĐ`
+                                      : "Chưa có"}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-medium text-gray-900 text-sm">
+                                    {session.date
+                                      ? new Date(
+                                          session.date
+                                        ).toLocaleDateString("vi-VN")
+                                      : "Chưa xác định"}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    {session.time}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
                           </div>
                           <CheckIcon />
@@ -483,6 +645,61 @@ const PaymentPage: React.FC = () => {
 
             {/* Right Column - Payment */}
             <div className="lg:col-span-1 flex flex-col">
+              {/* Coupon Section */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Mã giảm giá
+                </h2>
+
+                <div className="space-y-3">
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      placeholder="Nhập mã giảm giá"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={applyCoupon}
+                      disabled={isProcessing}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                    >
+                      Áp dụng
+                    </button>
+                  </div>
+
+                  {couponError && (
+                    <p className="text-red-500 text-sm">{couponError}</p>
+                  )}
+
+                  {appliedCoupon && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-green-800 font-medium text-sm">
+                            ✓ Đã áp dụng mã: {appliedCoupon.code}
+                          </p>
+                          <p className="text-green-600 text-xs">
+                            {appliedCoupon.description}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setAppliedCoupon(null);
+                            setCouponCode("");
+                            setCouponError("");
+                          }}
+                          className="text-green-600 hover:text-green-800"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 h-full flex flex-col">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                   Phương thức thanh toán
@@ -530,6 +747,50 @@ const PaymentPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
+
+                {/* SePay QR Display */}
+                {selectedPaymentMethod === "sepay-qr" && sepayQrUrl && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="text-sm font-medium text-gray-900 mb-3">
+                      Quét QR để thanh toán
+                    </h3>
+                    <div className="flex flex-col items-center space-y-3">
+                      <img
+                        src={sepayQrUrl}
+                        alt="SePay QR Code"
+                        className="w-48 h-48 border border-gray-300 rounded-lg"
+                      />
+                      <div className="text-center">
+                        <p className="text-sm text-gray-600 mb-1">
+                          Số tiền:{" "}
+                          {appliedCoupon
+                            ? (
+                                displayPackageInfo.finalPrice -
+                                appliedCoupon.discountAmount
+                              ).toLocaleString("vi-VN")
+                            : displayPackageInfo.finalPrice.toLocaleString(
+                                "vi-VN"
+                              )}{" "}
+                          VNĐ
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Mã đơn hàng:{" "}
+                          {bookingData.bookingCode ||
+                            `BK${String(bookingData.bookingId || 0).padStart(
+                              6,
+                              "0"
+                            )}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm text-gray-600">
+                          {sepayStatus}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Payment Summary */}
                 <div className="border-t border-gray-200 pt-4">

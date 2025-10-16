@@ -66,7 +66,7 @@ export const bookingService = {
     request: BookingRequestCreateDTO
   ): Promise<BookingCreateResponse> {
     try {
-      const response = await api.post("/booking/create", request);
+      const response = await api.post("/booking/student/create", request);
       return response.data;
     } catch (error: unknown) {
       console.error("Create booking error:", error);

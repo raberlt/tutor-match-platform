@@ -392,6 +392,26 @@ public class ProfileApplicationService {
      * Copy related data from ProfileApplication to TutorProfile
      */
     private void copyApplicationDataToTutorProfile(ProfileApplication application, TutorProfile tutor) {
+        // XÓA dữ liệu cũ trước khi copy dữ liệu mới để tránh duplicate
+        log.info("Clearing existing data for tutor profile {}", tutor.getId());
+        
+        // Xóa educations cũ
+        educationRepositoryMain.deleteByProfileId(tutor.getId());
+        
+        // Xóa certificates cũ
+        certificateRepositoryMain.deleteByProfileId(tutor.getId());
+        
+        // Xóa subject fees cũ
+        applicationSubjectFeeRepository.deleteByTutorProfileId(tutor.getId());
+        
+        // Xóa teaching audiences cũ
+        applicationTeachingAudienceRepository.deleteByTutorProfileId(tutor.getId());
+        
+        // Xóa schedules cũ
+        scheduleRepositoryMain.deleteByTutorProfileId(tutor.getId());
+        
+        log.info("Cleared existing data, now copying new data from application {}", application.getId());
+        
         // Copy educations
         if (application.getEducations() != null) {
             for (ApplicationEducation appEdu : application.getEducations()) {
@@ -430,12 +450,35 @@ public class ProfileApplicationService {
                 subjectFee.setTutorProfile(tutor);
                 subjectFee.setSubject(appSubjectFee.getSubject());
                 subjectFee.setFees(appSubjectFee.getFees());
-                subjectFeeRepository.save(subjectFee);
+                applicationSubjectFeeRepository.save(subjectFee);
             }
         }
 
-        // Note: Schedules and teaching audiences are now managed separately
-        // They will be copied to TutorProfile when needed through other services
+        // Copy teaching audiences
+        if (application.getTeachingAudiences() != null) {
+            for (ApplicationTeachingAudience appAudience : application.getTeachingAudiences()) {
+                ApplicationTeachingAudience audience = new ApplicationTeachingAudience();
+                audience.setTutorProfile(tutor);
+                audience.setTeachingAudience(appAudience.getTeachingAudience());
+                applicationTeachingAudienceRepository.save(audience);
+            }
+        }
+        
+        // Copy schedules
+        if (application.getSchedules() != null) {
+            for (ApplicationSchedule appSchedule : application.getSchedules()) {
+                ApplicationSchedule schedule = new ApplicationSchedule();
+                schedule.setTutorProfile(tutor);
+                schedule.setDayOfWeek(appSchedule.getDayOfWeek());
+                schedule.setFromTime(appSchedule.getFromTime());
+                schedule.setToTime(appSchedule.getToTime());
+                schedule.setEnable(appSchedule.getEnable());
+                scheduleRepositoryMain.save(schedule);
+            }
+        }
+        
+        log.info("Successfully copied all data from application {} to tutor profile {}", 
+                application.getId(), tutor.getId());
     }
 
       /**

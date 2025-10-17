@@ -17,4 +17,10 @@ public interface ApplicationScheduleRepository extends JpaRepository<Application
     List<ApplicationSchedule> findByApplicationId(Long applicationId);
     void deleteByApplication(ProfileApplication application);
     void deleteByApplicationId(Long applicationId);
+    
+    // Methods for TutorProfile
+    List<ApplicationSchedule> findByTutorProfile(TutorProfile tutorProfile);
+    List<ApplicationSchedule> findByTutorProfileId(Integer tutorProfileId);
+    void deleteByTutorProfile(TutorProfile tutorProfile);
+    void deleteByTutorProfileId(Integer tutorProfileId);
 }

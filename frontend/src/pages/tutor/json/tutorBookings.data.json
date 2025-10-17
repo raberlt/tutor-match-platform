@@ -1,0 +1,411 @@
+{
+    "mockBookings": [
+        {
+            "id": "1",
+            "studentName": "Nguyễn Minh An",
+            "studentEmail": "an@example.com",
+            "studentPhone": "0901234567",
+            "subject": "IELTS",
+            "type": "package",
+            "date": "2025-01-20",
+            "startTime": "19:00",
+            "endTime": "20:30",
+            "status": "pending",
+            "price": 300000,
+            "totalSessions": 20,
+            "completedSessions": 5,
+            "notes": "Package IELTS 20 buổi",
+            "createdAt": "2025-01-15",
+            "packageId": "PKG001",
+            "packageName": "IELTS Complete Package",
+            "voucherDiscount": 500000,
+            "pendingDeadline": "2025-01-21T19:00:00.000Z",
+            "sessions": [
+                {
+                    "sessionId": "S1",
+                    "date": "2025-02-10",
+                    "startTime": "19:00",
+                    "endTime": "20:30",
+                    "status": "completed",
+                    "fee": 300000
+                },
+                {
+                    "sessionId": "S2",
+                    "date": "2025-02-11",
+                    "startTime": "19:00",
+                    "endTime": "20:30",
+                    "status": "completed",
+                    "fee": 300000
+                },
+                {
+                    "sessionId": "S3",
+                    "date": "2025-02-12",
+                    "startTime": "19:00",
+                    "endTime": "20:30",
+                    "status": "approved",
+                    "fee": 300000
+                },
+                {
+                    "sessionId": "S4",
+                    "date": "2025-02-13",
+                    "startTime": "19:00",
+                    "endTime": "20:30",
+                    "status": "approved",
+                    "fee": 300000
+                },
+                {
+                    "sessionId": "S5",
+                    "date": "2025-02-14",
+                    "startTime": "19:00",
+                    "endTime": "20:30",
+                    "status": "approved",
+                    "fee": 300000
+                }
+            ]
+        },
+        {
+            "id": "2",
+            "studentName": "Trần Thị Bình",
+            "studentEmail": "binh@example.com",
+            "studentPhone": "0987654321",
+            "subject": "Tiếng Anh",
+            "type": "single",
+            "date": "2025-01-18",
+            "startTime": "16:00",
+            "endTime": "17:30",
+            "status": "completed",
+            "price": 250000,
+            "notes": "Buổi học Speaking",
+            "createdAt": "2025-01-10"
+        },
+        {
+            "id": "3",
+            "studentName": "Lê Văn Cường",
+            "studentEmail": "cuong@example.com",
+            "studentPhone": "0909123456",
+            "subject": "IELTS",
+            "type": "package",
+            "date": "2025-01-25",
+            "startTime": "18:30",
+            "endTime": "20:00",
+            "status": "completed",
+            "price": 400000,
+            "totalSessions": 10,
+            "completedSessions": 10,
+            "notes": "Package IELTS 10 buổi - Hoàn thành",
+            "createdAt": "2024-12-01",
+            "packageId": "PKG002",
+            "packageName": "IELTS Basic Package",
+            "voucherDiscount": 0,
+            "sessions": [
+                {
+                    "sessionId": "B1",
+                    "date": "2024-12-05",
+                    "startTime": "18:30",
+                    "endTime": "20:00",
+                    "status": "completed",
+                    "fee": 400000
+                },
+                {
+                    "sessionId": "B2",
+                    "date": "2024-12-06",
+                    "startTime": "18:30",
+                    "endTime": "20:00",
+                    "status": "completed",
+                    "fee": 400000
+                },
+                {
+                    "sessionId": "B3",
+                    "date": "2024-12-07",
+                    "startTime": "18:30",
+                    "endTime": "20:00",
+                    "status": "completed",
+                    "fee": 400000
+                },
+                {
+                    "sessionId": "B4",
+                    "date": "2024-12-08",
+                    "startTime": "18:30",
+                    "endTime": "20:00",
+                    "status": "completed",
+                    "fee": 400000
+                },
+                {
+                    "sessionId": "B5",
+                    "date": "2024-12-09",
+                    "startTime": "18:30",
+                    "endTime": "20:00",
+                    "status": "completed",
+                    "fee": 400000
+                },
+                {
+                    "sessionId": "B6",
+                    "date": "2024-12-10",
+                    "startTime": "18:30",
+                    "endTime": "20:00",
+                    "status": "completed",
+                    "fee": 400000
+                },
+                {
+                    "sessionId": "B7",
+                    "date": "2024-12-11",
+                    "startTime": "18:30",
+                    "endTime": "20:00",
+                    "status": "completed",
+                    "fee": 400000
+                },
+                {
+                    "sessionId": "B8",
+                    "date": "2024-12-12",
+                    "startTime": "18:30",
+                    "endTime": "20:00",
+                    "status": "completed",
+                    "fee": 400000
+                },
+                {
+                    "sessionId": "B9",
+                    "date": "2024-12-13",
+                    "startTime": "18:30",
+                    "endTime": "20:00",
+                    "status": "completed",
+                    "fee": 400000
+                },
+                {
+                    "sessionId": "B10",
+                    "date": "2024-12-14",
+                    "startTime": "18:30",
+                    "endTime": "20:00",
+                    "status": "completed",
+                    "fee": 400000
+                }
+            ]
+        },
+        {
+            "id": "4",
+            "studentName": "Phạm Thị Dung",
+            "studentEmail": "dung@example.com",
+            "studentPhone": "0912345678",
+            "subject": "Tiếng Anh",
+            "type": "single",
+            "date": "2025-01-22",
+            "startTime": "14:00",
+            "endTime": "15:30",
+            "status": "rejected",
+            "price": 200000,
+            "notes": "Không phù hợp lịch trình",
+            "createdAt": "2025-01-12"
+        },
+        {
+            "id": "5",
+            "studentName": "Hoàng Gia",
+            "studentEmail": "gia@example.com",
+            "studentPhone": "0901112222",
+            "subject": "Toán",
+            "type": "single",
+            "date": "2025-02-03",
+            "startTime": "08:00",
+            "endTime": "09:30",
+            "status": "pending",
+            "price": 180000,
+            "createdAt": "2025-01-28",
+            "notes": "Ôn tập hình học"
+        },
+        {
+            "id": "6",
+            "studentName": "Mai Hương",
+            "studentEmail": "huong@example.com",
+            "studentPhone": "0903334444",
+            "subject": "Vật lý",
+            "type": "single",
+            "date": "2025-01-05",
+            "startTime": "10:00",
+            "endTime": "11:30",
+            "status": "completed",
+            "price": 220000,
+            "createdAt": "2024-12-30",
+            "notes": "Ôn dao động điều hòa"
+        },
+        {
+            "id": "7",
+            "studentName": "Quang Minh",
+            "studentEmail": "minh@example.com",
+            "studentPhone": "0905556666",
+            "subject": "Hóa học",
+            "type": "single",
+            "date": "2025-02-10",
+            "startTime": "13:00",
+            "endTime": "14:30",
+            "status": "cancelled",
+            "price": 200000,
+            "createdAt": "2025-02-01",
+            "notes": "Học sinh bận việc cá nhân"
+        },
+        {
+            "id": "8",
+            "studentName": "Trúc Linh",
+            "studentEmail": "linh@example.com",
+            "studentPhone": "0907778888",
+            "subject": "IELTS",
+            "type": "package",
+            "date": "2025-02-15",
+            "startTime": "18:00",
+            "endTime": "19:30",
+            "status": "payment_pending",
+            "price": 350000,
+            "totalSessions": 8,
+            "completedSessions": 2,
+            "createdAt": "2025-02-05",
+            "packageId": "PKG003",
+            "packageName": "IELTS Starter",
+            "voucherDiscount": 200000,
+            "sessions": [
+                {
+                    "sessionId": "C1",
+                    "date": "2025-02-12",
+                    "startTime": "18:00",
+                    "endTime": "19:30",
+                    "status": "completed",
+                    "fee": 350000
+                },
+                {
+                    "sessionId": "C2",
+                    "date": "2025-02-13",
+                    "startTime": "18:00",
+                    "endTime": "19:30",
+                    "status": "completed",
+                    "fee": 350000
+                },
+                {
+                    "sessionId": "C3",
+                    "date": "2025-02-14",
+                    "startTime": "18:00",
+                    "endTime": "19:30",
+                    "status": "approved",
+                    "fee": 350000
+                },
+                {
+                    "sessionId": "C4",
+                    "date": "2025-02-15",
+                    "startTime": "18:00",
+                    "endTime": "19:30",
+                    "status": "approved",
+                    "fee": 350000
+                }
+            ],
+            "notes": "Đã duyệt, chờ học sinh thanh toán"
+        },
+        {
+            "id": "9",
+            "studentName": "Thanh Tùng",
+            "studentEmail": "tung@example.com",
+            "studentPhone": "0909990000",
+            "subject": "Tiếng Anh",
+            "type": "package",
+            "date": "2025-03-01",
+            "startTime": "19:00",
+            "endTime": "20:30",
+            "status": "cancelled",
+            "price": 280000,
+            "totalSessions": 6,
+            "completedSessions": 0,
+            "createdAt": "2025-02-20",
+            "packageId": "PKG004",
+            "packageName": "English Basic",
+            "voucherDiscount": 0,
+            "sessions": [
+                {
+                    "sessionId": "D1",
+                    "date": "2025-03-02",
+                    "startTime": "19:00",
+                    "endTime": "20:30",
+                    "status": "cancelled",
+                    "fee": 280000
+                },
+                {
+                    "sessionId": "D2",
+                    "date": "2025-03-03",
+                    "startTime": "19:00",
+                    "endTime": "20:30",
+                    "status": "cancelled",
+                    "fee": 280000
+                },
+                {
+                    "sessionId": "D3",
+                    "date": "2025-03-04",
+                    "startTime": "19:00",
+                    "endTime": "20:30",
+                    "status": "cancelled",
+                    "fee": 280000
+                }
+            ],
+            "notes": "Khách hủy trước khi bắt đầu"
+        },
+        {
+            "id": "11",
+            "studentName": "Minh Anh",
+            "studentEmail": "minhanh@example.com",
+            "studentPhone": "0903434345",
+            "subject": "IELTS",
+            "type": "package",
+            "date": "2025-02-18",
+            "startTime": "19:00",
+            "endTime": "20:30",
+            "status": "payment_completed",
+            "price": 320000,
+            "totalSessions": 12,
+            "completedSessions": 1,
+            "createdAt": "2025-02-11",
+            "packageId": "PKG005",
+            "packageName": "IELTS Advanced",
+            "voucherDiscount": 300000,
+            "sessions": [
+                {
+                    "sessionId": "E1",
+                    "date": "2025-02-18",
+                    "startTime": "19:00",
+                    "endTime": "20:30",
+                    "status": "completed",
+                    "fee": 320000
+                },
+                {
+                    "sessionId": "E2",
+                    "date": "2025-02-19",
+                    "startTime": "19:00",
+                    "endTime": "20:30",
+                    "status": "approved",
+                    "fee": 320000
+                },
+                {
+                    "sessionId": "E3",
+                    "date": "2025-02-20",
+                    "startTime": "19:00",
+                    "endTime": "20:30",
+                    "status": "approved",
+                    "fee": 320000
+                }
+            ],
+            "notes": "Đã thanh toán toàn bộ gói",
+            "targetAudience": "Cao đẳng/Đại học",
+            "location": "TP. Hồ Chí Minh",
+            "gender": "Nam"
+        },
+        {
+            "id": "12",
+            "studentName": "Nguyễn Thị Lan",
+            "studentEmail": "lan@example.com",
+            "studentPhone": "0901234567",
+            "subject": "Toán học",
+            "type": "single",
+            "date": "2025-02-20",
+            "startTime": "14:00",
+            "endTime": "15:30",
+            "status": "payment_completed",
+            "price": 200000,
+            "createdAt": "2025-02-18",
+            "notes": "Đã thanh toán, chờ học",
+            "targetAudience": "Trung học phổ thông",
+            "location": "Hà Nội",
+            "gender": "Nữ"
+        }
+    ]
+}

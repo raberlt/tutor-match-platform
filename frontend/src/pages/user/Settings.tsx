@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import api from "../../services/api";
 
 export const Settings: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("profile");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -14,6 +16,7 @@ export const Settings: React.FC = () => {
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState<string>("");
   const [topUpDescription, setTopUpDescription] = useState<string>("");
+  const topUpFormRef = useRef<HTMLFormElement | null>(null);
 
   // Profile form
   const [profileData, setProfileData] = useState({
@@ -177,7 +180,8 @@ export const Settings: React.FC = () => {
 
     try {
       // Tạo object data không bao gồm email vì email không thể chỉnh sửa
-      const { email, ...updateData } = profileData;
+      const updateData = { ...profileData } as Record<string, unknown>;
+      delete (updateData as Record<string, unknown>).email;
 
       // Nếu có avatar file mới, upload trước
       if (avatarFile) {
@@ -186,13 +190,18 @@ export const Settings: React.FC = () => {
         const avatarResponse = await api.post("/auth/upload-avatar", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        updateData.avatar = avatarResponse.data.avatarUrl;
+        const avatarUrl = (avatarResponse.data as { avatarUrl?: string })
+          ?.avatarUrl;
+        if (avatarUrl) {
+          (updateData as Record<string, unknown>).avatar = avatarUrl;
+        }
       }
 
       await api.put("/auth/profile", updateData);
       setMessage("Cập nhật thông tin thành công!");
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Cập nhật thất bại");
+    } catch (err: unknown) {
+      const httpErr = err as { response?: { data?: { error?: string } } };
+      setError(httpErr?.response?.data?.error || "Cập nhật thất bại");
     } finally {
       setIsLoading(false);
     }
@@ -227,8 +236,9 @@ export const Settings: React.FC = () => {
         newPassword: "",
         confirmPassword: "",
       });
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Đổi mật khẩu thất bại");
+    } catch (err: unknown) {
+      const anyErr = err as { response?: { data?: { error?: string } } };
+      setError(anyErr?.response?.data?.error || "Đổi mật khẩu thất bại");
     } finally {
       setIsLoading(false);
     }
@@ -243,9 +253,11 @@ export const Settings: React.FC = () => {
     try {
       await api.put("/auth/payment-info", paymentData);
       setMessage("Cập nhật thông tin thanh toán thành công!");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const httpErr = err as { response?: { data?: { error?: string } } };
       setError(
-        err.response?.data?.error || "Cập nhật thông tin thanh toán thất bại"
+        httpErr?.response?.data?.error ||
+          "Cập nhật thông tin thanh toán thất bại"
       );
     } finally {
       setIsLoading(false);
@@ -260,8 +272,9 @@ export const Settings: React.FC = () => {
     try {
       await api.post("/auth/forgot-password", { email: user?.email });
       setMessage("Email khôi phục mật khẩu đã được gửi!");
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Gửi email khôi phục thất bại");
+    } catch (err: unknown) {
+      const anyErr = err as { response?: { data?: { error?: string } } };
+      setError(anyErr?.response?.data?.error || "Gửi email khôi phục thất bại");
     } finally {
       setIsLoading(false);
     }
@@ -282,8 +295,8 @@ export const Settings: React.FC = () => {
         const data = await response.json();
         setCreditBalance(data.balance || 0);
       }
-    } catch (error) {
-      console.error("Error loading credit balance:", error);
+    } catch {
+      console.error("Error loading credit balance");
     } finally {
       setLoadingBalance(false);
     }
@@ -325,7 +338,7 @@ export const Settings: React.FC = () => {
       } else {
         setError(result.message || "Nạp tín dụng thất bại");
       }
-    } catch (error) {
+    } catch {
       setError("Có lỗi xảy ra khi nạp tín dụng");
     } finally {
       setIsLoading(false);
@@ -338,6 +351,50 @@ export const Settings: React.FC = () => {
       loadCreditBalance();
     }
   }, [activeTab, user]);
+
+  // Auto-activate tab based on query/state/hash
+  useEffect(() => {
+    try {
+      // From query string
+      const params = new URLSearchParams(location.search);
+      const tabParam = params.get("tab");
+      if (tabParam === "credit") {
+        setActiveTab("credit");
+      } else if (tabParam === "payment") {
+        setActiveTab("payment");
+      } else if (tabParam === "profile") {
+        setActiveTab("profile");
+      } else if (tabParam === "password") {
+        setActiveTab("password");
+      }
+
+      // From state
+      const navState = (location.state ?? {}) as {
+        activeTab?: string;
+        openTopUp?: boolean;
+      };
+      if (navState.activeTab) {
+        setActiveTab(navState.activeTab);
+      }
+
+      // If need to focus topup section
+      const needTopUp = location.hash?.includes("topup") || navState.openTopUp;
+      if (needTopUp) {
+        setActiveTab("credit");
+        // Scroll to top up form after next paint
+        setTimeout(() => {
+          if (topUpFormRef.current) {
+            topUpFormRef.current.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }
+        }, 0);
+      }
+    } catch {
+      // ignore
+    }
+  }, [location]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -472,15 +529,26 @@ export const Settings: React.FC = () => {
                 {/* Avatar Section - Top Center */}
                 <div className="flex flex-col items-center space-y-2">
                   <div className="relative">
-                    <img
-                      src={
-                        avatarPreview ||
-                        profileData.avatar ||
-                        "/default-avatar.png"
-                      }
-                      alt="Avatar"
-                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                    />
+                    {avatarPreview || profileData.avatar ? (
+                      <img
+                        src={avatarPreview || profileData.avatar}
+                        alt="Avatar"
+                        className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                      />
+                    ) : (
+                      <div
+                        className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-200"
+                        style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                      >
+                        <span
+                          className="font-bold text-lg"
+                          style={{ color: "rgb(252, 243, 245)" }}
+                        >
+                          {(user?.firstName || "U").charAt(0).toUpperCase()}
+                          {(user?.lastName || "").charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     {avatarPreview && (
                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                         <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -925,7 +993,11 @@ export const Settings: React.FC = () => {
               </div>
 
               {/* Top Up Form */}
-              <form onSubmit={handleTopUp} className="space-y-6">
+              <form
+                onSubmit={handleTopUp}
+                className="space-y-6"
+                ref={topUpFormRef}
+              >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Số tiền nạp (VNĐ)

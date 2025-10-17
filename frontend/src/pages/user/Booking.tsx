@@ -604,6 +604,7 @@ const UnifiedBookingNew: React.FC = () => {
             navigate("/payment", {
               state: {
                 bookingId: result.bookingId,
+                bookingCode: result.bookingCode,
                 paymentId: result.paymentId,
                 bookingType: "SINGLE_SESSION",
                 totalAmount: selectedSubject?.fees || 0,

@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.time.format.DateTimeFormatter;
 
 @RestController
 @RequestMapping("/api/booking")
@@ -178,6 +179,7 @@ public class BookingController {
             response.put("success", true);
             response.put("message", "Đặt lịch thành công!");
             response.put("bookingId", booking.getId());
+            response.put("bookingCode", booking.getBookingCode());
             response.put("status", booking.getStatus().name());
             
             // Cho SINGLE_SESSION, tự động confirm booking
@@ -345,6 +347,7 @@ public class BookingController {
                         try {
                             BookingMyDTO dto = new BookingMyDTO();
                             dto.id = booking.getId();
+                            dto.bookingCode = booking.getBookingCode();
                             dto.status = booking.getStatus();
                             dto.bookingType = booking.getBookingType();
                             dto.note = booking.getNote();
@@ -358,6 +361,7 @@ public class BookingController {
                             tutorDto.id = booking.getTutor() != null ? booking.getTutor().getId() : null;
                             tutorDto.firstName = booking.getTutor() != null && booking.getTutor().getUser() != null ? booking.getTutor().getUser().getFirstName() : null;
                             tutorDto.lastName = booking.getTutor() != null && booking.getTutor().getUser() != null ? booking.getTutor().getUser().getLastName() : null;
+                            tutorDto.imageAvatar = booking.getTutor() != null && booking.getTutor().getUser() != null ? booking.getTutor().getUser().getImageAvatar() : null;
                             dto.tutor = tutorDto;
 
                             dto.sessions = booking.getSessions() == null ? java.util.Collections.emptyList() : booking.getSessions().stream().map(s -> {
@@ -476,19 +480,94 @@ public class BookingController {
      */
     @GetMapping("/tutor/my-bookings")
     @PreAuthorize("hasRole('TUTOR')")
-    public ResponseEntity<Page<Booking>> getTutorBookings(Authentication authentication, Pageable pageable) {
+    public ResponseEntity<?> getTutorBookings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            Authentication authentication) {
         try {
             String username = authentication.getName();
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
-            
-            TutorProfile tutor = user.getTutorProfile()
-                    .orElseThrow(() -> new RuntimeException("Tutor profile not found"));
-            
-            Page<Booking> bookings = bookingRepository.findByTutor(tutor, pageable);
-            return ResponseEntity.ok(bookings);
+
+            // Nếu tutor chưa có profile, trả về danh sách rỗng thay vì lỗi 500
+            Optional<TutorProfile> tutorOpt = user.getTutorProfile();
+            if (tutorOpt.isEmpty()) {
+                Map<String, Object> emptyResponse = new HashMap<>();
+                emptyResponse.put("success", true);
+                emptyResponse.put("content", List.of());
+                emptyResponse.put("bookings", List.of());
+                emptyResponse.put("currentPage", 0);
+                emptyResponse.put("totalPages", 0);
+                emptyResponse.put("totalElements", 0);
+                return ResponseEntity.ok(emptyResponse);
+            }
+
+            TutorProfile tutor = tutorOpt.get();
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            // Loại bỏ các booking có trạng thái PAYMENT_EXPIRED khỏi danh sách
+            Page<Booking> bookings = bookingRepository.findByTutorAndStatusNot(tutor, BookingStatus.PAYMENT_EXPIRED, pageable);
+
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE;
+
+            List<Map<String, Object>> content = bookings.getContent().stream().map(b -> {
+                Map<String, Object> m = new HashMap<>();
+                m.put("id", b.getId());
+                m.put("status", b.getStatus() != null ? b.getStatus().name() : null);
+                m.put("bookingType", b.getBookingType() != null ? b.getBookingType().name() : null);
+                m.put("note", b.getNote());
+                m.put("totalSessions", b.getTotalSessions() != null ? b.getTotalSessions() : (b.getSessions() != null ? b.getSessions().size() : 0));
+                m.put("totalAmount", b.getTotalAmount());
+                m.put("paymentDeadline", b.getPaymentDeadline());
+
+                // Student info (để tutor xem thông tin học viên)
+                Map<String, Object> student = new HashMap<>();
+                if (b.getStudent() != null) {
+                    student.put("firstName", b.getStudent().getFirstName());
+                    student.put("lastName", b.getStudent().getLastName());
+                    student.put("email", b.getStudent().getEmail());
+                    student.put("phone", b.getStudent().getPhoneNumber());
+                }
+                m.put("student", student);
+
+                // Sessions
+                List<Map<String, Object>> sessionDtos = b.getSessions() == null ? List.of() : b.getSessions().stream().map(s -> {
+                    Map<String, Object> sMap = new HashMap<>();
+                    sMap.put("sessionCode", s.getSessionCode());
+                    sMap.put("sessionDate", s.getSessionDate() != null ? s.getSessionDate().format(dateFormatter) : null);
+                    sMap.put("startTime", s.getStartTime() != null ? s.getStartTime().toString() : null);
+                    sMap.put("endTime", s.getEndTime() != null ? s.getEndTime().toString() : null);
+                    sMap.put("status", s.getStatus() != null ? s.getStatus().name() : null);
+                    sMap.put("fee", s.getFee());
+                    if (s.getSubject() != null) {
+                        Map<String, Object> subj = new HashMap<>();
+                        subj.put("id", s.getSubject().getId());
+                        subj.put("name", s.getSubject().getName());
+                        sMap.put("subject", subj);
+                    } else {
+                        sMap.put("subject", null);
+                    }
+                    return sMap;
+                }).collect(Collectors.toList());
+                m.put("sessions", sessionDtos);
+
+                return m;
+            }).collect(Collectors.toList());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("content", content);
+            response.put("bookings", content); // backward-compatible key
+            response.put("currentPage", bookings.getNumber());
+            response.put("totalPages", bookings.getTotalPages());
+            response.put("totalElements", bookings.getTotalElements());
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Lỗi khi lấy danh sách booking của gia sư: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
 
@@ -692,6 +771,7 @@ public class BookingController {
         
         BookingRequestDTO dto = new BookingRequestDTO();
         dto.setId(booking.getId());
+        dto.setBookingCode(booking.getBookingCode());
         dto.setStatus(booking.getStatus() != null ? booking.getStatus().toString() : "UNKNOWN");
         dto.setBookingType(booking.getBookingType() != null ? booking.getBookingType().toString() : "UNKNOWN");
         // Get date/time from first session if available
@@ -774,6 +854,26 @@ public class BookingController {
                         return sessionInfo;
                     })
                     .collect(Collectors.toList());
+            // Enrich sessions with subjectName and fee for UI
+            sessionInfos.forEach(si -> {
+                var sessionEntity = booking.getSessions().stream()
+                        .filter(s -> si.getId() != null && si.getId().equals(s.getId()))
+                        .findFirst().orElse(null);
+                if (sessionEntity != null) {
+                    if (sessionEntity.getSubject() != null) {
+                        try {
+                            java.lang.reflect.Method m = si.getClass().getMethod("setSubjectName", String.class);
+                            m.invoke(si, sessionEntity.getSubject().getName());
+                        } catch (Exception ignored) {}
+                    }
+                    if (sessionEntity.getFee() != null) {
+                        try {
+                            java.lang.reflect.Method m2 = si.getClass().getMethod("setFee", java.math.BigDecimal.class);
+                            m2.invoke(si, sessionEntity.getFee());
+                        } catch (Exception ignored) {}
+                    }
+                }
+            });
             dto.setSessions(sessionInfos);
         } else {
             System.out.println("Warning: No sessions found for booking " + booking.getId());

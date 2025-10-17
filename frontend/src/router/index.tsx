@@ -33,11 +33,17 @@ import { ProfileManagement } from "../pages/tutor/ProfileManagement";
 import { TutorInbox } from "../pages/tutor/TutorInbox";
 import TutorBookings from "../pages/tutor/TutorBookings";
 
+// Admin pages (only import pages that exist and export correctly)
+import UserManagement from "../pages/admin/UserManagement";
+import { TutorApproval } from "../pages/admin/TutorApproval";
+
 // Demo pages
 import BookingDemo from "../pages/BookingDemo";
 import CloudinaryDemo from "../pages/CloudinaryDemo";
 import CreditDemo from "../pages/CreditDemo";
 import { DebugLogin } from "../pages/DebugLogin";
+import AdminLayout from "../components/layouts/AdminLayout";
+import AdminDashboard from "../pages/admin/AdminDashboard";
 
 export const router = createBrowserRouter([
   // Public routes
@@ -176,6 +182,16 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    path: "/settings",
+    element: <UserLayout />,
+    children: [
+      {
+        index: true,
+        element: <Settings />,
+      },
+    ],
+  },
+  {
     path: "/my-sessions",
     element: <UserLayout />,
     children: [
@@ -268,6 +284,30 @@ export const router = createBrowserRouter([
           </div>
         ),
       },
+    ],
+  },
+
+  // Admin routes (wrapped in AdminLayout)
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      { index: true, element: <AdminDashboard /> },
+      { path: "dashboard", element: <AdminDashboard /> },
+      { path: "users", element: <UserManagement /> },
+      { path: "tutor-approval", element: <TutorApproval /> },
+      { path: "profile", element: <TutorApproval /> },
+      { path: "profiles", element: <TutorApproval /> },
+      // Các trang dưới đây sẽ được bật khi có component hoàn chỉnh
+      // { path: "applications", element: <ApplicationManagement /> },
+      // { path: "bookings", element: <BookingManagement /> },
+      // { path: "payments", element: <PaymentManagement /> },
+      // { path: "coupons", element: <CouponManagement /> },
+      // { path: "ratings", element: <RatingManagement /> },
+      // { path: "schedule", element: <ScheduleManagement /> },
+      // { path: "profile", element: <AdminProfileManagement /> },
+      // { path: "messages", element: <AdminMessages /> },
+      // { path: "contracts", element: <ContractManagement /> },
     ],
   },
 

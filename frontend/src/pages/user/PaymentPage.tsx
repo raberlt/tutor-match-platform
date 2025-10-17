@@ -68,8 +68,10 @@ const PaymentPage: React.FC = () => {
   const [tick, setTick] = useState<number>(0);
   const [sepayQrUrl, setSepayQrUrl] = useState<string>("");
   const [sepayStatus, setSepayStatus] = useState<string>("");
+  const [sepayReady, setSepayReady] = useState<boolean>(false);
   const [paymentDeadline, setPaymentDeadline] = useState<string>("");
   const [isExpired, setIsExpired] = useState<boolean>(false);
+  const [apiBooking, setApiBooking] = useState<any | null>(null);
 
   // Lấy dữ liệu từ booking hoặc sử dụng mock data
   const bookingData = useMemo(
@@ -81,9 +83,10 @@ const PaymentPage: React.FC = () => {
         bookingCreatedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(), // 2 phút trước
         paymentDeadline: new Date(Date.now() + 8 * 60 * 1000).toISOString(), // 8 phút nữa
         tutor: {
+          id: 0,
           name: "Nguyễn Văn A",
           subject: "Toán học",
-          avatar: null,
+          avatar: "/default-avatar.png",
           rating: 4.5,
         },
         session: {
@@ -249,24 +252,60 @@ const PaymentPage: React.FC = () => {
     if (bookingId) {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch(`/api/bookings/${bookingId}`, {
+        // Ưu tiên endpoint trả DTO chi tiết cho student
+        const response = await fetch(`/api/booking/student/${bookingId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
         if (response.ok) {
-          const bookingData = await response.json();
-          console.log("Fetched booking data from API:", bookingData);
-
-          // Cập nhật state với dữ liệu thực từ API
-          // Note: Trong thực tế, bạn sẽ cần cập nhật state hoặc redirect với dữ liệu mới
+          const data = await response.json();
+          console.log("Fetched booking data from API:", data);
+          if (data?.booking) setApiBooking(data.booking);
         }
       } catch (error) {
         console.error("Error fetching booking data:", error);
       }
     }
   }, [location.state]);
+
+  // Chuẩn bị ngữ cảnh tạo payment: lấy studentId (từ localStorage) và tutorUserId (từ API nếu cần)
+  const getPaymentContext = useCallback(async (): Promise<{
+    studentId?: number;
+    tutorUserId?: number;
+  }> => {
+    try {
+      const userStr = localStorage.getItem("user");
+      let studentId: number | undefined = undefined;
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        studentId = u?.id;
+      }
+
+      // Ưu tiên lấy từ apiBooking nếu đã fetch
+      let tutorUserId: number | undefined = (apiBooking as any)?.tutor?.id;
+
+      // Nếu chưa có apiBooking mà chỉ có bookingId trong state, fetch chi tiết để lấy tutor user id
+      if (!tutorUserId && bookingData?.bookingId) {
+        const token = localStorage.getItem("token");
+        const resp = await fetch(
+          `/api/booking/student/${bookingData.bookingId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (resp.ok) {
+          const data = await resp.json();
+          tutorUserId = data?.booking?.tutor?.id;
+        }
+      }
+
+      return { studentId, tutorUserId };
+    } catch (_) {
+      return {};
+    }
+  }, [apiBooking, bookingData?.bookingId]);
 
   // Load credit balance on component mount
   useEffect(() => {
@@ -429,39 +468,30 @@ const PaymentPage: React.FC = () => {
             : "bg-yellow-50 border-yellow-200"
         }`}
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <p
-              className={`font-medium text-sm ${
-                isUrgent ? "text-red-800" : "text-yellow-800"
-              }`}
-            >
-              ⏳ Thời gian còn lại để thanh toán (
-              {isSingleSession ? "10 phút" : "24 giờ"})
-            </p>
-            <p
-              className={`text-lg font-bold ${
-                isUrgent ? "text-red-900" : "text-yellow-900"
-              }`}
-            >
-              {hh}:{mm}:{ss}
-            </p>
-            {/* Debug info */}
-            <p className="text-xs text-gray-500 mt-1">
-              Deadline: {new Date(paymentDeadline).toLocaleString("vi-VN")}
-            </p>
-          </div>
-          {isUrgent && (
-            <div className="text-red-600">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-          )}
+        <div className="flex items-center gap-3 text-sm">
+          <span
+            className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
+              isUrgent ? "bg-red-600 text-white" : "bg-yellow-500 text-white"
+            }`}
+          >
+            ⏳
+          </span>
+          <span className={`${isUrgent ? "text-red-800" : "text-yellow-800"}`}>
+            Thời gian còn lại để thanh toán (
+            {isSingleSession ? "10 phút" : "24 giờ"})
+          </span>
+          <span
+            className={`font-bold ${
+              isUrgent ? "text-red-900" : "text-yellow-900"
+            }`}
+          >
+            {hh}:{mm}:{ss}
+          </span>
+          <span className="text-gray-400">|</span>
+          <span className="text-gray-700">
+            Deadline: {new Date(paymentDeadline).toLocaleTimeString("vi-VN")}{" "}
+            {new Date(paymentDeadline).toLocaleDateString("vi-VN")}
+          </span>
         </div>
       </div>
     );
@@ -473,8 +503,11 @@ const PaymentPage: React.FC = () => {
       : displayPackageInfo.finalPrice;
 
     const bookingCode =
-      bookingData.bookingCode ||
-      `BK${String(bookingData.bookingId || 0).padStart(6, "0")}`;
+      (bookingData as any)?.bookingCode ||
+      (apiBooking as any)?.bookingCode ||
+      `BK${String(
+        (bookingData as any)?.bookingId || (apiBooking as any)?.id || 0
+      ).padStart(6, "0")}`;
 
     const qrUrl = `https://qr.sepay.vn/img?acc=VQRQAESPZ4646&bank=MBBank&amount=${Math.round(
       finalAmount
@@ -489,30 +522,72 @@ const PaymentPage: React.FC = () => {
     }, 1000);
   };
 
-  // Xử lý dữ liệu cho single session booking
-  const isSingleSession = bookingData.bookingType === "SINGLE_SESSION";
+  // Chọn nguồn dữ liệu ưu tiên từ API nếu có
+  const sourceBooking: any = apiBooking || bookingData;
+
+  // Xử lý dữ liệu cho single session / package booking
+  const isSingleSession =
+    sourceBooking.bookingType === "SINGLE_SESSION" ||
+    sourceBooking.bookingType === "SINGLE";
+
+  const mappedPackageSessions = (sourceBooking.sessions || []).map(
+    (s: any) => ({
+      date: s.sessionDate || s.date,
+      time:
+        s.timeSlot ||
+        (s.startTime && s.endTime
+          ? `${s.startTime.toString().slice(0, 5)} - ${s.endTime
+              .toString()
+              .slice(0, 5)}`
+          : undefined),
+      subjectName:
+        s.subjectName || s.subject?.name || sourceBooking.session?.subject,
+      fee: Number(s.fee) || 0,
+    })
+  );
+
   const displaySessions = isSingleSession
     ? [
         {
-          date: bookingData.session?.date,
-          time: bookingData.session?.time,
-          subjectName: bookingData.session?.subject,
-          fee: bookingData.session?.fee,
+          date: sourceBooking.session?.date || mappedPackageSessions[0]?.date,
+          time: sourceBooking.session?.time || mappedPackageSessions[0]?.time,
+          subjectName:
+            sourceBooking.session?.subject ||
+            mappedPackageSessions[0]?.subjectName,
+          fee:
+            sourceBooking.session?.fee ||
+            mappedPackageSessions[0]?.fee ||
+            Number(sourceBooking.totalAmount) ||
+            0,
         },
       ]
-    : bookingData.sessions?.map(
-        (session: {
-          date: string;
-          timeSlot: string;
-          subjectName: string;
-          fee: number;
-        }) => ({
-          date: session.date,
-          time: session.timeSlot,
-          subjectName: session.subjectName,
-          fee: session.fee,
-        })
-      ) || [];
+    : mappedPackageSessions;
+
+  // Chuẩn hóa và sắp xếp danh sách buổi (gần nhất → xa nhất)
+  const toMinutes = (hhmm?: string) => {
+    if (!hhmm || hhmm.length < 5) return 0;
+    const h = parseInt(hhmm.slice(0, 2) || "0", 10);
+    const m = parseInt(hhmm.slice(3, 5) || "0", 10);
+    return h * 60 + m;
+  };
+  const parseTimeStart = (time?: string) =>
+    time ? toMinutes(time.split("-")[0]?.trim()) : 0;
+  const parseDateNum = (d?: string) =>
+    d ? new Date(d).getTime() : Number.POSITIVE_INFINITY;
+  const sortedSessions = (displaySessions || [])
+    .map((s) => ({
+      date: s.date,
+      time: s.time,
+      subjectName: s.subjectName,
+      fee: s.fee,
+      _dateNum: parseDateNum(s.date),
+      _startMin: parseTimeStart(s.time),
+    }))
+    .sort((a, b) =>
+      a._dateNum === b._dateNum
+        ? a._startMin - b._startMin
+        : a._dateNum - b._dateNum
+    );
 
   // Tạo thông tin gói hiển thị an toàn ngay cả khi không có packageInfo trong state
   const computedPackageBaseTotal = !isSingleSession
@@ -522,7 +597,7 @@ const PaymentPage: React.FC = () => {
             0
           )
         : 0) ||
-      Number(bookingData.totalAmount) ||
+      Number(sourceBooking.totalAmount) ||
       0
     : 0;
 
@@ -530,15 +605,15 @@ const PaymentPage: React.FC = () => {
     ? {
         totalDays: 1,
         packageType: "Buổi học đơn",
-        pricePerSession: bookingData.session?.fee || 0,
-        totalPrice: bookingData.session?.fee || 0,
+        pricePerSession: sourceBooking.session?.fee || 0,
+        totalPrice: sourceBooking.session?.fee || 0,
         discount: 0,
-        finalPrice: bookingData.session?.fee || 0,
+        finalPrice: sourceBooking.session?.fee || 0,
       }
-    : bookingData.packageInfo || {
+    : sourceBooking.packageInfo || {
         totalDays:
           (Array.isArray(displaySessions) && displaySessions.length) ||
-          Number(bookingData.totalSessions) ||
+          Number(sourceBooking.totalSessions) ||
           0,
         packageType: "Gói học",
         pricePerSession:
@@ -546,7 +621,7 @@ const PaymentPage: React.FC = () => {
             ? Math.round(
                 (computedPackageBaseTotal || 0) / displaySessions.length
               )
-            : Number(bookingData.totalAmount) || 0,
+            : Number(sourceBooking.totalAmount) || 0,
         totalPrice: computedPackageBaseTotal || 0,
         discount: 0,
         finalPrice: computedPackageBaseTotal || 0,
@@ -562,12 +637,21 @@ const PaymentPage: React.FC = () => {
     },
     {
       id: "sepay-qr",
-      name: "QR Code SePay",
+      name: "QR Code",
       icon: <QRCodeIcon />,
       description: "Quét QR để thanh toán",
       available: true,
     },
   ];
+
+  // Modal: thiếu tín dụng
+  const [showInsufficientModal, setShowInsufficientModal] = useState(false);
+  const goToTopUp = () => {
+    navigate("/settings?tab=credit#topup", {
+      replace: true,
+      state: { activeTab: "credit", openTopUp: true },
+    });
+  };
 
   const handlePayment = async () => {
     setIsProcessing(true);
@@ -595,6 +679,12 @@ const PaymentPage: React.FC = () => {
       }
 
       if (selectedPaymentMethod === "credit") {
+        // Pre-check credit balance: nếu thiếu thì chuyển thẳng tới phần nạp tín dụng
+        const requiredAmount = displayPackageInfo.finalPrice;
+        if (Number(creditBalance) < Number(requiredAmount)) {
+          setShowInsufficientModal(true);
+          return;
+        }
         // Thanh toán bằng tín dụng
         console.log("Payment data:", bookingData);
         console.log("Payment ID:", bookingData.paymentId);
@@ -607,6 +697,9 @@ const PaymentPage: React.FC = () => {
             bookingData.bookingId
           );
 
+          // Bổ sung studentId và tutorUserId để backend không lỗi id null
+          const { studentId, tutorUserId } = await getPaymentContext();
+
           const createPaymentResponse = await fetch("/api/payments", {
             method: "POST",
             headers: {
@@ -618,6 +711,8 @@ const PaymentPage: React.FC = () => {
               amount: bookingData.totalAmount || displayPackageInfo.finalPrice,
               paymentMethod: "CREDIT",
               description: `Payment for booking #${bookingData.bookingId}`,
+              studentId: studentId,
+              tutorId: tutorUserId,
             }),
           });
 
@@ -651,17 +746,12 @@ const PaymentPage: React.FC = () => {
             alert("Thanh toán thành công! Đặt lịch hoàn tất.");
             navigate("/my-sessions");
           } else {
-            // Xử lý lỗi cụ thể
+            // Fallback: nếu backend báo thiếu tín dụng, điều hướng thẳng tới phần nạp
             if (
               result.message &&
               result.message.includes("Insufficient credit balance")
             ) {
-              const confirmTopUp = window.confirm(
-                `Số dư tín dụng không đủ!\nSố dư hiện tại: ${creditBalance.toLocaleString()} VNĐ\nSố tiền cần thanh toán: ${displayPackageInfo.finalPrice.toLocaleString()} VNĐ\n\nBạn có muốn chuyển đến trang nạp tín dụng không?`
-              );
-              if (confirmTopUp) {
-                navigate("/settings", { state: { activeTab: "credit" } });
-              }
+              setShowInsufficientModal(true);
             } else {
               alert("Thanh toán thất bại: " + result.message);
             }
@@ -671,8 +761,9 @@ const PaymentPage: React.FC = () => {
           alert("Không thể tạo thông tin thanh toán. Vui lòng thử lại.");
         }
       } else if (selectedPaymentMethod === "sepay-qr") {
-        // Thanh toán QR SePay
+        // Thanh toán QR: tạo QR và chuyển sang chế độ hiển thị QR, ẩn nút thanh toán
         generateSepayQr();
+        setSepayReady(true);
         return; // Không cần xử lý API, chỉ hiển thị QR
       }
     } catch (error) {
@@ -709,13 +800,23 @@ const PaymentPage: React.FC = () => {
                 </h2>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center space-x-4">
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                    >
-                      <span className="text-white font-semibold text-lg">
-                        {(bookingData.tutor?.name || "G").charAt(0)}
-                      </span>
+                    <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                      {bookingData.tutor?.avatar ? (
+                        <img
+                          src={bookingData.tutor.avatar}
+                          alt="Tutor Avatar"
+                          className="w-12 h-12 object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="w-12 h-12 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                        >
+                          <span className="text-white font-semibold text-lg">
+                            {(bookingData.tutor?.name || "G").charAt(0)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">
@@ -770,12 +871,13 @@ const PaymentPage: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-gray-600">Mã lịch học:</span>
-                    <span className="font-medium text-blue-600">
-                      {bookingData.bookingCode ||
-                        `BK${String(bookingData.bookingId || 0).padStart(
-                          6,
-                          "0"
-                        )}`}
+                    <span className="font-medium ">
+                      {(bookingData as any)?.bookingCode ||
+                        (bookingData as any)?.booking?.bookingCode ||
+                        (bookingData as any)?.code ||
+                        `BK${String(
+                          (bookingData as any)?.bookingId || 0
+                        ).padStart(6, "0")}`}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -790,81 +892,6 @@ const PaymentPage: React.FC = () => {
                       {displayPackageInfo.totalDays} buổi
                     </span>
                   </div>
-
-                  {/* Danh sách buổi học hiển thị ngay trong phần chi tiết nếu là gói */}
-                  {!isSingleSession &&
-                    Array.isArray(displaySessions) &&
-                    displaySessions.length > 0 && (
-                      <div className="py-2 border-b border-gray-100">
-                        <span className="block text-gray-600 mb-2">
-                          Danh sách buổi:
-                        </span>
-                        <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                          {displaySessions.map(
-                            (
-                              s: {
-                                date?: string;
-                                time?: string;
-                                subjectName?: string;
-                                fee?: number;
-                              },
-                              idx: number
-                            ) => (
-                              <div
-                                key={`${s.date}-${s.time}-${idx}`}
-                                className="flex items-start justify-between text-sm"
-                              >
-                                <div className="flex-1 min-w-0 pr-3">
-                                  <div className="font-medium text-gray-900">
-                                    Buổi {idx + 1}
-                                  </div>
-                                  <div className="text-gray-600 truncate">
-                                    {s.subjectName || "Môn học"} ·{" "}
-                                    {typeof s.fee === "number"
-                                      ? s.fee.toLocaleString("vi-VN") + " VNĐ"
-                                      : "Chưa có"}
-                                  </div>
-                                </div>
-                                <div className="text-right whitespace-nowrap text-gray-700">
-                                  <div>
-                                    {s.date
-                                      ? new Date(s.date).toLocaleDateString(
-                                          "vi-VN"
-                                        )
-                                      : "—"}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    {s.time || "—"}
-                                  </div>
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                  {displayPackageInfo.discount > 0 && (
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-green-600">Giảm giá:</span>
-                      <span className="font-medium text-green-600">
-                        -{displayPackageInfo.discount.toLocaleString("vi-VN")}{" "}
-                        VNĐ
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-lg font-semibold text-gray-900">
-                      Thành tiền:
-                    </span>
-                    <span
-                      className="text-xl font-bold"
-                      style={{ color: "rgb(148, 204, 230)" }}
-                    >
-                      {displayPackageInfo.finalPrice.toLocaleString("vi-VN")}{" "}
-                      VNĐ
-                    </span>
-                  </div>
                 </div>
               </div>
 
@@ -873,83 +900,51 @@ const PaymentPage: React.FC = () => {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                   Lịch học đã chọn
                 </h2>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {displaySessions.map(
-                    (
-                      session: {
-                        date: string;
-                        time: string;
-                        subjectName?: string;
-                        fee?: number;
-                      },
-                      index: number
-                    ) => (
-                      <div
-                        key={index}
-                        className="p-3 bg-gray-50 rounded-lg border border-gray-200"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-3">
-                            <div
-                              className="w-6 h-6 rounded-full flex items-center justify-center"
-                              style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                            >
-                              <span className="text-white text-xs font-medium">
-                                {index + 1}
-                              </span>
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {session.subjectName || "Môn học"}
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    {session.fee
-                                      ? `${session.fee.toLocaleString(
-                                          "vi-VN"
-                                        )} VNĐ`
-                                      : "Chưa có"}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-medium text-gray-900 text-sm">
-                                    {session.date
-                                      ? new Date(
-                                          session.date
-                                        ).toLocaleDateString("vi-VN")
-                                      : "Chưa xác định"}
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    {session.time}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <CheckIcon />
-                        </div>
-
-                        {/* Additional session details for package booking */}
-                        {bookingData.bookingType === "PACKAGE" && (
-                          <div className="ml-9 space-y-1">
-                            {session.subjectName && (
-                              <p className="text-xs text-gray-600">
-                                <span className="font-medium">Môn học:</span>{" "}
-                                {session.subjectName}
-                              </p>
-                            )}
-                            {session.fee && (
-                              <p className="text-xs text-gray-600">
-                                <span className="font-medium">Học phí:</span>{" "}
-                                {session.fee.toLocaleString("vi-VN")} VNĐ
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  )}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium text-gray-700">
+                          Buổi
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-700">
+                          Môn học
+                        </th>
+                        <th className="px-3 py-2 text-right font-medium text-gray-700">
+                          Học phí
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-700">
+                          Ngày
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-700">
+                          Giờ
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      {sortedSessions.map((s, idx) => (
+                        <tr key={`${s.date}-${s.time}-${idx}`}>
+                          <td className="px-3 py-2 text-gray-900">{idx + 1}</td>
+                          <td className="px-3 py-2 text-gray-900">
+                            {s.subjectName || "Môn học"}
+                          </td>
+                          <td className="px-3 py-2 text-right text-gray-900">
+                            {typeof s.fee === "number"
+                              ? s.fee.toLocaleString("vi-VN") + " VNĐ"
+                              : "Chưa có"}
+                          </td>
+                          <td className="px-3 py-2 text-gray-900">
+                            {s.date
+                              ? new Date(s.date).toLocaleDateString("vi-VN")
+                              : "—"}
+                          </td>
+                          <td className="px-3 py-2 text-gray-500">
+                            {s.time || "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -1011,12 +1006,12 @@ const PaymentPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 h-full flex flex-col">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                   Phương thức thanh toán
                 </h2>
 
-                <div className="flex-1 space-y-3 mb-4">
+                <div className="space-y-3 mb-4">
                   {paymentMethods.map((method) => (
                     <div
                       key={method.id}
@@ -1025,7 +1020,15 @@ const PaymentPage: React.FC = () => {
                           ? "border-blue-500 bg-blue-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
-                      onClick={() => setSelectedPaymentMethod(method.id)}
+                      onClick={() => {
+                        setSelectedPaymentMethod(method.id);
+                        // Reset QR display state when switching methods
+                        setSepayReady(false);
+                        if (method.id !== "sepay-qr") {
+                          setSepayQrUrl("");
+                          setSepayStatus("");
+                        }
+                      }}
                     >
                       <div className="flex items-center space-x-3">
                         <div
@@ -1060,48 +1063,51 @@ const PaymentPage: React.FC = () => {
                 </div>
 
                 {/* SePay QR Display */}
-                {selectedPaymentMethod === "sepay-qr" && sepayQrUrl && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <h3 className="text-sm font-medium text-gray-900 mb-3">
-                      Quét QR để thanh toán
-                    </h3>
-                    <div className="flex flex-col items-center space-y-3">
-                      <img
-                        src={sepayQrUrl}
-                        alt="SePay QR Code"
-                        className="w-48 h-48 border border-gray-300 rounded-lg"
-                      />
-                      <div className="text-center">
-                        <p className="text-sm text-gray-600 mb-1">
-                          Số tiền:{" "}
-                          {appliedCoupon
-                            ? (
-                                displayPackageInfo.finalPrice -
-                                appliedCoupon.discountAmount
-                              ).toLocaleString("vi-VN")
-                            : displayPackageInfo.finalPrice.toLocaleString(
-                                "vi-VN"
-                              )}{" "}
-                          VNĐ
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Mã lịch học:{" "}
-                          {bookingData.bookingCode ||
-                            `BK${String(bookingData.bookingId || 0).padStart(
-                              6,
-                              "0"
-                            )}`}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-gray-600">
-                          {sepayStatus}
-                        </span>
+                {selectedPaymentMethod === "sepay-qr" &&
+                  sepayReady &&
+                  sepayQrUrl && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <h3 className="text-sm font-medium text-gray-900 mb-3">
+                        Quét QR để thanh toán
+                      </h3>
+                      <div className="flex flex-col items-center space-y-3">
+                        <img
+                          src={sepayQrUrl}
+                          alt="SePay QR Code"
+                          className="w-48 h-48 border border-gray-300 rounded-lg"
+                        />
+                        <div className="text-center">
+                          <p className="text-sm text-gray-600 mb-1">
+                            Số tiền:{" "}
+                            {appliedCoupon
+                              ? (
+                                  displayPackageInfo.finalPrice -
+                                  appliedCoupon.discountAmount
+                                ).toLocaleString("vi-VN")
+                              : displayPackageInfo.finalPrice.toLocaleString(
+                                  "vi-VN"
+                                )}{" "}
+                            VNĐ
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Mã lịch học:{" "}
+                            {(bookingData as any)?.bookingCode ||
+                              (bookingData as any)?.booking?.bookingCode ||
+                              (bookingData as any)?.code ||
+                              `BK${String(
+                                (bookingData as any)?.bookingId || 0
+                              ).padStart(6, "0")}`}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <span className="text-sm text-gray-600">
+                            {sepayStatus}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Payment Summary */}
                 <div className="border-t border-gray-200 pt-4">
@@ -1135,7 +1141,9 @@ const PaymentPage: React.FC = () => {
                         Đặt lịch lại
                       </button>
                     </div>
-                  ) : (
+                  ) : selectedPaymentMethod === "sepay-qr" &&
+                    sepayReady &&
+                    sepayQrUrl ? null : (
                     <button
                       onClick={handlePayment}
                       disabled={isProcessing}
@@ -1169,6 +1177,46 @@ const PaymentPage: React.FC = () => {
           </div>
         </div>
       </div>
+      {/* Modal: Không đủ tín dụng */}
+      {showInsufficientModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black bg-opacity-40"
+            onClick={() => setShowInsufficientModal(false)}
+          ></div>
+          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Không đủ tín dụng
+              </h3>
+            </div>
+            <div className="px-6 py-4 space-y-2">
+              <p className="text-sm text-gray-700">
+                Số dư tín dụng hiện tại của bạn không đủ để thanh toán giao dịch
+                này.
+              </p>
+              <p className="text-sm text-gray-700">
+                Vui lòng nạp thêm tín dụng để tiếp tục.
+              </p>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowInsufficientModal(false)}
+                className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Đóng
+              </button>
+              <button
+                onClick={goToTopUp}
+                className="px-4 py-2 rounded-md text-white"
+                style={{ backgroundColor: "rgb(148, 204, 230)" }}
+              >
+                Nạp tín dụng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

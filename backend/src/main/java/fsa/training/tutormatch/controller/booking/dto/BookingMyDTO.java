@@ -9,6 +9,7 @@ import java.util.List;
 
 public class BookingMyDTO {
     public Integer id;
+    public String bookingCode;
     public BookingStatus status;
     public BookingType bookingType;
     public String note;

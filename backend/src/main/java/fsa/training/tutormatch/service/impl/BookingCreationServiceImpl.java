@@ -59,7 +59,54 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         booking.setTotalSessions(1);
         // deadline thanh toán 10 phút
         booking.setPaymentDeadline(java.time.ZonedDateTime.now().plusMinutes(10));
-        return bookingRepository.save(booking);
+        booking = bookingRepository.save(booking);
+
+        // Tạo session cho booking đơn
+        // Ưu tiên lấy từ request.sessions[0] nếu có, nếu không dùng các trường date/fromTime/toTime
+        String dateStr = null;
+        String fromTimeStr = null;
+        String toTimeStr = null;
+        Integer subjectId = request.getSubjectId();
+        java.math.BigDecimal fee = request.getTotalAmount();
+
+        if (request.getSessions() != null && !request.getSessions().isEmpty()) {
+            var s0 = request.getSessions().get(0);
+            dateStr = s0.getDate();
+            fromTimeStr = s0.getFromTime();
+            toTimeStr = s0.getToTime();
+            if (s0.getSubjectId() != null) {
+                subjectId = s0.getSubjectId();
+            }
+            if (s0.getFee() != null) {
+                fee = s0.getFee();
+            }
+        } else {
+            dateStr = request.getDate();
+            fromTimeStr = request.getFromTime();
+            toTimeStr = request.getToTime();
+        }
+
+        if (dateStr != null && fromTimeStr != null && toTimeStr != null) {
+            Session session = new Session();
+            session.setBooking(booking);
+            session.setSessionDate(java.time.LocalDate.parse(dateStr));
+            // Đảm bảo định dạng HH:mm:ss khi parse
+            String startFmt = fromTimeStr.length() == 5 ? fromTimeStr + ":00" : fromTimeStr;
+            String endFmt = toTimeStr.length() == 5 ? toTimeStr + ":00" : toTimeStr;
+            session.setStartTime(java.time.LocalTime.parse(startFmt));
+            session.setEndTime(java.time.LocalTime.parse(endFmt));
+            session.setStatus(SessionStatus.PAYMENT_PENDING);
+            session.setRescheduleCount(0);
+            try {
+                session.setSubject(findSubjectById(subjectId));
+            } catch (Exception ignored) {}
+            if (fee != null) {
+                session.setFee(fee);
+            }
+            sessionRepository.save(session);
+        }
+
+        return booking;
     }
     
     @Override

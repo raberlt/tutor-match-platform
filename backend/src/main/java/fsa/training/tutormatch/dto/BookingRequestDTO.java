@@ -8,6 +8,7 @@ import java.util.List;
 @Data
 public class BookingRequestDTO {
     private Integer id;
+    private String bookingCode;
     private String status;
     private String bookingType;
     private LocalDate date;
@@ -62,5 +63,8 @@ public class BookingRequestDTO {
         private LocalTime endTime;
         private String status;
         private Integer rescheduleCount;
+        // extended fields for UI
+        private String subjectName;
+        private java.math.BigDecimal fee;
     }
 } 

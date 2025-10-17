@@ -20,9 +20,12 @@ public class CustomUserDetailsService implements UserDetailsService {
     private UserRepository userRepo;
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepo.findByUsername(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + email));
+    public UserDetails loadUserByUsername(String login) throws UsernameNotFoundException {
+        // Cho phép đăng nhập bằng username hoặc email
+        User user = userRepo.findByUsername(login)
+                .orElseGet(() -> userRepo.findByEmail(login)
+                        .orElseGet(() -> userRepo.findByPhoneNumber(login)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found with username/email/phone: " + login))));
 
         List<GrantedAuthority> authorities = List.of(
                 new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
@@ -32,6 +35,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         Integer profileId = null;
 
         return new CustomUserDetails(
+                // Principal luôn là username để đồng nhất các chỗ authentication.getName()
                 user.getUsername(),
                 user.getPassword(),
                 authorities,

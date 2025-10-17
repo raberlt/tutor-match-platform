@@ -44,7 +44,7 @@ export const LoginPage: React.FC = () => {
     } catch (err: unknown) {
       const errorMessage =
         (err as ApiError)?.response?.data?.message ||
-        "Email hoặc mật khẩu không đúng";
+        "Thông tin đăng nhập hoặc mật khẩu không đúng";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -136,19 +136,19 @@ export const LoginPage: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label
-                  htmlFor="email"
+                  htmlFor="identifier"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Email
+                  Email 
                 </label>
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
+                  id="identifier"
+                  name="identifier"
+                  type="text"
+                  autoComplete="username"
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  placeholder="Nhập địa chỉ email của bạn"
+                  placeholder="Nhập email, tên đăng nhập hoặc số điện thoại"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />

@@ -89,6 +89,7 @@ public class AuthController {
             // Lưu user
             User savedUser = userService.save(user);
 
+
             // Khởi tạo profile phù hợp với role
             if (savedUser.getRole() == UserRole.TUTOR) {
                 TutorProfile tutor = new TutorProfile();
@@ -105,6 +106,14 @@ public class AuthController {
                 tutorProfileRepository.save(tutor);
             }
 
+            // Mặc định educationLevel cho user mới nếu chưa có
+            try {
+                if (savedUser.getEducationLevel() == null) {
+                    savedUser.setEducationLevel(EducationLevel.INDEPENDENT_LEARNER);
+                    savedUser = userService.save(savedUser);
+                }
+            } catch (Exception ignored) {}
+
             // Response trả về
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -114,7 +123,8 @@ public class AuthController {
                     "firstName", savedUser.getFirstName(),
                     "lastName", savedUser.getLastName(),
                     "email", savedUser.getEmail(),
-                    "role", savedUser.getRole().toString()
+                    "role", savedUser.getRole().toString(),
+                    "educationLevel", savedUser.getEducationLevel() != null ? savedUser.getEducationLevel().toString() : null
             ));
 
             return ResponseEntity.ok(response);
@@ -340,10 +350,25 @@ public class AuthController {
     @GetMapping("/profile")
     public ResponseEntity<?> getCurrentUserProfile(Authentication authentication) {
         try {
-            // Tạm thời sử dụng email mặc định để test
-            String username = authentication != null ? authentication.getName() : "testuser@example.com";
-            User user = userService.findByEmail(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            if (authentication == null || authentication.getName() == null) {
+                return ResponseEntity.status(401).body(Map.of(
+                    "success", false,
+                    "error", "Unauthorized"
+                ));
+            }
+
+            String username = authentication.getName();
+            Optional<User> userOpt = userService.findByUsername(username);
+            if (userOpt.isEmpty()) {
+                userOpt = userService.findByEmail(username);
+            }
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of(
+                    "success", false,
+                    "error", "User not found"
+                ));
+            }
+            User user = userOpt.get();
             
             Map<String, Object> userProfile = new HashMap<>();
             userProfile.put("id", user.getId());
@@ -366,7 +391,7 @@ public class AuthController {
                 "data", userProfile
             ));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
+            return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
                 "error", e.getMessage()
             ));
@@ -384,9 +409,20 @@ public class AuthController {
     ) {
         try {
             // Tạm thời sử dụng email mặc định để test
-            String username = authentication != null ? authentication.getName() : "testuser@example.com";
-            User user = userService.findByEmail(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            String username = authentication != null ? authentication.getName() : null;
+            if (username == null) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "error", "Unauthorized"));
+            }
+            User user = userService.findByUsername(username)
+                .orElseGet(() -> userService.findByEmail(username)
+                    .orElseThrow(() -> new RuntimeException("User not found")));
+            String username = authentication != null ? authentication.getName() : null;
+            if (username == null) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "error", "Unauthorized"));
+            }
+            User user = userService.findByUsername(username)
+                .orElseGet(() -> userService.findByEmail(username)
+                    .orElseThrow(() -> new RuntimeException("User not found")));
             
             // Cập nhật thông tin user
             if (profileData.containsKey("firstName")) {
@@ -396,7 +432,17 @@ public class AuthController {
                 user.setLastName((String) profileData.get("lastName"));
             }
             if (profileData.containsKey("username")) {
-                user.setUsername((String) profileData.get("username"));
+                String newUsername = (String) profileData.get("username");
+                if (newUsername != null && !newUsername.isBlank()) {
+                    Optional<User> other = userService.findByUsername(newUsername);
+                    if (other.isPresent() && !other.get().getId().equals(user.getId())) {
+                        return ResponseEntity.badRequest().body(Map.of(
+                                "success", false,
+                                "error", "Tên đăng nhập đã được sử dụng bởi người khác"
+                        ));
+                    }
+                    user.setUsername(newUsername);
+                }
             }
             if (profileData.containsKey("phoneNumber")) {
                 user.setPhoneNumber((String) profileData.get("phoneNumber"));
@@ -433,15 +479,36 @@ public class AuthController {
                         EducationLevel educationLevel = EducationLevel.valueOf(educationStr.toUpperCase());
                         user.setEducationLevel(educationLevel);
                     } catch (Exception e) {
-                        // Log warning but continue
+                        // fallback mặc định nếu client gửi sai
+                        user.setEducationLevel(EducationLevel.INDEPENDENT_LEARNER);
                     }
                 }
+            }
+
+            // Nếu chưa có educationLevel, set mặc định để tránh null
+            if (user.getEducationLevel() == null) {
+                user.setEducationLevel(EducationLevel.INDEPENDENT_LEARNER);
             }
             if (profileData.containsKey("avatar")) {
                 user.setImageAvatar((String) profileData.get("avatar"));
             }
+
+            // Không ép avatar mặc định dạng ảnh; để rỗng để frontend hiển thị avatar chữ cái
             
-            User updatedUser = userService.save(user);
+            User updatedUser;
+            try {
+                updatedUser = userService.save(user);
+            } catch (org.springframework.dao.DataIntegrityViolationException dive) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Dữ liệu không hợp lệ hoặc trùng lặp (ví dụ: tên đăng nhập đã tồn tại)"
+                ));
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", e.getMessage()
+                ));
+            }
             
             // Tạo response object đơn giản để tránh lỗi serialization
             Map<String, Object> userData = new HashMap<>();

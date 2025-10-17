@@ -18,6 +18,7 @@ interface Session {
 
 interface Booking {
   id: number;
+  bookingCode?: string;
   status: BookingStatus;
   bookingType: string;
   note?: string;
@@ -158,6 +159,12 @@ const MySessions: React.FC = () => {
 
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [tick, setTick] = useState<number>(0);
+
+  // Filter states
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showCalendar, setShowCalendar] = useState(false);
 
   // Accordion state for session details
   const [expandedBookings, setExpandedBookings] = useState<Set<number>>(
@@ -721,6 +728,78 @@ const MySessions: React.FC = () => {
 
   const calendarInfo = getCalendarInfo(currentDate);
 
+  // Filter bookings based on search and filters
+  const filteredBookings = bookings.filter((booking) => {
+    // Search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch =
+        booking.id.toString().includes(searchLower) ||
+        (booking.tutor?.user?.firstName &&
+          booking.tutor.user.firstName.toLowerCase().includes(searchLower)) ||
+        (booking.tutor?.user?.lastName &&
+          booking.tutor.user.lastName.toLowerCase().includes(searchLower)) ||
+        (booking.tutor?.firstName &&
+          booking.tutor.firstName.toLowerCase().includes(searchLower)) ||
+        (booking.tutor?.lastName &&
+          booking.tutor.lastName.toLowerCase().includes(searchLower)) ||
+        (booking.sessions?.[0]?.subject?.name &&
+          booking.sessions[0].subject.name.toLowerCase().includes(searchLower));
+
+      if (!matchesSearch) return false;
+    }
+
+    // Status filter
+    if (filterStatus !== "all") {
+      if (
+        filterStatus === "payment_pending" &&
+        booking.status !== "PAYMENT_PENDING"
+      )
+        return false;
+      if (
+        filterStatus === "payment_completed" &&
+        booking.status !== "PAYMENT_COMPLETED"
+      )
+        return false;
+      if (
+        filterStatus === "awaiting_tutor_accept" &&
+        booking.status !== "AWAITING_TUTOR_ACCEPT"
+      )
+        return false;
+      if (
+        filterStatus === "tutor_accepted" &&
+        booking.status !== "TUTOR_ACCEPTED"
+      )
+        return false;
+      if (
+        filterStatus === "tutor_rejected" &&
+        booking.status !== "TUTOR_REJECTED"
+      )
+        return false;
+      if (filterStatus === "cancelled" && booking.status !== "CANCELLED")
+        return false;
+      if (filterStatus === "completed" && booking.status !== "COMPLETED")
+        return false;
+      if (filterStatus === "refunded" && booking.status !== "REFUNDED")
+        return false;
+      if (
+        filterStatus === "payment_expired" &&
+        booking.status !== "PAYMENT_EXPIRED"
+      )
+        return false;
+    }
+
+    // Type filter
+    if (filterType !== "all") {
+      if (filterType === "single" && booking.bookingType !== "SINGLE")
+        return false;
+      if (filterType === "package" && booking.bookingType !== "PACKAGE")
+        return false;
+    }
+
+    return true;
+  });
+
   // ====== Cancel & Refund Modals State ======
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<{
@@ -870,6 +949,7 @@ const MySessions: React.FC = () => {
       navigate("/payment", {
         state: {
           bookingId: bookingId,
+          bookingCode: booking.bookingCode,
           bookingType:
             booking.bookingType === "SINGLE" ? "SINGLE_SESSION" : "PACKAGE",
           totalAmount: booking.totalAmount || 0,
@@ -881,25 +961,57 @@ const MySessions: React.FC = () => {
               } ${
                 booking.tutor?.user?.lastName || booking.tutor?.lastName || ""
               }`.trim() || "Gia sư",
-            subject: booking.sessions?.[0]?.subject?.name || "Môn học",
-            avatar: "/default-avatar.png",
+            subject:
+              booking.sessions?.[0]?.subject?.name ||
+              (booking as any).subject?.name ||
+              "Môn học",
+            avatar:
+              booking.tutor?.user?.imageAvatar ||
+              (booking.tutor as any)?.imageAvatar ||
+              "/default-avatar.png",
           },
-          session: booking.sessions?.[0]
-            ? {
-                date:
-                  booking.sessions[0].date || booking.sessions[0].sessionDate,
-                time: `${booking.sessions[0].startTime?.substring(
-                  0,
-                  5
-                )} - ${booking.sessions[0].endTime?.substring(0, 5)}`,
-                subject: booking.sessions[0].subject?.name || "Môn học",
-                fee:
-                  booking.sessions[0].fee ||
-                  booking.sessions[0].subject?.fees ||
-                  booking.totalAmount ||
-                  0,
-              }
-            : null,
+          // Đơn lẻ: truyền 1 session; Gói: truyền mảng sessions
+          session:
+            booking.bookingType === "SINGLE" && booking.sessions?.[0]
+              ? {
+                  date:
+                    (booking.sessions[0] as any).date ||
+                    (booking.sessions[0] as any).sessionDate,
+                  time: `${String(
+                    (booking.sessions[0] as any).startTime || ""
+                  ).substring(0, 5)} - ${String(
+                    (booking.sessions[0] as any).endTime || ""
+                  ).substring(0, 5)}`,
+                  subject:
+                    (booking.sessions[0] as any).subject?.name ||
+                    (booking.sessions[0] as any).subjectName ||
+                    "Môn học",
+                  fee:
+                    Number((booking.sessions[0] as any).fee) ||
+                    Number((booking.sessions[0] as any).subject?.fees) ||
+                    Number(booking.totalAmount) ||
+                    0,
+                }
+              : undefined,
+          sessions:
+            booking.bookingType === "PACKAGE"
+              ? (booking.sessions || []).map((s) => ({
+                  date: (s as any).date || (s as any).sessionDate,
+                  timeSlot:
+                    (s as any).timeSlot ||
+                    ((s as any).startTime && (s as any).endTime
+                      ? `${String((s as any).startTime).substring(
+                          0,
+                          5
+                        )} - ${String((s as any).endTime).substring(0, 5)}`
+                      : undefined),
+                  subjectName:
+                    (s as any).subjectName ||
+                    (s as any).subject?.name ||
+                    "Môn học",
+                  fee: Number((s as any).fee) || 0,
+                }))
+              : undefined,
           note: booking.note,
         },
       });
@@ -971,13 +1083,6 @@ const MySessions: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <Link
-                to="/find-tutor"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium"
-              >
-                <UserIcon />
-                <span className="ml-2">Tìm gia sư</span>
-              </Link>
               <button
                 onClick={toggleView}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
@@ -989,6 +1094,205 @@ const MySessions: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Filters */}
+        <div
+          className="bg-white p-6 rounded-2xl shadow-lg mb-6"
+          style={{
+            borderColor: "rgba(148, 204, 230, 0.2)",
+            borderWidth: "1px",
+          }}
+        >
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tìm kiếm
+                </label>
+                <input
+                  type="text"
+                  placeholder="Tìm theo mã booking, tên gia sư hoặc môn học..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-3 py-2 rounded-2xl transition-colors duration-200"
+                  style={{
+                    borderColor: "rgba(148, 204, 230, 0.3)",
+                    borderWidth: "1px",
+                    backgroundColor: "rgba(148, 204, 230, 0.05)",
+                  }}
+                  onFocus={(e) =>
+                    (e.target.style.borderColor = "rgb(148, 204, 230)")
+                  }
+                  onBlur={(e) =>
+                    (e.target.style.borderColor = "rgba(148, 204, 230, 0.3)")
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Trạng thái
+                </label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full px-3 py-2 rounded-2xl transition-colors duration-200"
+                  style={{
+                    borderColor: "rgba(148, 204, 230, 0.3)",
+                    borderWidth: "1px",
+                    backgroundColor: "rgba(148, 204, 230, 0.05)",
+                  }}
+                  onFocus={(e) =>
+                    (e.target.style.borderColor = "rgb(148, 204, 230)")
+                  }
+                  onBlur={(e) =>
+                    (e.target.style.borderColor = "rgba(148, 204, 230, 0.3)")
+                  }
+                >
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="awaiting_tutor_accept">
+                    Chờ gia sư chấp nhận
+                  </option>
+                  <option value="tutor_accepted">Gia sư đã chấp nhận</option>
+                  <option value="payment_pending">Chờ thanh toán</option>
+                  <option value="payment_completed">Đã thanh toán</option>
+                  <option value="tutor_rejected">Gia sư từ chối</option>
+                  <option value="cancelled">Đã hủy</option>
+                  <option value="completed">Hoàn thành</option>
+                  <option value="refunded">Đã hoàn tiền</option>
+                  <option value="payment_expired">Quá hạn thanh toán</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Loại đặt lịch
+                </label>
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="w-full px-3 py-2 rounded-2xl transition-colors duration-200"
+                  style={{
+                    borderColor: "rgba(148, 204, 230, 0.3)",
+                    borderWidth: "1px",
+                    backgroundColor: "rgba(148, 204, 230, 0.05)",
+                  }}
+                  onFocus={(e) =>
+                    (e.target.style.borderColor = "rgb(148, 204, 230)")
+                  }
+                  onBlur={(e) =>
+                    (e.target.style.borderColor = "rgba(148, 204, 230, 0.3)")
+                  }
+                >
+                  <option value="all">Tất cả loại</option>
+                  <option value="single">Đơn lẻ</option>
+                  <option value="package">Gói học</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-end">
+              <button
+                onClick={() => setShowCalendar(!showCalendar)}
+                className="px-4 py-2 text-sm font-medium text-white rounded-2xl transition-colors duration-200"
+                style={{
+                  backgroundColor: showCalendar
+                    ? "rgb(100, 150, 200)"
+                    : "rgb(148, 204, 230)",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor =
+                    "rgba(148, 204, 230, 0.8)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = showCalendar
+                    ? "rgb(100, 150, 200)"
+                    : "rgb(148, 204, 230)")
+                }
+              >
+                {showCalendar ? "Ẩn lịch" : "Xem lịch"}
+              </button>
+            </div>
+          </div>
+
+          {showCalendar && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  onClick={() =>
+                    setCurrentDate(
+                      new Date(
+                        currentDate.getFullYear(),
+                        currentDate.getMonth() - 1,
+                        1
+                      )
+                    )
+                  }
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {currentDate.toLocaleDateString("vi-VN", {
+                    year: "numeric",
+                    month: "long",
+                  })}
+                </h3>
+                <button
+                  onClick={() =>
+                    setCurrentDate(
+                      new Date(
+                        currentDate.getFullYear(),
+                        currentDate.getMonth() + 1,
+                        1
+                      )
+                    )
+                  }
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div className="text-center py-8">
+                <div
+                  className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                  style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}
+                >
+                  <CalendarIcon />
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                  Chế độ xem lịch
+                </h4>
+                <p className="text-gray-500">
+                  Tính năng xem lịch sẽ được phát triển trong phiên bản tiếp
+                  theo.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Calendar View */}
@@ -1103,7 +1407,7 @@ const MySessions: React.FC = () => {
               </p>
             </div>
           </div>
-        ) : bookings.length === 0 ? (
+        ) : filteredBookings.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
             <div className="text-center py-16">
               <div
@@ -1113,26 +1417,35 @@ const MySessions: React.FC = () => {
                 <BookIcon />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Chưa có buổi học nào
+                {searchTerm || filterStatus !== "all" || filterType !== "all"
+                  ? "Không tìm thấy kết quả"
+                  : "Chưa có buổi học nào"}
               </h3>
               <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                Bắt đầu hành trình học tập của bạn bằng cách đặt lịch học đầu
-                tiên với gia sư phù hợp.
+                {searchTerm || filterStatus !== "all" || filterType !== "all"
+                  ? "Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm để xem kết quả khác."
+                  : "Bắt đầu hành trình học tập của bạn bằng cách đặt lịch học đầu tiên với gia sư phù hợp."}
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Link
-                  to="/find-tutor"
-                  className="inline-flex items-center px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium"
-                >
-                  <UserIcon />
-                  <span className="ml-2">Tìm gia sư</span>
-                </Link>
-              </div>
+              {!(
+                searchTerm ||
+                filterStatus !== "all" ||
+                filterType !== "all"
+              ) && (
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Link
+                    to="/find-tutor"
+                    className="inline-flex items-center px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium"
+                  >
+                    <UserIcon />
+                    <span className="ml-2">Tìm gia sư</span>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6">
-            {bookings.map((booking) => (
+            {filteredBookings.map((booking) => (
               <div
                 key={booking.id}
                 className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden"
@@ -1179,8 +1492,7 @@ const MySessions: React.FC = () => {
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 min-w-0 flex-1">
                       <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer"
-                        style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                        className="w-12 h-12 rounded-full flex-shrink-0 cursor-pointer overflow-hidden"
                         onClick={() => {
                           const tutorId = booking.tutor?.id || booking.tutorId;
                           if (tutorId) {
@@ -1190,13 +1502,30 @@ const MySessions: React.FC = () => {
                           }
                         }}
                       >
-                        <span className="text-white font-semibold text-lg">
-                          {(
-                            booking.tutor?.user?.firstName ??
-                            booking.tutor?.firstName ??
-                            "G"
-                          ).charAt(0)}
-                        </span>
+                        {booking.tutor?.user?.imageAvatar ||
+                        (booking.tutor as any)?.imageAvatar ? (
+                          <img
+                            src={
+                              booking.tutor?.user?.imageAvatar ||
+                              (booking.tutor as any)?.imageAvatar
+                            }
+                            alt="Tutor Avatar"
+                            className="w-12 h-12 object-cover"
+                          />
+                        ) : (
+                          <div
+                            className="w-12 h-12 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                          >
+                            <span className="text-white font-semibold text-lg">
+                              {(
+                                booking.tutor?.user?.firstName ??
+                                booking.tutor?.firstName ??
+                                "G"
+                              ).charAt(0)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3

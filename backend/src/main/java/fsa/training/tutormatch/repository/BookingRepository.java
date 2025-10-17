@@ -25,6 +25,7 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     Page<Booking> findByTutor(TutorProfile tutor, Pageable pageable);
     Page<Booking> findByTutorAndStatus(TutorProfile tutor, BookingStatus status, Pageable pageable);
     List<Booking> findByTutorAndStatus(TutorProfile tutor, BookingStatus status);
+    Page<Booking> findByTutorAndStatusNot(TutorProfile tutor, BookingStatus status, Pageable pageable);
     
     // Methods với User để backward compatibility
     @Query("SELECT b FROM Booking b WHERE b.student = :user")

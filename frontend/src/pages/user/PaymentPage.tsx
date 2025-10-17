@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // Icons
@@ -68,20 +68,49 @@ const PaymentPage: React.FC = () => {
   const [tick, setTick] = useState<number>(0);
   const [sepayQrUrl, setSepayQrUrl] = useState<string>("");
   const [sepayStatus, setSepayStatus] = useState<string>("");
+  const [paymentDeadline, setPaymentDeadline] = useState<string>("");
+  const [isExpired, setIsExpired] = useState<boolean>(false);
 
   // Lấy dữ liệu từ booking hoặc sử dụng mock data
   const bookingData = useMemo(
     () =>
       location.state || {
+        bookingId: 12345,
+        bookingCode: "BK001234",
+        bookingType: "SINGLE_SESSION", // hoặc "PACKAGE"
+        bookingCreatedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(), // 2 phút trước
+        paymentDeadline: new Date(Date.now() + 8 * 60 * 1000).toISOString(), // 8 phút nữa
         tutor: {
           name: "Nguyễn Văn A",
           subject: "Toán học",
           avatar: null,
+          rating: 4.5,
+        },
+        session: {
+          date: "2024-01-15",
+          time: "14:00 - 15:30",
+          subject: "Toán học",
+          fee: 200000,
         },
         sessions: [
-          { date: "2024-01-15", time: "14:00 - 15:30" },
-          { date: "2024-01-17", time: "14:00 - 15:30" },
-          { date: "2024-01-19", time: "14:00 - 15:30" },
+          {
+            date: "2024-01-15",
+            timeSlot: "14:00 - 15:30",
+            subjectName: "Toán học",
+            fee: 200000,
+          },
+          {
+            date: "2024-01-17",
+            timeSlot: "14:00 - 15:30",
+            subjectName: "Toán học",
+            fee: 200000,
+          },
+          {
+            date: "2024-01-19",
+            timeSlot: "14:00 - 15:30",
+            subjectName: "Toán học",
+            fee: 200000,
+          },
         ],
         packageInfo: {
           totalDays: 3,
@@ -91,9 +120,153 @@ const PaymentPage: React.FC = () => {
           discount: 100000,
           finalPrice: 500000,
         },
+        totalAmount: 200000,
+        note: "Học sinh cần hỗ trợ thêm về phần đạo hàm",
       },
     [location.state]
   );
+
+  const handlePaymentExpired = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token || !bookingData.bookingId) return;
+
+      // Update booking status to expired
+      const response = await fetch(
+        `/api/bookings/${bookingData.bookingId}/expire`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        console.log("Booking status updated to expired");
+        // Redirect to booking list with expired message
+        navigate("/user/bookings", {
+          state: {
+            message: "Thanh toán đã hết hạn. Đặt lịch đã bị hủy.",
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error updating booking status:", error);
+    }
+  }, [bookingData.bookingId, navigate]);
+
+  const setPaymentDeadlineBasedOnBookingType = useCallback(() => {
+    const bookingId = bookingData.bookingId || bookingData.bookingCode;
+    const localStorageKey = `paymentDeadline_${bookingId}`;
+
+    // Kiểm tra localStorage trước
+    const savedDeadline = localStorage.getItem(localStorageKey);
+    if (savedDeadline) {
+      const deadlineTime = new Date(savedDeadline).getTime();
+      const now = Date.now();
+
+      // Nếu deadline đã hết hạn, đánh dấu expired
+      if (deadlineTime <= now) {
+        setIsExpired(true);
+        console.log(`Payment deadline expired: ${savedDeadline}`);
+        return;
+      }
+
+      setPaymentDeadline(savedDeadline);
+      console.log(`Using saved payment deadline: ${savedDeadline}`);
+      return;
+    }
+
+    // Nếu đã có paymentDeadline từ booking data, sử dụng nó
+    if (bookingData.paymentDeadline) {
+      setPaymentDeadline(bookingData.paymentDeadline);
+      localStorage.setItem(localStorageKey, bookingData.paymentDeadline);
+      console.log(
+        `Using existing payment deadline: ${bookingData.paymentDeadline}`
+      );
+      return;
+    }
+
+    // Nếu có bookingCreatedAt, tính deadline từ thời điểm tạo booking
+    if (bookingData.bookingCreatedAt) {
+      const bookingCreatedTime = new Date(
+        bookingData.bookingCreatedAt
+      ).getTime();
+      const isSingleSession = bookingData.bookingType === "SINGLE_SESSION";
+
+      // Single session: 10 minutes, Package: 24 hours
+      const deadlineMinutes = isSingleSession ? 10 : 24 * 60;
+      const deadline = new Date(
+        bookingCreatedTime + deadlineMinutes * 60 * 1000
+      );
+
+      setPaymentDeadline(deadline.toISOString());
+      localStorage.setItem(localStorageKey, deadline.toISOString());
+      console.log(
+        `Payment deadline calculated from booking creation: ${deadline.toISOString()} (${
+          isSingleSession ? "10 minutes" : "24 hours"
+        })`
+      );
+      return;
+    }
+
+    // Fallback: tính từ thời điểm hiện tại (chỉ dùng khi không có dữ liệu)
+    const now = new Date();
+    const isSingleSession = bookingData.bookingType === "SINGLE_SESSION";
+
+    // Single session: 10 minutes, Package: 24 hours
+    const deadlineMinutes = isSingleSession ? 10 : 24 * 60;
+    const deadline = new Date(now.getTime() + deadlineMinutes * 60 * 1000);
+
+    setPaymentDeadline(deadline.toISOString());
+    localStorage.setItem(localStorageKey, deadline.toISOString());
+    console.log(
+      `Payment deadline set from current time (fallback): ${deadline.toISOString()} (${
+        isSingleSession ? "10 minutes" : "24 hours"
+      })`
+    );
+  }, [
+    bookingData.bookingType,
+    bookingData.paymentDeadline,
+    bookingData.bookingCreatedAt,
+    bookingData.bookingId,
+    bookingData.bookingCode,
+  ]);
+
+  const fetchBookingData = useCallback(async () => {
+    // Nếu đã có dữ liệu từ location.state, không cần fetch
+    if (location.state?.bookingId) {
+      return;
+    }
+
+    // Nếu có bookingId trong URL params hoặc localStorage, fetch từ API
+    const urlParams = new URLSearchParams(window.location.search);
+    const bookingId =
+      urlParams.get("bookingId") || localStorage.getItem("currentBookingId");
+
+    if (bookingId) {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`/api/bookings/${bookingId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const bookingData = await response.json();
+          console.log("Fetched booking data from API:", bookingData);
+
+          // Cập nhật state với dữ liệu thực từ API
+          // Note: Trong thực tế, bạn sẽ cần cập nhật state hoặc redirect với dữ liệu mới
+        }
+      } catch (error) {
+        console.error("Error fetching booking data:", error);
+      }
+    }
+  }, [location.state]);
 
   // Load credit balance on component mount
   useEffect(() => {
@@ -103,14 +276,40 @@ const PaymentPage: React.FC = () => {
     console.log("paymentId:", bookingData?.paymentId);
     console.log("Session data:", bookingData?.session);
     console.log("Session date:", bookingData?.session?.date);
+    console.log("bookingCreatedAt:", bookingData?.bookingCreatedAt);
+    console.log("paymentDeadline:", bookingData?.paymentDeadline);
+
     loadCreditBalance();
-  }, [location.state, bookingData]);
+    fetchBookingData();
+
+    // Set payment deadline based on booking type
+    setPaymentDeadlineBasedOnBookingType();
+  }, [
+    location.state,
+    bookingData,
+    setPaymentDeadlineBasedOnBookingType,
+    fetchBookingData,
+  ]);
 
   // Countdown timer
   useEffect(() => {
     const i = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(i);
   }, []);
+
+  // Check if payment is expired
+  useEffect(() => {
+    if (paymentDeadline) {
+      const deadline = new Date(paymentDeadline).getTime();
+      const now = Date.now();
+      const diff = Math.floor((deadline - now) / 1000);
+
+      if (diff <= 0 && !isExpired) {
+        setIsExpired(true);
+        handlePaymentExpired();
+      }
+    }
+  }, [tick, paymentDeadline, isExpired, handlePaymentExpired]);
 
   const loadCreditBalance = async () => {
     try {
@@ -174,29 +373,41 @@ const PaymentPage: React.FC = () => {
   };
 
   const renderCountdown = () => {
-    if (!bookingData.paymentDeadline) return null;
+    if (!paymentDeadline || isExpired) return null;
 
-    // Sử dụng tick để trigger re-render mỗi giây
-    const deadline = new Date(bookingData.paymentDeadline).getTime();
+    const deadline = new Date(paymentDeadline).getTime();
     const now = Date.now();
     const diff = Math.max(0, Math.floor((deadline - now) / 1000));
 
-    // Trigger re-render bằng cách sử dụng tick trong dependency
-    const currentTick = tick;
+    // Debug info
+    console.log(
+      `Countdown debug - Deadline: ${new Date(
+        deadline
+      ).toISOString()}, Now: ${new Date(now).toISOString()}, Diff: ${diff}s`
+    );
 
-    // Nếu hết thời gian, không hiển thị countdown
+    // Nếu hết thời gian, hiển thị thông báo hết hạn
     if (diff <= 0) {
       return (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-          <div className="flex items-center">
-            <span className="text-red-800 font-medium text-sm">
-              ⏰ Hết hạn thanh toán
-            </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <span className="text-red-800 font-medium text-sm">
+                ⏰ Hết hạn thanh toán
+              </span>
+            </div>
+            <button
+              onClick={() => navigate("/user/search")}
+              className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Đặt lịch lại
+            </button>
           </div>
         </div>
       );
     }
 
+    const isSingleSession = bookingData.bookingType === "SINGLE_SESSION";
     const hh = Math.floor(diff / 3600)
       .toString()
       .padStart(2, "0");
@@ -206,7 +417,9 @@ const PaymentPage: React.FC = () => {
     const ss = Math.floor(diff % 60)
       .toString()
       .padStart(2, "0");
-    const isUrgent = diff <= 300; // <= 5 phút
+
+    // For single session: urgent if <= 2 minutes, for package: urgent if <= 1 hour
+    const isUrgent = isSingleSession ? diff <= 120 : diff <= 3600;
 
     return (
       <div
@@ -223,7 +436,8 @@ const PaymentPage: React.FC = () => {
                 isUrgent ? "text-red-800" : "text-yellow-800"
               }`}
             >
-              ⏳ Thời gian còn lại để thanh toán (tick: {currentTick})
+              ⏳ Thời gian còn lại để thanh toán (
+              {isSingleSession ? "10 phút" : "24 giờ"})
             </p>
             <p
               className={`text-lg font-bold ${
@@ -231,6 +445,10 @@ const PaymentPage: React.FC = () => {
               }`}
             >
               {hh}:{mm}:{ss}
+            </p>
+            {/* Debug info */}
+            <p className="text-xs text-gray-500 mt-1">
+              Deadline: {new Date(paymentDeadline).toLocaleString("vi-VN")}
             </p>
           </div>
           {isUrgent && (
@@ -424,6 +642,11 @@ const PaymentPage: React.FC = () => {
           const result = await response.json();
 
           if (result.success) {
+            // Thanh toán thành công - xóa deadline khỏi localStorage
+            const bookingId = bookingData.bookingId || bookingData.bookingCode;
+            const localStorageKey = `paymentDeadline_${bookingId}`;
+            localStorage.removeItem(localStorageKey);
+
             // Thanh toán thành công - chuyển đến trang buổi học của tôi
             alert("Thanh toán thành công! Đặt lịch hoàn tất.");
             navigate("/my-sessions");
@@ -546,7 +769,7 @@ const PaymentPage: React.FC = () => {
                 </h2>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Mã booking:</span>
+                    <span className="text-gray-600">Mã lịch học:</span>
                     <span className="font-medium text-blue-600">
                       {bookingData.bookingCode ||
                         `BK${String(bookingData.bookingId || 0).padStart(
@@ -862,7 +1085,7 @@ const PaymentPage: React.FC = () => {
                           VNĐ
                         </p>
                         <p className="text-xs text-gray-500">
-                          Mã đơn hàng:{" "}
+                          Mã lịch học:{" "}
                           {bookingData.bookingCode ||
                             `BK${String(bookingData.bookingId || 0).padStart(
                               6,
@@ -895,21 +1118,40 @@ const PaymentPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <button
-                    onClick={handlePayment}
-                    disabled={isProcessing}
-                    className="w-full py-3 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                  >
-                    {isProcessing ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Đang xử lý...</span>
-                      </div>
-                    ) : (
-                      "Thanh toán ngay"
-                    )}
-                  </button>
+                  {isExpired ? (
+                    <div className="space-y-3">
+                      <button
+                        disabled
+                        className="w-full py-3 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg opacity-50 cursor-not-allowed"
+                        style={{ backgroundColor: "#6B7280" }}
+                      >
+                        Thanh toán đã hết hạn
+                      </button>
+                      <button
+                        onClick={() => navigate("/user/search")}
+                        className="w-full py-3 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+                        style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                      >
+                        Đặt lịch lại
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handlePayment}
+                      disabled={isProcessing}
+                      className="w-full py-3 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                    >
+                      {isProcessing ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Đang xử lý...</span>
+                        </div>
+                      ) : (
+                        "Thanh toán ngay"
+                      )}
+                    </button>
+                  )}
 
                   <p className="text-xs text-gray-500 text-center mt-3">
                     Bằng cách thanh toán, bạn đồng ý với{" "}

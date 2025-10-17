@@ -137,6 +137,10 @@ export const router = createBrowserRouter([
         path: "payment-qr",
         element: <PaymentQR />,
       },
+      {
+        path: "bookings",
+        element: <MySessions />,
+      },
     ],
   },
 
@@ -178,6 +182,48 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <MySessions />,
+      },
+    ],
+  },
+  {
+    path: "/booking",
+    element: <UserLayout />,
+    children: [
+      {
+        index: true,
+        element: (
+          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
+            <Booking />
+          </BookingProtectedRoute>
+        ),
+      },
+    ],
+  },
+  {
+    path: "/booking-success",
+    element: <UserLayout />,
+    children: [
+      {
+        index: true,
+        element: (
+          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
+            <BookingSuccess />
+          </BookingProtectedRoute>
+        ),
+      },
+    ],
+  },
+  {
+    path: "/payment",
+    element: <UserLayout />,
+    children: [
+      {
+        index: true,
+        element: (
+          <BookingProtectedRoute allowedRoles={["STUDENT"]}>
+            <PaymentPage />
+          </BookingProtectedRoute>
+        ),
       },
     ],
   },

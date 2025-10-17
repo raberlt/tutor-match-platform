@@ -10,7 +10,7 @@ interface SessionItem {
 }
 
 interface Booking {
-  id: string; // Mã lịch
+  id: string; // Mã lịch học
   studentName: string;
   studentEmail: string;
   studentPhone: string;
@@ -330,6 +330,9 @@ const TutorBookings: React.FC = () => {
   ]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectingBookingId, setRejectingBookingId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -477,16 +480,83 @@ const TutorBookings: React.FC = () => {
     setShowDetailModal(true);
   };
 
-  const handleApproveBooking = (bookingId: string) => {
-    console.log("Approving booking:", bookingId);
-    // Logic để chuyển từ pending sang payment_pending
-    alert("Đã chấp nhận đặt lịch! Chuyển sang trạng thái chờ thanh toán.");
+  const handleApproveBooking = async (bookingId: string) => {
+    try {
+      console.log("Approving booking:", bookingId);
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Vui lòng đăng nhập lại");
+        return;
+      }
+
+      const response = await fetch(`/api/booking/${bookingId}/accept`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        alert("Đã chấp nhận đặt lịch! Chuyển sang trạng thái chờ thanh toán.");
+        // Reload data để cập nhật trạng thái
+        window.location.reload();
+      } else {
+        const error = await response.text();
+        alert(`Lỗi: ${error}`);
+      }
+    } catch (error) {
+      console.error("Error approving booking:", error);
+      alert("Có lỗi xảy ra khi chấp nhận đặt lịch");
+    }
   };
 
   const handleRejectBooking = (bookingId: string) => {
-    console.log("Rejecting booking:", bookingId);
-    // Logic để chuyển từ pending sang rejected
-    alert("Đã từ chối đặt lịch!");
+    setRejectingBookingId(bookingId);
+    setRejectReason("");
+    setShowRejectModal(true);
+  };
+
+  const submitRejectBooking = async () => {
+    if (!rejectReason.trim()) {
+      alert("Vui lòng nhập lý do từ chối");
+      return;
+    }
+
+    try {
+      console.log("Rejecting booking:", rejectingBookingId);
+      
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Vui lòng đăng nhập lại");
+        return;
+      }
+
+      const response = await fetch(`/api/booking/${rejectingBookingId}/decline`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reason: rejectReason }),
+      });
+
+      if (response.ok) {
+        alert("Đã từ chối đặt lịch!");
+        setShowRejectModal(false);
+        setRejectReason("");
+        setRejectingBookingId(null);
+        // Reload data để cập nhật trạng thái
+        window.location.reload();
+      } else {
+        const error = await response.text();
+        alert(`Lỗi: ${error}`);
+      }
+    } catch (error) {
+      console.error("Error rejecting booking:", error);
+      alert("Có lỗi xảy ra khi từ chối đặt lịch");
+    }
   };
 
   const handleCancelBooking = (bookingId: string) => {
@@ -873,7 +943,7 @@ const TutorBookings: React.FC = () => {
                 {booking.type === "package" ? (
                   <>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Mã lịch:</span>
+                      <span className="text-gray-600">Mã lịch học:</span>
                       <span className="font-medium">{booking.id}</span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -928,6 +998,10 @@ const TutorBookings: React.FC = () => {
                   </>
                 ) : (
                   <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Mã lịch học:</span>
+                      <span className="font-medium">{booking.id}</span>
+                    </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Ngày học:</span>
                       <span className="font-medium">
@@ -1207,10 +1281,10 @@ const TutorBookings: React.FC = () => {
                     Thông tin đặt lịch
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Mã lịch - hiển thị cho cả đơn lẻ và gói */}
+                    {/* Mã lịch học - hiển thị cho cả đơn lẻ và gói */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Mã lịch
+                        Mã lịch học
                       </label>
                       <p className="mt-1 text-sm text-gray-900 font-medium">
                         {selectedBooking.id}
@@ -1521,6 +1595,47 @@ const TutorBookings: React.FC = () => {
                     </button>
                   )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal từ chối booking */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Từ chối đặt lịch
+            </h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Lý do từ chối
+              </label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"
+                placeholder="Nhập lý do từ chối đặt lịch..."
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setRejectReason("");
+                  setRejectingBookingId(null);
+                }}
+                className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={submitRejectBooking}
+                className="px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700"
+              >
+                Gửi
+              </button>
             </div>
           </div>
         </div>

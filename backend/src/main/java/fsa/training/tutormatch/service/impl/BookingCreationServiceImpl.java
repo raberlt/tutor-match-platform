@@ -4,6 +4,7 @@ import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.entity.*;
 import fsa.training.tutormatch.enums.BookingStatus;
 import fsa.training.tutormatch.enums.BookingType;
+import fsa.training.tutormatch.enums.PaymentStatus;
 import fsa.training.tutormatch.enums.SessionStatus;
 import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.SessionRepository;
@@ -51,6 +52,8 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         
         Booking booking = createBaseBooking(studentUsername, request);
         booking.setBookingType(BookingType.SINGLE);
+        booking.setStatus(BookingStatus.PAYMENT_PENDING);
+        booking.setPaymentStatus(PaymentStatus.PENDING); // Single booking cần thanh toán ngay
 
         // single booking luôn có 1 session
         booking.setTotalSessions(1);
@@ -73,6 +76,7 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         booking.setTotalAmount(request.getTotalAmount());
         // Gói học chờ gia sư đồng ý trước khi thanh toán
         booking.setStatus(BookingStatus.AWAITING_TUTOR_ACCEPT);
+        // paymentStatus sẽ là null cho đến khi gia sư đồng ý và chuyển sang TUTOR_ACCEPTED
 
         booking = bookingRepository.save(booking);
 
@@ -159,7 +163,7 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         booking.setStudent(studentUser);
         booking.setTutor(tutor);
         booking.setNote(request.getNote());
-        booking.setStatus(BookingStatus.PAYMENT_PENDING);
+        // Không set status ở đây - để createPackageBooking và createSingleBooking tự quyết định
         
         // Set financial fields - required for database constraints
         booking.setTotalAmount(request.getTotalAmount() != null ? request.getTotalAmount() : BigDecimal.ZERO);

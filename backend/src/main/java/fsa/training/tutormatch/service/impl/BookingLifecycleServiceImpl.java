@@ -2,6 +2,7 @@ package fsa.training.tutormatch.service.impl;
 
 import fsa.training.tutormatch.entity.Booking;
 import fsa.training.tutormatch.enums.BookingStatus;
+import fsa.training.tutormatch.enums.PaymentStatus;
 import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.service.BookingLifecycleService;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
     public void acceptPackageBooking(Integer bookingId, Integer tutorUserId) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow();
         booking.setStatus(BookingStatus.TUTOR_ACCEPTED);
+        booking.setPaymentStatus(PaymentStatus.PENDING); // Set payment status khi gia sư đồng ý
         booking.setPaymentDeadline(ZonedDateTime.now().plusHours(24));
         bookingRepository.save(booking);
     }

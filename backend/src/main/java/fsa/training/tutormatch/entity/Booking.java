@@ -79,7 +79,7 @@ public class Booking {
     
     @Column(name = "payment_status")
     @Enumerated(EnumType.STRING)
-    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+    private PaymentStatus paymentStatus = null; // Mặc định null, chỉ set khi cần thiết
     
     @Column(name = "payment_method")
     private String paymentMethod;

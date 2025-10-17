@@ -33,12 +33,35 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({
       setError(null);
 
       const token = localStorage.getItem("token");
+
+      // Lấy user từ localStorage để check role
+      const savedUser = localStorage.getItem("user");
+      let userRole = null;
+      if (savedUser) {
+        try {
+          const user = JSON.parse(savedUser);
+          userRole = user.role;
+        } catch (e) {
+          console.error("Error parsing user from localStorage:", e);
+        }
+      }
+
+      // Chỉ gọi API admin dashboard khi user là ADMIN
+      if (userRole !== "ADMIN") {
+        // Sử dụng mock data cho non-admin users
+        setStats(viData.stats as GenericStats);
+        setRecentActivities(viData.activities as RecentActivity[]);
+        setTopTutors(viData.topTutors as TopTutor[]);
+        setLoading(false);
+        return;
+      }
+
       const headers = {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       };
 
-      // Load overview data
+      // Load overview data (chỉ cho ADMIN)
       const overviewResponse = await fetch("/api/admin/dashboard/overview", {
         headers,
       });

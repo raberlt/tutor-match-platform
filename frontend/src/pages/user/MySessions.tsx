@@ -503,26 +503,42 @@ const MySessions: React.FC = () => {
           </button>
         );
         {
-          const hoursLeft = !isPackage ? getNextSessionHoursLeft() : null;
-          let label = "Huỷ lịch";
-          if (hoursLeft !== null && hoursLeft >= 48) label = "Huỷ & hoàn 100%";
-          else if (hoursLeft !== null && hoursLeft >= 24)
-            label = "Huỷ & hoàn 50%";
-          actions.push(
-            <div key="cancel-wrap" className="flex items-center gap-2">
+          // Logic khác nhau cho booking đơn và booking gói
+          if (isPackage) {
+            // Booking gói: chỉ hiện "Huỷ lịch" khi chờ thanh toán
+            actions.push(
               <button
+                key="cancel-booking"
                 className="px-3 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
                 onClick={() => openCancelBooking(booking.id)}
               >
-                {label}
+                Huỷ lịch
               </button>
-              {hoursLeft !== null && (
-                <span className="text-xs text-gray-500">
-                  Còn {hoursLeft}h tới buổi học
-                </span>
-              )}
-            </div>
-          );
+            );
+          } else {
+            // Booking đơn: áp dụng logic hoàn tiền theo giờ còn lại
+            const hoursLeft = getNextSessionHoursLeft();
+            let label = "Huỷ lịch";
+            if (hoursLeft !== null && hoursLeft >= 48)
+              label = "Huỷ & hoàn 100%";
+            else if (hoursLeft !== null && hoursLeft >= 24)
+              label = "Huỷ & hoàn 50%";
+            actions.push(
+              <div key="cancel-wrap" className="flex items-center gap-2">
+                <button
+                  className="px-3 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
+                  onClick={() => openCancelBooking(booking.id)}
+                >
+                  {label}
+                </button>
+                {hoursLeft !== null && (
+                  <span className="text-xs text-gray-500">
+                    Còn {hoursLeft}h tới buổi học
+                  </span>
+                )}
+              </div>
+            );
+          }
         }
         break;
       case "PAYMENT_EXPIRED":

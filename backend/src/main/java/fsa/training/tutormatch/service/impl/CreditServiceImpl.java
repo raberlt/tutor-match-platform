@@ -1,17 +1,15 @@
 package fsa.training.tutormatch.service.impl;
 
-import fsa.training.tutormatch.entity.CreditTransaction;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.entity.Transaction;
-import fsa.training.tutormatch.enums.CreditTransactionType;
+import fsa.training.tutormatch.enums.TransactionType;
+import fsa.training.tutormatch.enums.PaymentMethod;
 import fsa.training.tutormatch.enums.TransactionStatus;
-import fsa.training.tutormatch.repository.CreditTransactionRepository;
 import fsa.training.tutormatch.repository.UserRepository;
 import fsa.training.tutormatch.service.CreditService;
 import fsa.training.tutormatch.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,14 +23,22 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CreditServiceImpl implements CreditService {
     
-    private final CreditTransactionRepository creditTransactionRepository;
     private final UserRepository userRepository;
     private final TransactionService transactionService;
     
-    // Temporarily disabled until database migration
+    @Override
+    public BigDecimal getCurrentBalance(User user) {
+        return user.getCreditBalance();
+    }
+    
+    @Override
+    public boolean hasEnoughCredit(User user, BigDecimal amount) {
+        return user.hasEnoughCredit(amount);
+    }
+    
     @Override
     @Transactional
-    public CreditTransaction depositCredit(User user, BigDecimal amount, String description, String referenceId) {
+    public Transaction depositCredit(User user, BigDecimal amount, String description, String transactionRef) {
         log.info("Depositing {} credits to user {}", amount, user.getId());
         
         // Get balance before transaction
@@ -46,40 +52,66 @@ public class CreditServiceImpl implements CreditService {
         BigDecimal balanceAfter = user.getCreditBalance();
         
         // Create new Transaction record
-        Transaction transaction = transactionService.createDepositTransaction(user, amount, description);
-        
-        // Update balance tracking
+        Transaction transaction = new Transaction();
+        transaction.setUser(user);
+        transaction.setType(TransactionType.DEPOSIT);
+        transaction.setMethod(PaymentMethod.CREDIT);
+        transaction.setStatus(TransactionStatus.COMPLETED);
+        transaction.setAmount(amount);
         transaction.setBalanceBefore(balanceBefore);
         transaction.setBalanceAfter(balanceAfter);
+        transaction.setDescription(description);
+        transaction.setTransactionRef(transactionRef != null ? transactionRef : Transaction.generateTransactionRef());
+        transaction.setGatewayTransactionId("CREDIT_" + System.currentTimeMillis());
+        
+        Transaction savedTransaction = transactionService.createTransaction(transaction);
+        log.info("Credit deposit successful. Transaction ID: {}", savedTransaction.getId());
+        
+        return savedTransaction;
+    }
+    
+    @Override
+    @Transactional
+    public Transaction withdrawCredit(User user, BigDecimal amount, String description, String transactionRef) {
+        log.info("Withdrawing {} credits from user {}", amount, user.getId());
+        
+        // Check if user has enough credit
+        if (!user.hasEnoughCredit(amount)) {
+            throw new IllegalArgumentException("Insufficient credit balance");
+        }
+        
+        // Get balance before transaction
+        BigDecimal balanceBefore = user.getCreditBalance();
+        
+        // Deduct credit from user
+        user.deductCredit(amount);
+        userRepository.save(user);
+        
+        // Get balance after transaction
+        BigDecimal balanceAfter = user.getCreditBalance();
+        
+        // Create new Transaction record
+        Transaction transaction = new Transaction();
+        transaction.setUser(user);
+        transaction.setType(TransactionType.WITHDRAWAL);
+        transaction.setMethod(PaymentMethod.CREDIT);
         transaction.setStatus(TransactionStatus.COMPLETED);
-        transactionService.updateTransaction(transaction.getId(), transaction);
+        transaction.setAmount(amount);
+        transaction.setBalanceBefore(balanceBefore);
+        transaction.setBalanceAfter(balanceAfter);
+        transaction.setDescription(description);
+        transaction.setTransactionRef(transactionRef != null ? transactionRef : Transaction.generateTransactionRef());
+        transaction.setGatewayTransactionId("CREDIT_" + System.currentTimeMillis());
         
-        // Legacy: Create CreditTransaction for backward compatibility (will be removed after migration)
-        CreditTransaction creditTransaction = new CreditTransaction();
-        creditTransaction.setUser(user);
-        creditTransaction.setAmount(amount);
-        creditTransaction.setTransactionType(CreditTransactionType.DEPOSIT);
-        creditTransaction.setDescription(description);
-        creditTransaction.setReferenceId(referenceId);
-        creditTransaction.setBalanceBefore(balanceBefore);
-        creditTransaction.setBalanceAfter(balanceAfter);
+        Transaction savedTransaction = transactionService.createTransaction(transaction);
+        log.info("Credit withdrawal successful. Transaction ID: {}", savedTransaction.getId());
         
-        CreditTransaction savedCreditTransaction = creditTransactionRepository.save(creditTransaction);
-        log.info("Credit deposit successful. Transaction ID: {}", savedCreditTransaction.getId());
-        
-        return savedCreditTransaction;
+        return savedTransaction;
     }
     
     @Override
     @Transactional
-    public CreditTransaction withdrawCredit(User user, BigDecimal amount, String description, String referenceId) {
-        log.warn("Credit system is temporarily disabled. Migration required.");
-        throw new UnsupportedOperationException("Credit system is temporarily disabled. Please run database migration first.");
-    }
-    
-    @Override
-    @Transactional
-    public CreditTransaction payWithCredit(User user, BigDecimal amount, String description, String referenceId) {
+    public Transaction payWithCredit(User user, BigDecimal amount, String description, String transactionRef) {
         log.info("Processing payment of {} credits for user {}", amount, user.getId());
         
         // Check if user has enough credit
@@ -97,17 +129,20 @@ public class CreditServiceImpl implements CreditService {
         // Get balance after transaction
         BigDecimal balanceAfter = user.getCreditBalance();
         
-        // Create transaction record
-        CreditTransaction transaction = new CreditTransaction();
+        // Create new Transaction record
+        Transaction transaction = new Transaction();
         transaction.setUser(user);
+        transaction.setType(TransactionType.PAYMENT);
+        transaction.setMethod(PaymentMethod.CREDIT);
+        transaction.setStatus(TransactionStatus.COMPLETED);
         transaction.setAmount(amount);
-        transaction.setTransactionType(CreditTransactionType.PAYMENT);
-        transaction.setDescription(description);
-        transaction.setReferenceId(referenceId);
         transaction.setBalanceBefore(balanceBefore);
         transaction.setBalanceAfter(balanceAfter);
+        transaction.setDescription(description);
+        transaction.setTransactionRef(transactionRef != null ? transactionRef : Transaction.generateTransactionRef());
+        transaction.setGatewayTransactionId("CREDIT_" + System.currentTimeMillis());
         
-        CreditTransaction savedTransaction = creditTransactionRepository.save(transaction);
+        Transaction savedTransaction = transactionService.createTransaction(transaction);
         log.info("Credit payment successful. Transaction ID: {}", savedTransaction.getId());
         
         return savedTransaction;
@@ -115,37 +150,84 @@ public class CreditServiceImpl implements CreditService {
     
     @Override
     @Transactional
-    public CreditTransaction refundCredit(User user, BigDecimal amount, String description, String referenceId) {
-        log.warn("Credit system is temporarily disabled. Migration required.");
-        throw new UnsupportedOperationException("Credit system is temporarily disabled. Please run database migration first.");
+    public Transaction refundCredit(User user, BigDecimal amount, String description, String transactionRef) {
+        log.info("Refunding {} credits to user {}", amount, user.getId());
+        
+        // Get balance before transaction
+        BigDecimal balanceBefore = user.getCreditBalance();
+        
+        // Add credit to user
+        user.addCredit(amount);
+        userRepository.save(user);
+        
+        // Get balance after transaction
+        BigDecimal balanceAfter = user.getCreditBalance();
+        
+        // Create new Transaction record
+        Transaction transaction = new Transaction();
+        transaction.setUser(user);
+        transaction.setType(TransactionType.REFUND);
+        transaction.setMethod(PaymentMethod.CREDIT);
+        transaction.setStatus(TransactionStatus.COMPLETED);
+        transaction.setAmount(amount);
+        transaction.setBalanceBefore(balanceBefore);
+        transaction.setBalanceAfter(balanceAfter);
+        transaction.setDescription(description);
+        transaction.setTransactionRef(transactionRef != null ? transactionRef : Transaction.generateTransactionRef());
+        transaction.setGatewayTransactionId("CREDIT_" + System.currentTimeMillis());
+        
+        Transaction savedTransaction = transactionService.createTransaction(transaction);
+        log.info("Credit refund successful. Transaction ID: {}", savedTransaction.getId());
+        
+        return savedTransaction;
+    }
+    
+    @Override
+    public List<Transaction> getTransactionHistory(User user) {
+        return transactionService.getTransactionsByUser(user);
+    }
+    
+    @Override
+    public List<Transaction> getTransactionHistory(User user, int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        return transactionService.getTransactionsByUser(user, pageable).getContent();
     }
     
     @Override
     @Transactional
-    public CreditTransaction adjustCredit(User user, BigDecimal amount, String description, String referenceId) {
-        log.warn("Credit system is temporarily disabled. Migration required.");
-        throw new UnsupportedOperationException("Credit system is temporarily disabled. Please run database migration first.");
-    }
-    
-    @Override
-    public boolean hasEnoughCredit(User user, BigDecimal amount) {
-        return user.hasEnoughCredit(amount);
-    }
-    
-    @Override
-    public BigDecimal getCurrentBalance(User user) {
-        return user.getCreditBalance();
-    }
-    
-    @Override
-    public List<CreditTransaction> getTransactionHistory(User user) {
-        log.warn("Credit system is temporarily disabled. Migration required.");
-        return List.of();
-    }
-    
-    @Override
-    public List<CreditTransaction> getTransactionHistory(User user, int limit) {
-        log.warn("Credit system is temporarily disabled. Migration required.");
-        return List.of();
+    public Transaction adjustCredit(User user, BigDecimal amount, String description, String transactionRef) {
+        log.info("Admin adjusting {} credits for user {}", amount, user.getId());
+        
+        // Get balance before transaction
+        BigDecimal balanceBefore = user.getCreditBalance();
+        
+        // Adjust credit
+        if (amount.compareTo(BigDecimal.ZERO) > 0) {
+            user.addCredit(amount);
+        } else {
+            user.deductCredit(amount.abs());
+        }
+        userRepository.save(user);
+        
+        // Get balance after transaction
+        BigDecimal balanceAfter = user.getCreditBalance();
+        
+        // Create new Transaction record
+        Transaction transaction = new Transaction();
+        transaction.setUser(user);
+        transaction.setType(TransactionType.ADMIN_ADJUSTMENT);
+        transaction.setMethod(PaymentMethod.CREDIT);
+        transaction.setStatus(TransactionStatus.COMPLETED);
+        transaction.setAmount(amount);
+        transaction.setBalanceBefore(balanceBefore);
+        transaction.setBalanceAfter(balanceAfter);
+        transaction.setDescription(description);
+        transaction.setTransactionRef(transactionRef != null ? transactionRef : Transaction.generateTransactionRef());
+        transaction.setGatewayTransactionId("ADMIN_" + System.currentTimeMillis());
+        
+        Transaction savedTransaction = transactionService.createTransaction(transaction);
+        log.info("Credit adjustment successful. Transaction ID: {}", savedTransaction.getId());
+        
+        return savedTransaction;
     }
 }

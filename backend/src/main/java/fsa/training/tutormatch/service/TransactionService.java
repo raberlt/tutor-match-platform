@@ -55,12 +55,12 @@ public interface TransactionService {
     List<Transaction> getTransactionsByDateRange(ZonedDateTime startDate, ZonedDateTime endDate);
     List<Transaction> getTransactionsByUserAndDateRange(User user, ZonedDateTime startDate, ZonedDateTime endDate);
     
-    // Get transactions by reference
-    Optional<Transaction> getTransactionByReferenceId(String referenceId);
-    List<Transaction> getTransactionsByReferenceIdContaining(String referenceId);
+    // Get transactions by transaction reference
+    Optional<Transaction> getTransactionByTransactionRef(String transactionRef);
+    List<Transaction> getTransactionsByTransactionRefContaining(String transactionRef);
     
-    // Get transactions by transaction ID
-    Optional<Transaction> getTransactionByTransactionId(String transactionId);
+    // Get transactions by gateway transaction ID
+    Optional<Transaction> getTransactionByGatewayTransactionId(String gatewayTransactionId);
     
     // Count transactions
     long countTransactionsByUser(User user);

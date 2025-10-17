@@ -107,6 +107,7 @@ public class TutorApplicationController {
                     appData.put("phoneNumber", user.getPhoneNumber());
                     appData.put("address", user.getAddress());
                     appData.put("imageAvatar", user.getImageAvatar());
+                    appData.put("userRole", user.getRole().toString());
                 }
 
                 appData.put("bio", app.getBio());

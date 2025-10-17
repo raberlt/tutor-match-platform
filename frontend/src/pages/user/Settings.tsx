@@ -15,7 +15,15 @@ export const Settings: React.FC = () => {
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState<string>("");
-  const [topUpDescription, setTopUpDescription] = useState<string>("");
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+  const [transactionRef, setTransactionRef] = useState<string>("");
+  const [showQRCode, setShowQRCode] = useState<boolean>(false);
+  const [submittedAmount, setSubmittedAmount] = useState<string>("");
+  const [transactionStatus, setTransactionStatus] = useState<string>("PENDING");
+  const [checkingStatus, setCheckingStatus] = useState<boolean>(false);
+  const [statusCheckInterval, setStatusCheckInterval] = useState<number | null>(
+    null
+  );
   const topUpFormRef = useRef<HTMLFormElement | null>(null);
 
   // Profile form
@@ -323,18 +331,25 @@ export const Settings: React.FC = () => {
         },
         body: JSON.stringify({
           amount: parseFloat(topUpAmount),
-          description: topUpDescription || "Nạp tín dụng từ cài đặt",
+          description: "Nạp tín dụng từ cài đặt",
         }),
       });
 
       const result = await response.json();
       if (result.success) {
         setMessage(
-          `Nạp tín dụng thành công! Số dư mới: ${result.newBalance.toLocaleString()} VNĐ`
+          `Tạo giao dịch nạp tín dụng thành công! Vui lòng quét QR code để thanh toán.`
         );
         setCreditBalance(result.newBalance);
+        setTransactionRef(result.transactionRef);
+        setQrCodeUrl(result.qrCodeUrl);
+        setSubmittedAmount(topUpAmount);
+        setTransactionStatus("PENDING");
+        setShowQRCode(true);
         setTopUpAmount("");
-        setTopUpDescription("");
+
+        // Bắt đầu kiểm tra trạng thái định kỳ
+        startStatusCheck(result.transactionRef);
       } else {
         setError(result.message || "Nạp tín dụng thất bại");
       }
@@ -344,6 +359,95 @@ export const Settings: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Kiểm tra trạng thái giao dịch
+  const checkTransactionStatus = async (txRef: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/payment/status/${txRef}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTransactionStatus(data.status);
+
+        if (data.status === "COMPLETED") {
+          setMessage("Giao dịch đã hoàn thành! Số dư đã được cập nhật.");
+          // Cập nhật số dư mới
+          loadCreditBalance();
+          // Dừng kiểm tra trạng thái
+          stopStatusCheck();
+        } else if (data.status === "FAILED") {
+          setError("Giao dịch thất bại. Vui lòng thử lại.");
+          stopStatusCheck();
+        }
+      }
+    } catch (error) {
+      console.error("Error checking transaction status:", error);
+    }
+  };
+
+  // Mô phỏng thanh toán thành công (chỉ để test)
+  const simulatePaymentSuccess = async (txRef: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/payment/simulate-success/${txRef}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setMessage("Mô phỏng thanh toán thành công! Số dư đã được cập nhật.");
+          setTransactionStatus("COMPLETED");
+          setCreditBalance(data.newBalance);
+          stopStatusCheck();
+        } else {
+          setError(data.message || "Mô phỏng thanh toán thất bại");
+        }
+      }
+    } catch (error) {
+      console.error("Error simulating payment:", error);
+      setError("Có lỗi xảy ra khi mô phỏng thanh toán");
+    }
+  };
+
+  // Bắt đầu kiểm tra trạng thái định kỳ
+  const startStatusCheck = (txRef: string) => {
+    // Kiểm tra ngay lập tức
+    checkTransactionStatus(txRef);
+
+    // Kiểm tra định kỳ mỗi 5 giây
+    const interval = setInterval(() => {
+      checkTransactionStatus(txRef);
+    }, 5000);
+
+    setStatusCheckInterval(interval);
+  };
+
+  // Dừng kiểm tra trạng thái
+  const stopStatusCheck = () => {
+    if (statusCheckInterval) {
+      clearInterval(statusCheckInterval);
+      setStatusCheckInterval(null);
+    }
+    setCheckingStatus(false);
+  };
+
+  // Cleanup interval khi component unmount
+  useEffect(() => {
+    return () => {
+      if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+      }
+    };
+  }, [statusCheckInterval]);
 
   // Load credit balance when credit tab is active
   useEffect(() => {
@@ -1038,34 +1142,185 @@ export const Settings: React.FC = () => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Ghi chú (tùy chọn)
-                  </label>
-                  <input
-                    type="text"
-                    value={topUpDescription}
-                    onChange={(e) => setTopUpDescription(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Mô tả cho giao dịch này"
-                  />
-                </div>
-
-                <div className="flex justify-end pt-4 border-t border-gray-200">
-                  <button
-                    type="submit"
-                    disabled={
-                      isLoading ||
-                      !topUpAmount ||
-                      parseFloat(topUpAmount) < 1000
-                    }
-                    className="px-6 py-2 text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 font-medium transition-all duration-200"
-                    style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                  >
-                    {isLoading ? "Đang nạp..." : "Nạp tín dụng"}
-                  </button>
-                </div>
+                {!showQRCode && (
+                  <div className="flex justify-end pt-4 border-t border-gray-200">
+                    <button
+                      type="submit"
+                      disabled={
+                        isLoading ||
+                        !topUpAmount ||
+                        parseFloat(topUpAmount) < 1000
+                      }
+                      className="px-6 py-2 text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 font-medium transition-all duration-200"
+                      style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                    >
+                      {isLoading ? "Đang nạp..." : "Nạp tín dụng"}
+                    </button>
+                  </div>
+                )}
               </form>
+
+              {/* QR Code Display - Thay thế form khi đã nạp thành công */}
+              {showQRCode && qrCodeUrl && (
+                <div className="mt-6 bg-white border border-gray-200 rounded-lg p-6">
+                  <div className="text-center">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Quét QR Code để nạp tín dụng
+                    </h3>
+
+                    {/* Transaction Status */}
+                    <div className="mb-4">
+                      {transactionStatus === "PENDING" && (
+                        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-2 rounded-lg flex items-center justify-center space-x-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                          <span className="text-sm font-medium">
+                            Đang chờ thanh toán...
+                          </span>
+                        </div>
+                      )}
+                      {transactionStatus === "COMPLETED" && (
+                        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg flex items-center justify-center space-x-2">
+                          <svg
+                            className="w-4 h-4"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span className="text-sm font-medium">
+                            Giao dịch hoàn thành!
+                          </span>
+                        </div>
+                      )}
+                      {transactionStatus === "FAILED" && (
+                        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded-lg flex items-center justify-center space-x-2">
+                          <svg
+                            className="w-4 h-4"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span className="text-sm font-medium">
+                            Giao dịch thất bại
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* QR Code Image */}
+                    <div className="mb-4 flex justify-center">
+                      <img
+                        src={qrCodeUrl}
+                        alt="QR Code nạp tín dụng"
+                        className="w-64 h-64 border border-gray-200 rounded-lg"
+                      />
+                    </div>
+
+                    {/* Transaction Info */}
+                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-gray-600 mb-2">
+                        <strong>Mã giao dịch:</strong> {transactionRef}
+                      </p>
+                      <p className="text-sm text-gray-600 mb-2">
+                        <strong>Số tiền:</strong>{" "}
+                        {submittedAmount
+                          ? parseFloat(submittedAmount).toLocaleString()
+                          : "0"}{" "}
+                        VNĐ
+                      </p>
+                      <p className="text-sm text-gray-600 mb-2">
+                        <strong>Trạng thái:</strong>{" "}
+                        <span
+                          className={`font-medium ${
+                            transactionStatus === "COMPLETED"
+                              ? "text-green-600"
+                              : transactionStatus === "FAILED"
+                              ? "text-red-600"
+                              : "text-yellow-600"
+                          }`}
+                        >
+                          {transactionStatus === "PENDING"
+                            ? "Chờ thanh toán"
+                            : transactionStatus === "COMPLETED"
+                            ? "Hoàn thành"
+                            : transactionStatus === "FAILED"
+                            ? "Thất bại"
+                            : transactionStatus}
+                        </span>
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Vui lòng quét QR code bằng ứng dụng ngân hàng để hoàn
+                        tất giao dịch
+                      </p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => {
+                          setShowQRCode(false);
+                          setQrCodeUrl("");
+                          setTransactionRef("");
+                          setSubmittedAmount("");
+                          setTransactionStatus("PENDING");
+                          stopStatusCheck();
+                        }}
+                        className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+                      >
+                        Nạp lại
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(qrCodeUrl);
+                          setMessage("Đã sao chép link QR code!");
+                        }}
+                        className="flex-1 px-4 py-2 text-white rounded-md hover:opacity-90 transition-colors"
+                        style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                      >
+                        Sao chép link
+                      </button>
+                      {transactionStatus === "PENDING" && (
+                        <button
+                          onClick={() => {
+                            if (transactionRef) {
+                              setCheckingStatus(true);
+                              checkTransactionStatus(transactionRef);
+                              setTimeout(() => setCheckingStatus(false), 2000);
+                            }
+                          }}
+                          disabled={checkingStatus}
+                          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                        >
+                          {checkingStatus
+                            ? "Đang kiểm tra..."
+                            : "Kiểm tra trạng thái"}
+                        </button>
+                      )}
+                      {transactionStatus === "PENDING" && (
+                        <button
+                          onClick={() => {
+                            if (transactionRef) {
+                              simulatePaymentSuccess(transactionRef);
+                            }
+                          }}
+                          className="flex-1 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+                        >
+                          Mô phỏng thanh toán thành công
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

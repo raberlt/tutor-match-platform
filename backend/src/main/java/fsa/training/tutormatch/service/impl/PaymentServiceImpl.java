@@ -28,7 +28,6 @@ public class PaymentServiceImpl implements PaymentService {
     private final UserRepository userRepository;
     private final CouponRepository couponRepository;
     private final CreditService creditService;
-    private final SePayService sePayService;
     private final TransactionService transactionService;
     private final SessionService sessionService;
     
@@ -158,26 +157,16 @@ public class PaymentServiceImpl implements PaymentService {
         String orderId = "TUTOR_" + payment.getId() + "_" + System.currentTimeMillis();
         String description = "Payment for booking #" + payment.getBooking().getId();
         
-        SePayService.SePayQRResponse qrResponse = sePayService.createQRPayment(
-                orderId, 
-                payment.getAmount(), 
-                description,
-                "http://localhost:8080/api/payments/sepay/callback"
-        );
-        
-        if (qrResponse.isSuccess()) {
-            // Update payment with QR info
-            payment.setSepayOrderId(orderId);
-            payment.setQrCodeUrl(qrResponse.getQrCodeUrl());
-            payment.setStatus(PaymentStatus.PROCESSING);
-            payment.setGatewayResponse("QR code created successfully");
-            
-            Payment savedPayment = paymentRepository.save(payment);
-            log.info("SePay QR payment created successfully for payment ID: {}", paymentId);
-            return savedPayment;
-        } else {
-            throw new RuntimeException("Failed to create SePay QR payment: " + qrResponse.getMessage());
-        }
+        // Tạm thời comment out SepayService
+        // String paymentUrl = sePayService.createPayment(payment.getStudent(), payment.getAmount(), orderId);
+        String paymentUrl = "https://qr.sepay.vn/img?acc=VQRQAESPZ4646&bank=MBBank&amount=" + payment.getAmount().toBigInteger().toString() + "&des=" + orderId;
+        payment.setSepayOrderId(orderId);
+        payment.setQrCodeUrl(paymentUrl);
+        payment.setStatus(PaymentStatus.PROCESSING);
+        payment.setGatewayResponse("Payment URL created successfully");
+        Payment savedPayment = paymentRepository.save(payment);
+        log.info("SePay payment URL created successfully for payment ID: {}", paymentId);
+        return savedPayment;
     }
     
     @Override
@@ -197,13 +186,10 @@ public class PaymentServiceImpl implements PaymentService {
         }
         
         // Check status with SePay
-        SePayService.SePayStatusResponse statusResponse = sePayService.checkPaymentStatus(
-                payment.getSepayOrderId()
-        );
-        
-        if (statusResponse.isSuccess()) {
-            // Update payment status based on SePay response
-            if ("COMPLETED".equals(statusResponse.getStatus())) {
+        // String status = sePayService.checkPaymentStatus(payment.getSepayOrderId());
+        String status = "PENDING"; // Tạm thời hardcode
+        if (status != null) {
+            if ("COMPLETED".equals(status) || "SUCCESS".equals(status)) {
                 payment.setStatus(PaymentStatus.COMPLETED);
                 payment.setPaidAt(ZonedDateTime.now());
                 payment.setGatewayResponse("Payment completed via SePay");
@@ -217,17 +203,16 @@ public class PaymentServiceImpl implements PaymentService {
                 // Update all sessions status to PAYMENT_COMPLETED
                 updateSessionsStatusAfterPayment(booking);
                 
-            } else if ("FAILED".equals(statusResponse.getStatus())) {
+            } else if ("FAILED".equals(status) || "CANCELLED".equals(status)) {
                 payment.setStatus(PaymentStatus.FAILED);
-                payment.setGatewayResponse("Payment failed via SePay: " + statusResponse.getMessage());
+                payment.setGatewayResponse("Payment failed via SePay");
             }
             
             Payment savedPayment = paymentRepository.save(payment);
             log.info("SePay payment status updated for payment ID: {}", paymentId);
             return savedPayment;
-        } else {
-            throw new RuntimeException("Failed to check SePay payment status: " + statusResponse.getMessage());
         }
+        throw new RuntimeException("Failed to check SePay payment status");
     }
     
     @Override
@@ -300,16 +285,7 @@ public class PaymentServiceImpl implements PaymentService {
             
         } else if (payment.getPaymentMethod() == PaymentMethod.SEPAY_QR) {
             // Refund via SePay
-            SePayService.SePayRefundResponse refundResponse = sePayService.refundPayment(
-                    payment.getSepayOrderId(), 
-                    payment.getAmount(), 
-                    reason
-            );
-            
-            if (!refundResponse.isSuccess()) {
-                throw new RuntimeException("Failed to process SePay refund: " + refundResponse.getMessage());
-            }
-            
+            // TODO: implement refund through sepayService if supported
             // Create transaction record for SePay refund
             Transaction refundTransaction = transactionService.createRefundTransaction(
                     payment, 

@@ -1,6 +1,6 @@
 package fsa.training.tutormatch.service;
 
-import fsa.training.tutormatch.entity.CreditTransaction;
+import fsa.training.tutormatch.entity.Transaction;
 import fsa.training.tutormatch.entity.User;
 
 import java.math.BigDecimal;
@@ -13,15 +13,15 @@ public interface CreditService {
     boolean hasEnoughCredit(User user, BigDecimal amount);
     
     // Credit transactions
-    CreditTransaction depositCredit(User user, BigDecimal amount, String description, String referenceId);
-    CreditTransaction withdrawCredit(User user, BigDecimal amount, String description, String referenceId);
-    CreditTransaction payWithCredit(User user, BigDecimal amount, String description, String referenceId);
-    CreditTransaction refundCredit(User user, BigDecimal amount, String description, String referenceId);
+    Transaction depositCredit(User user, BigDecimal amount, String description, String transactionRef);
+    Transaction withdrawCredit(User user, BigDecimal amount, String description, String transactionRef);
+    Transaction payWithCredit(User user, BigDecimal amount, String description, String transactionRef);
+    Transaction refundCredit(User user, BigDecimal amount, String description, String transactionRef);
     
     // Transaction history
-    List<CreditTransaction> getTransactionHistory(User user);
-    List<CreditTransaction> getTransactionHistory(User user, int limit);
+    List<Transaction> getTransactionHistory(User user);
+    List<Transaction> getTransactionHistory(User user, int limit);
     
     // Admin functions
-    CreditTransaction adjustCredit(User user, BigDecimal amount, String description, String referenceId);
+    Transaction adjustCredit(User user, BigDecimal amount, String description, String transactionRef);
 }

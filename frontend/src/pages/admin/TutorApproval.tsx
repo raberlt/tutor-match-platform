@@ -26,6 +26,7 @@ interface TutorApplication {
   subjectFees: SubjectFee[];
   schedules: Schedule[];
   teachingAudiences: TeachingAudience[];
+  userRole?: string; // Thêm role của user
 }
 
 interface TeachingAudience {
@@ -77,6 +78,8 @@ export const TutorApproval: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [adminNote, setAdminNote] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterRole, setFilterRole] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [showRejectNote, setShowRejectNote] = useState(false);
   const [verifyingItems, setVerifyingItems] = useState<Set<string>>(new Set());
 
@@ -125,9 +128,17 @@ export const TutorApproval: React.FC = () => {
     }
   };
 
-  const filteredApplications = applications.filter(
-    (app) => filterStatus === "all" || app.status === filterStatus
-  );
+  const filteredApplications = applications.filter((app) => {
+    const matchesStatus = filterStatus === "all" || app.status === filterStatus;
+    const matchesRole = filterRole === "all" || app.userRole === filterRole;
+    const matchesSearch =
+      searchTerm === "" ||
+      app.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+    return matchesStatus && matchesRole && matchesSearch;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -156,6 +167,17 @@ export const TutorApproval: React.FC = () => {
         return "Bản nháp";
       default:
         return status;
+    }
+  };
+
+  const getRoleText = (role?: string) => {
+    switch (role) {
+      case "TUTOR":
+        return "Gia sư";
+      case "STUDENT":
+        return "Học sinh";
+      default:
+        return "Chưa xác định";
     }
   };
 
@@ -463,15 +485,41 @@ export const TutorApproval: React.FC = () => {
 
       {/* Filters */}
       <div className="bg-white p-6 rounded-xl shadow-sm">
-        <div className="flex items-center space-x-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Tìm kiếm */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tìm kiếm
+            </label>
+            <input
+              type="text"
+              placeholder="Tên hoặc email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none transition-colors"
+              style={{
+                borderColor: "rgb(148, 204, 230)",
+              }}
+              onFocus={(e) =>
+                ((e.target as HTMLInputElement).style.borderColor =
+                  "rgb(135, 190, 220)")
+              }
+              onBlur={(e) =>
+                ((e.target as HTMLInputElement).style.borderColor =
+                  "rgb(148, 204, 230)")
+              }
+            />
+          </div>
+
+          {/* Trạng thái */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Trạng thái
             </label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-xl focus:outline-none transition-colors"
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none transition-colors"
               style={{
                 borderColor: "rgb(148, 204, 230)",
               }}
@@ -485,9 +533,37 @@ export const TutorApproval: React.FC = () => {
               }
             >
               <option value="all">Tất cả trạng thái</option>
+              <option value="DRAFT">Nháp</option>
               <option value="SUBMITTED">Chờ duyệt</option>
               <option value="APPROVED">Đã duyệt</option>
               <option value="REJECTED">Đã từ chối</option>
+            </select>
+          </div>
+
+          {/* Vai trò */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Vai trò
+            </label>
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none transition-colors"
+              style={{
+                borderColor: "rgb(148, 204, 230)",
+              }}
+              onFocus={(e) =>
+                ((e.target as HTMLSelectElement).style.borderColor =
+                  "rgb(135, 190, 220)")
+              }
+              onBlur={(e) =>
+                ((e.target as HTMLSelectElement).style.borderColor =
+                  "rgb(148, 204, 230)")
+              }
+            >
+              <option value="all">Tất cả vai trò</option>
+              <option value="STUDENT">Học sinh</option>
+              <option value="TUTOR">Gia sư</option>
             </select>
           </div>
         </div>
@@ -506,13 +582,16 @@ export const TutorApproval: React.FC = () => {
             <thead style={{ backgroundColor: "rgba(148, 204, 230, 0.1)" }}>
               <tr>
                 <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                  Ứng viên
+                  ID
                 </th>
-                <th
-                  className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
-                  style={{ width: "200px" }}
-                >
-                  Thông tin cơ bản
+                <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  Họ tên
+                </th>
+                <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  Vai trò
                 </th>
                 <th className="px-3 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Trạng thái
@@ -528,32 +607,27 @@ export const TutorApproval: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredApplications.map((application) => (
                 <tr key={application.id} className="hover:bg-gray-50">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                    {application.id}
+                  </td>
                   <td className="px-3 py-2 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-blue-600 font-medium text-xs">
-                            {application.firstName.charAt(0)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {application.firstName} {application.lastName}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {application.email}
-                        </div>
-                      </div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {application.firstName} {application.lastName}
                     </div>
                   </td>
-                  <td className="px-3 py-2">
-                    <div className="text-sm text-gray-900">
-                      <div className="font-medium">{application.headline}</div>
-                      <div className="text-gray-500 mt-1 line-clamp-1">
-                        {application.bio}
-                      </div>
-                    </div>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                    {application.email}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        application.userRole === "TUTOR"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
+                      {getRoleText(application.userRole)}
+                    </span>
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <span

@@ -34,6 +34,9 @@ interface NewUserForm {
   educationLevel: string;
   gender: string;
   dateOfBirth: string;
+  bio?: string;
+  headline?: string;
+  experience?: string;
 }
 
 const UserManagement: React.FC = () => {
@@ -52,6 +55,7 @@ const UserManagement: React.FC = () => {
   const [addUserLoading, setAddUserLoading] = useState(false);
   const [addUserError, setAddUserError] = useState<string | null>(null);
   const [addUserSuccess, setAddUserSuccess] = useState<string | null>(null);
+  const [userType, setUserType] = useState<"STUDENT" | "TUTOR">("STUDENT");
   const [newUser, setNewUser] = useState<NewUserForm>({
     firstName: "",
     lastName: "",
@@ -124,7 +128,10 @@ const UserManagement: React.FC = () => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newUser),
+        body: JSON.stringify({
+          ...newUser,
+          role: userType,
+        }),
       });
 
       if (response.ok) {
@@ -182,7 +189,11 @@ const UserManagement: React.FC = () => {
           educationLevel: "INDEPENDENT_LEARNER",
           gender: "",
           dateOfBirth: "",
+          bio: "",
+          headline: "",
+          experience: "",
         });
+        setUserType("STUDENT");
         setShowAddUserForm(false);
 
         // Không cần gọi lại API vì đã cập nhật state rồi!
@@ -200,6 +211,44 @@ const UserManagement: React.FC = () => {
       setAddUserError("Có lỗi xảy ra khi thêm người dùng");
     } finally {
       setAddUserLoading(false);
+    }
+  };
+
+  // Handle edit user
+  const handleEditUser = (user: User) => {
+    // TODO: Implement edit user functionality
+    console.log("Edit user:", user);
+    alert("Chức năng sửa người dùng đang được phát triển");
+  };
+
+  // Handle toggle user status (enable/disable)
+  const handleToggleUserStatus = async (user: User) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `/api/admin/users/${user.id}/toggle-status`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ enable: !user.enable }),
+        }
+      );
+
+      if (response.ok) {
+        // Update local state
+        setUsers(
+          users.map((u) => (u.id === user.id ? { ...u, enable: !u.enable } : u))
+        );
+        alert(`Đã ${user.enable ? "khóa" : "mở khóa"} người dùng thành công`);
+      } else {
+        alert("Có lỗi xảy ra khi cập nhật trạng thái người dùng");
+      }
+    } catch (error) {
+      console.error("Error toggling user status:", error);
+      alert("Có lỗi xảy ra khi cập nhật trạng thái người dùng");
     }
   };
 
@@ -429,6 +478,39 @@ const UserManagement: React.FC = () => {
 
             <form onSubmit={handleAddUser}>
               <div className="space-y-4">
+                {/* User Type Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Loại người dùng
+                  </label>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        value="STUDENT"
+                        checked={userType === "STUDENT"}
+                        onChange={(e) =>
+                          setUserType(e.target.value as "STUDENT" | "TUTOR")
+                        }
+                        className="mr-2"
+                      />
+                      Học sinh
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        value="TUTOR"
+                        checked={userType === "TUTOR"}
+                        onChange={(e) =>
+                          setUserType(e.target.value as "STUDENT" | "TUTOR")
+                        }
+                        className="mr-2"
+                      />
+                      Gia sư
+                    </label>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Họ và tên đệm
@@ -489,25 +571,82 @@ const UserManagement: React.FC = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Vai trò
-                  </label>
-                  <select
-                    value={newUser.role}
-                    onChange={(e) =>
-                      setNewUser({
-                        ...newUser,
-                        role: e.target.value as "STUDENT" | "TUTOR" | "ADMIN",
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="STUDENT">Học sinh</option>
-                    <option value="TUTOR">Gia sư</option>
-                    <option value="ADMIN">Quản trị viên</option>
-                  </select>
-                </div>
+                {/* Student specific fields */}
+                {userType === "STUDENT" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Trình độ học vấn
+                      </label>
+                      <select
+                        value={newUser.educationLevel}
+                        onChange={(e) =>
+                          setNewUser({
+                            ...newUser,
+                            educationLevel: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="INDEPENDENT_LEARNER">Tự học</option>
+                        <option value="ELEMENTARY">Tiểu học</option>
+                        <option value="MIDDLE_SCHOOL">Trung học cơ sở</option>
+                        <option value="HIGH_SCHOOL">Trung học phổ thông</option>
+                        <option value="COLLEGE_UNIVERSITY">
+                          Cao đẳng/Đại học
+                        </option>
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                {/* Tutor specific fields */}
+                {userType === "TUTOR" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Giới thiệu bản thân
+                      </label>
+                      <textarea
+                        value={newUser.bio || ""}
+                        onChange={(e) =>
+                          setNewUser({ ...newUser, bio: e.target.value })
+                        }
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Mô tả ngắn về bản thân và kinh nghiệm giảng dạy..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tiêu đề hồ sơ
+                      </label>
+                      <input
+                        type="text"
+                        value={newUser.headline || ""}
+                        onChange={(e) =>
+                          setNewUser({ ...newUser, headline: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="VD: Gia sư Toán - Lý chuyên nghiệp"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Kinh nghiệm giảng dạy
+                      </label>
+                      <textarea
+                        value={newUser.experience || ""}
+                        onChange={(e) =>
+                          setNewUser({ ...newUser, experience: e.target.value })
+                        }
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Mô tả kinh nghiệm giảng dạy của bạn..."
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 mt-6">
@@ -561,6 +700,9 @@ const UserManagement: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ngày tạo
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Thao tác
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -600,11 +742,31 @@ const UserManagement: React.FC = () => {
                           : "bg-red-100 text-red-800"
                       }`}
                     >
-                      {user.enable ? "Hoạt động" : "Không hoạt động"}
+                      {user.enable ? "Hoạt động" : "Đã khóa"}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(user.createdAt).toLocaleDateString("vi-VN")}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEditUser(user)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Sửa
+                      </button>
+                      <button
+                        onClick={() => handleToggleUserStatus(user)}
+                        className={`${
+                          user.enable
+                            ? "text-red-600 hover:text-red-900"
+                            : "text-green-600 hover:text-green-900"
+                        }`}
+                      >
+                        {user.enable ? "Khóa" : "Mở khóa"}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -617,4 +779,3 @@ const UserManagement: React.FC = () => {
 };
 
 export default UserManagement;
-

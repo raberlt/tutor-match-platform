@@ -1,9 +1,14 @@
 package fsa.training.tutormatch.controller.credit;
 
-import fsa.training.tutormatch.entity.CreditTransaction;
+import fsa.training.tutormatch.entity.Transaction;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.repository.UserRepository;
+import fsa.training.tutormatch.enums.PaymentMethod;
+import fsa.training.tutormatch.enums.TransactionStatus;
+import fsa.training.tutormatch.enums.TransactionType;
 import fsa.training.tutormatch.service.CreditService;
+import fsa.training.tutormatch.service.TransactionService;
+import fsa.training.tutormatch.service.SepayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +27,8 @@ public class CreditController {
 
     private final CreditService creditService;
     private final UserRepository userRepository;
+    private final TransactionService transactionService;
+    private final SepayService sepayService;
 
     /**
      * Nạp tín dụng cho user (alias cho deposit)
@@ -37,14 +44,32 @@ public class CreditController {
             BigDecimal amount = new BigDecimal(request.get("amount").toString());
             String description = request.get("description") != null ? request.get("description").toString() : "Nạp tín dụng";
 
-            CreditTransaction transaction = creditService.depositCredit(user, amount, description, "TOPUP_" + System.currentTimeMillis());
+            // 1) Tạo transaction PENDING (chưa cộng tiền)
+            String transactionRef = Transaction.generateTransactionRef();
+            Transaction transaction = new Transaction();
+            transaction.setUser(user);
+            transaction.setPayment(null);
+            transaction.setBooking(null);
+            transaction.setType(TransactionType.DEPOSIT);
+            transaction.setMethod(PaymentMethod.CREDIT);
+            transaction.setStatus(TransactionStatus.PENDING);
+            transaction.setAmount(amount);
+            transaction.setDescription(description);
+            transaction.setTransactionRef(transactionRef);
+            transaction.setBalanceBefore(user.getCreditBalance());
+            transaction = transactionService.createTransaction(transaction);
+
+            // 2) Gọi Sepay tạo URL thanh toán/QR (webhook sẽ cập nhật số dư khi SUCCESS)
+            String qrCodeUrl = sepayService.createPayment(user, amount, transactionRef);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("message", "Nạp tín dụng thành công");
+            response.put("message", "Tạo giao dịch nạp tín dụng thành công. Vui lòng quét/đi tới URL để thanh toán.");
             response.put("transactionId", transaction.getId());
+            response.put("transactionRef", transactionRef);
             response.put("amount", amount);
-            response.put("newBalance", user.getCreditBalance());
+            response.put("newBalance", user.getCreditBalance()); // chưa thay đổi cho tới khi webhook SUCCESS
+            response.put("qrCodeUrl", qrCodeUrl); // tái sử dụng field để FE hiển thị
 
             return ResponseEntity.ok(response);
 
@@ -79,7 +104,7 @@ public class CreditController {
                 ));
             }
 
-            CreditTransaction transaction = creditService.depositCredit(
+            Transaction transaction = creditService.depositCredit(
                     user, amount, description, "DEPOSIT_" + System.currentTimeMillis()
             );
 
@@ -137,7 +162,7 @@ public class CreditController {
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            List<CreditTransaction> transactions = creditService.getTransactionHistory(user);
+            List<Transaction> transactions = creditService.getTransactionHistory(user);
 
             return ResponseEntity.ok(Map.of(
                     "success", true,

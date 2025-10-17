@@ -14,6 +14,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -50,12 +51,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
     List<Transaction> findByCreatedAtBetweenOrderByCreatedAtDesc(ZonedDateTime startDate, ZonedDateTime endDate);
     List<Transaction> findByUserAndCreatedAtBetweenOrderByCreatedAtDesc(User user, ZonedDateTime startDate, ZonedDateTime endDate);
     
-    // Find by reference ID
-    Optional<Transaction> findByReferenceId(String referenceId);
-    List<Transaction> findByReferenceIdContainingIgnoreCase(String referenceId);
+    // Find by transaction reference
+    Optional<Transaction> findByTransactionRef(String transactionRef);
+    List<Transaction> findByTransactionRefContainingIgnoreCase(String transactionRef);
     
-    // Find by transaction ID
-    Optional<Transaction> findByTransactionId(String transactionId);
+    // Find by gateway transaction ID
+    Optional<Transaction> findByGatewayTransactionId(String gatewayTransactionId);
+    
+    // Find by status, amount and time range (for Sepay webhook)
+    List<Transaction> findByStatusAndAmountAndCreatedAtAfter(TransactionStatus status, BigDecimal amount, ZonedDateTime createdAt);
     
     // Complex queries
     @Query("SELECT t FROM Transaction t WHERE t.user = :user AND t.type = :type AND t.status = :status ORDER BY t.createdAt DESC")

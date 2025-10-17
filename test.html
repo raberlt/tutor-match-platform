@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test Credit Top-up</title>
+  </head>
+  <body>
+    <h1>Test Credit Top-up</h1>
+    <button onclick="testTopUp()">Test Top-up</button>
+    <div id="result"></div>
+
+    <script>
+      async function testTopUp() {
+        const token =
+          "eyJhbGciOiJIUzUxMiJ9.eyJyb2xlIjoiUk9MRV9TVFVERU5UIiwiYXV0aG9yaXRpZXMiOlt7ImF1dGhvcml0eSI6IlJPTEVfU1RVREVOVCJ9XSwic3ViIjoidGVzdDJAZXhhbXBsZS5jb20iLCJpYXQiOjE3NjA3MzQ5MzYsImV4cCI6MTc2MDgyMTMzNn0.1cFEisWcb2PdQVQ5SHkMQoc-14xMeUcn7Ihx1jGIsFcglsslJmdPuZ7KrdCWurxhHQCtHbzV2xCqm89FttN6yA";
+
+        try {
+          const response = await fetch(
+            "http://localhost:8080/api/credit/top-up",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ amount: 10000 }),
+            }
+          );
+
+          const data = await response.json();
+          document.getElementById("result").innerHTML = `<pre>${JSON.stringify(
+            data,
+            null,
+            2
+          )}</pre>`;
+
+          console.log("Response:", data);
+        } catch (error) {
+          document.getElementById(
+            "result"
+          ).innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+          console.error("Error:", error);
+        }
+      }
+    </script>
+  </body>
+</html>

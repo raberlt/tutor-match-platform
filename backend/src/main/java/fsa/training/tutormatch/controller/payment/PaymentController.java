@@ -8,7 +8,6 @@ import fsa.training.tutormatch.enums.PaymentStatus;
 import fsa.training.tutormatch.repository.UserRepository;
 import fsa.training.tutormatch.service.CreditService;
 import fsa.training.tutormatch.service.PaymentService;
-import fsa.training.tutormatch.service.SePayService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,7 +32,6 @@ public class PaymentController {
     
     private final PaymentService paymentService;
     private final CreditService creditService;
-    private final SePayService sePayService;
     private final UserRepository userRepository;
     
     /**
@@ -248,7 +246,7 @@ public class PaymentController {
             User currentUser = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
             
-            List<fsa.training.tutormatch.entity.CreditTransaction> transactions = 
+            List<fsa.training.tutormatch.entity.Transaction> transactions = 
                     creditService.getTransactionHistory(currentUser, (int) pageable.getPageSize());
             
             Map<String, Object> response = new HashMap<>();
@@ -317,7 +315,7 @@ public class PaymentController {
             User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
             
-            fsa.training.tutormatch.entity.CreditTransaction transaction = 
+            fsa.training.tutormatch.entity.Transaction transaction = 
                 creditService.depositCredit(user, amount, description, "ADMIN_TOPUP_" + System.currentTimeMillis());
             
             Map<String, Object> response = new HashMap<>();

@@ -35,9 +35,9 @@ public class TransactionServiceImpl implements TransactionService {
         log.info("Creating transaction: type={}, method={}, amount={}, user={}", 
                 transaction.getType(), transaction.getMethod(), transaction.getAmount(), transaction.getUser().getId());
         
-        // Generate transaction ID if not provided
-        if (transaction.getTransactionId() == null) {
-            transaction.setTransactionId(UUID.randomUUID().toString());
+        // Generate gateway transaction ID if not provided
+        if (transaction.getGatewayTransactionId() == null) {
+            transaction.setGatewayTransactionId(UUID.randomUUID().toString());
         }
         
         // Set created timestamp
@@ -64,7 +64,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setAmount(amount);
         transaction.setStatus(TransactionStatus.PENDING);
         transaction.setDescription(description);
-        transaction.setReferenceId("PAYMENT_" + payment.getId());
+        transaction.setTransactionRef("PAYMENT_" + payment.getId());
         
         return createTransaction(transaction);
     }
@@ -84,7 +84,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setAmount(amount.negate()); // Negative amount for refund
         transaction.setStatus(TransactionStatus.PENDING);
         transaction.setDescription(description);
-        transaction.setReferenceId("REFUND_" + payment.getId());
+        transaction.setTransactionRef("REFUND_" + payment.getId());
         
         return createTransaction(transaction);
     }
@@ -103,7 +103,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setAmount(amount);
         transaction.setStatus(TransactionStatus.PENDING);
         transaction.setDescription(description);
-        transaction.setReferenceId("DEPOSIT_" + user.getId() + "_" + System.currentTimeMillis());
+        transaction.setTransactionRef("DEPOSIT_" + user.getId() + "_" + System.currentTimeMillis());
         
         return createTransaction(transaction);
     }
@@ -122,7 +122,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setAmount(amount.negate()); // Negative amount for withdrawal
         transaction.setStatus(TransactionStatus.PENDING);
         transaction.setDescription(description);
-        transaction.setReferenceId("WITHDRAWAL_" + user.getId() + "_" + System.currentTimeMillis());
+        transaction.setTransactionRef("WITHDRAWAL_" + user.getId() + "_" + System.currentTimeMillis());
         
         return createTransaction(transaction);
     }
@@ -141,8 +141,8 @@ public class TransactionServiceImpl implements TransactionService {
         existingTransaction.setStatus(transaction.getStatus());
         existingTransaction.setAmount(transaction.getAmount());
         existingTransaction.setDescription(transaction.getDescription());
-        existingTransaction.setReferenceId(transaction.getReferenceId());
-        existingTransaction.setTransactionId(transaction.getTransactionId());
+        existingTransaction.setTransactionRef(transaction.getTransactionRef());
+        existingTransaction.setGatewayTransactionId(transaction.getGatewayTransactionId());
         
         Transaction savedTransaction = transactionRepository.save(existingTransaction);
         log.info("Transaction updated: {}", transactionId);
@@ -296,18 +296,18 @@ public class TransactionServiceImpl implements TransactionService {
     }
     
     @Override
-    public Optional<Transaction> getTransactionByReferenceId(String referenceId) {
-        return transactionRepository.findByReferenceId(referenceId);
+    public Optional<Transaction> getTransactionByTransactionRef(String transactionRef) {
+        return transactionRepository.findByTransactionRef(transactionRef);
     }
     
     @Override
-    public List<Transaction> getTransactionsByReferenceIdContaining(String referenceId) {
-        return transactionRepository.findByReferenceIdContainingIgnoreCase(referenceId);
+    public List<Transaction> getTransactionsByTransactionRefContaining(String transactionRef) {
+        return transactionRepository.findByTransactionRefContainingIgnoreCase(transactionRef);
     }
     
     @Override
-    public Optional<Transaction> getTransactionByTransactionId(String transactionId) {
-        return transactionRepository.findByTransactionId(transactionId);
+    public Optional<Transaction> getTransactionByGatewayTransactionId(String gatewayTransactionId) {
+        return transactionRepository.findByGatewayTransactionId(gatewayTransactionId);
     }
     
     @Override

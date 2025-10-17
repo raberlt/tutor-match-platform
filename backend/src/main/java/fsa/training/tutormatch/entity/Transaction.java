@@ -70,11 +70,11 @@ public class Transaction {
     @Column(name = "description", columnDefinition = "NVARCHAR(500)")
     private String description;
 
-    @Column(name = "reference_id", columnDefinition = "NVARCHAR(100)")
-    private String referenceId;
+    @Column(name = "transaction_ref", columnDefinition = "NVARCHAR(100)")
+    private String transactionRef;
 
-    @Column(name = "transaction_id", columnDefinition = "NVARCHAR(255)")
-    private String transactionId;
+    @Column(name = "gateway_transaction_id", columnDefinition = "NVARCHAR(255)")
+    private String gatewayTransactionId;
 
     @Column(name = "processed_at")
     private ZonedDateTime processedAt;
@@ -128,6 +128,24 @@ public class Transaction {
 
     public ZonedDateTime getProcessedAtInUserTimezone() {
         return user != null ? getProcessedAtInTimezone(user.getTimezone()) : null;
+    }
+    
+    // Helper method để tạo transaction reference ngắn gọn và duy nhất
+    public static String generateTransactionRef() {
+        java.time.LocalDate nowDate = java.time.LocalDate.now();
+        java.time.LocalTime nowTime = java.time.LocalTime.now();
+        String y = String.valueOf(nowDate.getYear()).substring(2);     // YY
+        String m = String.format("%02d", nowDate.getMonthValue());     // MM
+        String d = String.format("%02d", nowDate.getDayOfMonth());     // DD
+        String hh = String.format("%02d", nowTime.getHour());          // HH
+        String mm = String.format("%02d", nowTime.getMinute());        // MM
+        String ss = String.format("%02d", nowTime.getSecond());        // SS
+        // hậu tố ngẫu nhiên 2 ký tự [A-Z0-9]
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        java.util.Random rnd = new java.util.Random();
+        String suffix = "" + chars.charAt(rnd.nextInt(chars.length())) + chars.charAt(rnd.nextInt(chars.length()));
+        // Định dạng: TX + YYMMDD + HHMMSS + 2 ký tự = 2+6+6+2 = 16 ký tự (phù hợp NVARCHAR(100))
+        return "TX" + y + m + d + hh + mm + ss + suffix;
     }
 }
 

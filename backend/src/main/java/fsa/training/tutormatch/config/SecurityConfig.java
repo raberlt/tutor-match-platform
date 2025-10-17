@@ -69,17 +69,17 @@ public class SecurityConfig {
                 
                 // Role-based API endpoints
                 .requestMatchers("/api/booking/tutor/**").hasRole("TUTOR")
-                .requestMatchers("/api/booking/student/**").hasRole("STUDENT")
+                .requestMatchers("/api/booking/student/**").hasAnyRole("STUDENT", "TUTOR")
                 .requestMatchers("/api/booking/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/auth/refresh", "/api/auth/change-password", "/api/auth/logout").authenticated()
                 .requestMatchers("/api/profile/**").authenticated()
                 .requestMatchers("/api/admin/**").permitAll() // Tạm thời disable authentication để test
                 .requestMatchers("/api/applications/admin/**").permitAll() // Tạm thời disable authentication để test
-                .requestMatchers("/api/tutor/draft/**").permitAll()
+                .requestMatchers("/api/tutor/draft/**").hasAnyRole("STUDENT", "TUTOR")
                 .requestMatchers("/api/auth/profile").permitAll() // Tạm thời disable authentication để test
                 .requestMatchers("/api/tutor/**").hasRole("TUTOR")
-                .requestMatchers("/api/student/**").hasRole("STUDENT")
-                .requestMatchers("/api/tutors/**").hasRole("STUDENT")
+                .requestMatchers("/api/student/**").hasAnyRole("STUDENT", "TUTOR")
+                .requestMatchers("/api/tutors/**").hasAnyRole("STUDENT", "TUTOR")
                 .requestMatchers("/api/messages/**").authenticated() // Message endpoints cần đăng nhập
                 
                 // Web pages with role-based access

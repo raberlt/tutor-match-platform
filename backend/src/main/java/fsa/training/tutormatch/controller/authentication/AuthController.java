@@ -408,14 +408,6 @@ public class AuthController {
         Authentication authentication
     ) {
         try {
-            // Tạm thời sử dụng email mặc định để test
-            String username = authentication != null ? authentication.getName() : null;
-            if (username == null) {
-                return ResponseEntity.status(401).body(Map.of("success", false, "error", "Unauthorized"));
-            }
-            User user = userService.findByUsername(username)
-                .orElseGet(() -> userService.findByEmail(username)
-                    .orElseThrow(() -> new RuntimeException("User not found")));
             String username = authentication != null ? authentication.getName() : null;
             if (username == null) {
                 return ResponseEntity.status(401).body(Map.of("success", false, "error", "Unauthorized"));

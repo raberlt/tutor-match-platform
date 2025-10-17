@@ -162,6 +162,16 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    path: "/tutor/:username",
+    element: <UserLayout />,
+    children: [
+      {
+        index: true,
+        element: <TutorDetail />,
+      },
+    ],
+  },
+  {
     path: "/become-tutor",
     element: <UserLayout />,
     children: [

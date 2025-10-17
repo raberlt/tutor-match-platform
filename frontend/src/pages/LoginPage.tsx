@@ -139,7 +139,7 @@ export const LoginPage: React.FC = () => {
                   htmlFor="identifier"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Email 
+                  Email
                 </label>
                 <input
                   id="identifier"

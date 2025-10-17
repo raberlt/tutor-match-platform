@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { TutorService } from "../../services/tutorService";
 import type { TutorProfile } from "../../types";
+import type { TeachingAudience, TutorProfileSubject } from "../../types";
+
+type SubjectSimple = { id: number; name: string; fees: number };
 
 const TutorDetail: React.FC = () => {
   const { username } = useParams<{ username: string }>();
@@ -62,6 +65,22 @@ const TutorDetail: React.FC = () => {
         console.log("Tutor detail data:", tutorData);
         console.log("Tutor profileSubjects:", tutorData.profileSubjects);
 
+        // Chuẩn hoá teachingAudiences về dạng [{id, name}] nếu API trả về dạng mảng string
+        if (
+          Array.isArray(tutorData.teachingAudiences) &&
+          tutorData.teachingAudiences.length > 0
+        ) {
+          const first = tutorData.teachingAudiences[0];
+          if (typeof first === "string") {
+            tutorData.teachingAudiences = (
+              tutorData.teachingAudiences as string[]
+            ).map((name: string, idx: number) => ({
+              id: idx + 1,
+              name,
+            })) as TeachingAudience[];
+          }
+        }
+
         // Sử dụng profileSubjects từ API trực tiếp
         if (
           tutorData.profileSubjects &&
@@ -69,22 +88,25 @@ const TutorDetail: React.FC = () => {
           tutorData.profileSubjects.length > 0
         ) {
           // Chuyển đổi profileSubjects thành subjects format với hourlyRate
-          tutorData.subjects = tutorData.profileSubjects.map((subject) => ({
+          tutorData.subjects = (
+            tutorData.profileSubjects as TutorProfileSubject[]
+          ).map((subject: TutorProfileSubject) => ({
             id: subject.id,
             name: subject.name,
-            fees: subject.fees, // fees từ API là BigDecimal, sẽ được hiển thị đúng
+            fees: subject.fees,
           }));
           console.log("✅ Using profileSubjects from API:", tutorData.subjects);
         } else {
           // Fallback: nếu không có profileSubjects, thử tạo từ subjectNames
           if (tutorData.subjectNames && Array.isArray(tutorData.subjectNames)) {
             tutorData.subjects = tutorData.subjectNames.map(
-              (subjectName, idx) => ({
+              (subjectName: string, idx: number) => ({
                 id: idx + 1,
                 name: subjectName,
                 fees:
-                  tutorData.fees && tutorData.fees[subjectName]
-                    ? tutorData.fees[subjectName]
+                  tutorData.fees &&
+                  (tutorData.fees as Record<string, number>)[subjectName]
+                    ? (tutorData.fees as Record<string, number>)[subjectName]
                     : 200000,
               })
             );
@@ -173,6 +195,9 @@ const TutorDetail: React.FC = () => {
     );
   }
 
+  const subjects: SubjectSimple[] | undefined = (
+    tutor as unknown as { subjects?: SubjectSimple[] }
+  )?.subjects;
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f8fafc" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -278,45 +303,48 @@ const TutorDetail: React.FC = () => {
                   </div>
 
                   {/* Subjects and Fees */}
-                  {tutor.subjects && tutor.subjects.length > 0 && (
+                  {subjects && subjects.length > 0 && (
                     <div className="mb-4">
                       <div className="flex flex-wrap gap-2 mb-3">
-                        {tutor.subjects.map((subject, index) => (
-                          <button
-                            key={index}
-                            onClick={() => {
-                              console.log(
-                                "Clicked subject:",
-                                subject.name,
-                                "id:",
-                                subject.id,
-                                "fees:",
-                                subject.fees
-                              );
-                              setSelectedSubjectId(subject.id);
-                            }}
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors cursor-pointer ${
-                              selectedSubjectId === subject.id
-                                ? "text-white shadow-md"
-                                : "text-gray-700 hover:shadow-sm"
-                            }`}
-                            style={{
-                              backgroundColor:
+                        {subjects.map(
+                          (subject: SubjectSimple, index: number) => (
+                            <button
+                              key={index}
+                              onClick={() => {
+                                console.log(
+                                  "Clicked subject:",
+                                  subject.name,
+                                  "id:",
+                                  subject.id,
+                                  "fees:",
+                                  subject.fees
+                                );
+                                setSelectedSubjectId(subject.id);
+                              }}
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors cursor-pointer ${
                                 selectedSubjectId === subject.id
-                                  ? "rgb(148, 204, 230)"
-                                  : "rgba(148, 204, 230, 0.1)",
-                            }}
-                          >
-                            {subject.name}
-                          </button>
-                        ))}
+                                  ? "text-white shadow-md"
+                                  : "text-gray-700 hover:shadow-sm"
+                              }`}
+                              style={{
+                                backgroundColor:
+                                  selectedSubjectId === subject.id
+                                    ? "rgb(148, 204, 230)"
+                                    : "rgba(148, 204, 230, 0.1)",
+                              }}
+                            >
+                              {subject.name}
+                            </button>
+                          )
+                        )}
                       </div>
                       <div className="text-sm">
                         <span className="font-semibold text-blue-600">
                           {selectedSubjectId
                             ? (() => {
-                                const selectedSubject = tutor.subjects.find(
-                                  (s) => s.id === selectedSubjectId
+                                const selectedSubject = subjects.find(
+                                  (s: SubjectSimple) =>
+                                    s.id === selectedSubjectId
                                 );
                                 return selectedSubject
                                   ? new Intl.NumberFormat("vi-VN", {
@@ -325,11 +353,11 @@ const TutorDetail: React.FC = () => {
                                     }).format(selectedSubject.fees)
                                   : "Liên hệ";
                               })()
-                            : tutor.subjects.length > 0
+                            : subjects.length > 0
                             ? new Intl.NumberFormat("vi-VN", {
                                 style: "currency",
                                 currency: "VND",
-                              }).format(tutor.subjects[0].fees)
+                              }).format(subjects[0].fees)
                             : "Liên hệ"}
                         </span>
                         <span className="text-gray-500">/buổi học</span>
@@ -442,17 +470,25 @@ const TutorDetail: React.FC = () => {
                 Đối tượng nhận dạy
               </h2>
               <div className="flex flex-wrap gap-2">
-                {tutor.teachingAudiences &&
+                {Array.isArray(tutor.teachingAudiences) &&
                 tutor.teachingAudiences.length > 0 ? (
-                  tutor.teachingAudiences.map((audience) => (
-                    <span
-                      key={audience.id}
-                      className="px-4 py-2 rounded-full text-sm font-medium text-white"
-                      style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                    >
-                      {getTeachingAudienceText(audience.name)}
-                    </span>
-                  ))
+                  (
+                    tutor.teachingAudiences as (TeachingAudience | string)[]
+                  ).map((audience: TeachingAudience | string, idx: number) => {
+                    const name =
+                      typeof audience === "string" ? audience : audience.name;
+                    const key =
+                      typeof audience === "string" ? idx : audience.id;
+                    return (
+                      <span
+                        key={key}
+                        className="px-4 py-2 rounded-full text-sm font-medium text-white"
+                        style={{ backgroundColor: "rgb(148, 204, 230)" }}
+                      >
+                        {getTeachingAudienceText(name)}
+                      </span>
+                    );
+                  })
                 ) : (
                   <p className="text-gray-500 italic">
                     Chưa cập nhật thông tin

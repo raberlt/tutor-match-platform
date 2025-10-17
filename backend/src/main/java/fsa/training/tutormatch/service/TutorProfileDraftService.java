@@ -48,8 +48,9 @@ public class TutorProfileDraftService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        if (user.getRole() != UserRole.STUDENT) {
-            throw new RuntimeException("Only students can create new tutor profiles");
+        // Cho phép cả STUDENT và TUTOR lưu nháp
+        if (user.getRole() != UserRole.STUDENT && user.getRole() != UserRole.TUTOR) {
+            throw new RuntimeException("Only students or tutors can create/update tutor profiles");
         }
         
         // Tìm hoặc tạo bản ghi draft trong ProfileApplication
@@ -475,15 +476,201 @@ public class TutorProfileDraftService {
     public Map<String, Object> saveDraftRequest(String username, BecomeTutorDraftRequest request) {
         log.info("Saving draft request for user: {}", username);
         
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        User user = resolveUserByPrincipal(username);
+        Map<String, Object> result = new HashMap<>();
         
-        // Only STUDENT can use this endpoint
-        if (user.getRole() == UserRole.STUDENT) {
+        // Cho phép STUDENT (đang xin trở thành gia sư) và TUTOR (cập nhật hồ sơ)
+        if (user.getRole() == UserRole.STUDENT || user.getRole() == UserRole.TUTOR) {
             return saveDraftForStudent(username, request);
-        } else {
-            throw new RuntimeException("Only students can use this endpoint");
+        } else if (user.getRole() == UserRole.TUTOR) {
+            // For tutors updating profile - get latest application (DRAFT or SUBMITTED or REJECTED)
+            List<ProfileApplication> applications = applicationRepository
+                    .findByUserOrderByCreatedAtDesc(user);
+
+            ProfileApplication latestApplication = applications.stream()
+                    .filter(app -> app.getStatus() == ApplicationStatus.DRAFT ||
+                                  app.getStatus() == ApplicationStatus.SUBMITTED ||
+                                  app.getStatus() == ApplicationStatus.REJECTED)
+                    .findFirst()
+                    .orElse(null);
+
+            if (latestApplication != null) {
+                result.put("hasDraft", true);
+                result.put("applicationId", latestApplication.getId());
+                result.put("status", latestApplication.getStatus().toString());
+
+                // Personal info from application
+                result.put("firstName", latestApplication.getFirstName());
+                result.put("lastName", latestApplication.getLastName());
+                result.put("imageAvatar", latestApplication.getImageAvatar());
+
+                // Tutor-specific fields
+                result.put("bio", latestApplication.getBio());
+                result.put("headline", latestApplication.getHeadline());
+                result.put("experience", latestApplication.getExperience());
+                result.put("cvFileUrl", latestApplication.getCvFileUrl());
+                result.put("videoIntro", latestApplication.getVideoIntro());
+
+                // User info (can be updated directly)
+                result.put("phoneNumber", user.getPhoneNumber());
+                result.put("address", user.getAddress());
+                result.put("dateOfBirth", user.getDateOfBirth());
+                result.put("gender", user.getGender());
+                result.put("timezone", user.getTimezone());
+
+                result.put("createdAt", latestApplication.getCreatedAt());
+                result.put("updatedAt", latestApplication.getUpdatedAt());
+
+                // Load related data from application
+                result.put("educations", getEducationsForApplication(latestApplication.getId()));
+                result.put("certificates", getCertificatesForApplication(latestApplication.getId()));
+                result.put("teachingAudiences", getTeachingAudiencesForApplication(latestApplication.getId()));
+                result.put("schedules", getSchedulesForApplication(latestApplication.getId()));
+                result.put("subjectFees", getSubjectFeesForApplication(latestApplication.getId()));
+            } else {
+                result.put("hasDraft", false);
+
+                // Return user info as fallback data
+                result.put("firstName", user.getFirstName());
+                result.put("lastName", user.getLastName());
+                result.put("imageAvatar", user.getImageAvatar());
+                result.put("phoneNumber", user.getPhoneNumber());
+                result.put("address", user.getAddress());
+                result.put("dateOfBirth", user.getDateOfBirth());
+                result.put("gender", user.getGender());
+                result.put("timezone", user.getTimezone());
+            }
+        } else if (user.getRole() == UserRole.TUTOR) {
+            // For tutors updating profile - get latest application (DRAFT or SUBMITTED or REJECTED)
+            List<ProfileApplication> applications = applicationRepository
+                    .findByUserOrderByCreatedAtDesc(user);
+
+            ProfileApplication latestApplication = applications.stream()
+                    .filter(app -> app.getStatus() == ApplicationStatus.DRAFT ||
+                                  app.getStatus() == ApplicationStatus.SUBMITTED ||
+                                  app.getStatus() == ApplicationStatus.REJECTED)
+                    .findFirst()
+                    .orElse(null);
+
+            if (latestApplication != null) {
+                result.put("hasDraft", true);
+                result.put("applicationId", latestApplication.getId());
+                result.put("status", latestApplication.getStatus().toString());
+
+                // Personal info from application
+                result.put("firstName", latestApplication.getFirstName());
+                result.put("lastName", latestApplication.getLastName());
+                result.put("imageAvatar", latestApplication.getImageAvatar());
+
+                // Tutor-specific fields
+                result.put("bio", latestApplication.getBio());
+                result.put("headline", latestApplication.getHeadline());
+                result.put("experience", latestApplication.getExperience());
+                result.put("cvFileUrl", latestApplication.getCvFileUrl());
+                result.put("videoIntro", latestApplication.getVideoIntro());
+
+                // User info (can be updated directly)
+                result.put("phoneNumber", user.getPhoneNumber());
+                result.put("address", user.getAddress());
+                result.put("dateOfBirth", user.getDateOfBirth());
+                result.put("gender", user.getGender());
+                result.put("timezone", user.getTimezone());
+
+                result.put("createdAt", latestApplication.getCreatedAt());
+                result.put("updatedAt", latestApplication.getUpdatedAt());
+
+                // Load related data from application
+                result.put("educations", getEducationsForApplication(latestApplication.getId()));
+                result.put("certificates", getCertificatesForApplication(latestApplication.getId()));
+                result.put("teachingAudiences", getTeachingAudiencesForApplication(latestApplication.getId()));
+                result.put("schedules", getSchedulesForApplication(latestApplication.getId()));
+                result.put("subjectFees", getSubjectFeesForApplication(latestApplication.getId()));
+            } else {
+                result.put("hasDraft", false);
+
+                // Return user info as fallback data
+                result.put("firstName", user.getFirstName());
+                result.put("lastName", user.getLastName());
+                result.put("imageAvatar", user.getImageAvatar());
+                result.put("phoneNumber", user.getPhoneNumber());
+                result.put("address", user.getAddress());
+                result.put("dateOfBirth", user.getDateOfBirth());
+                result.put("gender", user.getGender());
+                result.put("timezone", user.getTimezone());
+            }
+        } else if (user.getRole() == UserRole.TUTOR) {
+            // For tutors updating profile - get latest application (DRAFT/SUBMITTED/REJECTED)
+            List<ProfileApplication> applications = applicationRepository
+                    .findByUserOrderByCreatedAtDesc(user);
+
+            ProfileApplication latestApplication = applications.stream()
+                    .filter(app -> app.getStatus() == ApplicationStatus.DRAFT ||
+                                  app.getStatus() == ApplicationStatus.SUBMITTED ||
+                                  app.getStatus() == ApplicationStatus.REJECTED)
+                    .findFirst()
+                    .orElse(null);
+
+            if (latestApplication != null) {
+                result.put("hasDraft", true);
+                result.put("applicationId", latestApplication.getId());
+                result.put("status", latestApplication.getStatus().toString());
+
+                // Personal info from application
+                result.put("firstName", latestApplication.getFirstName());
+                result.put("lastName", latestApplication.getLastName());
+                result.put("imageAvatar", latestApplication.getImageAvatar());
+
+                // Tutor-specific fields
+                result.put("bio", latestApplication.getBio());
+                result.put("headline", latestApplication.getHeadline());
+                result.put("experience", latestApplication.getExperience());
+                result.put("cvFileUrl", latestApplication.getCvFileUrl());
+                result.put("videoIntro", latestApplication.getVideoIntro());
+
+                // User info (can be updated directly)
+                result.put("phoneNumber", user.getPhoneNumber());
+                result.put("address", user.getAddress());
+                result.put("dateOfBirth", user.getDateOfBirth());
+                result.put("gender", user.getGender());
+                result.put("timezone", user.getTimezone());
+
+                result.put("createdAt", latestApplication.getCreatedAt());
+                result.put("updatedAt", latestApplication.getUpdatedAt());
+
+                // Load related data from application
+                result.put("educations", getEducationsForApplication(latestApplication.getId()));
+                result.put("certificates", getCertificatesForApplication(latestApplication.getId()));
+                result.put("teachingAudiences", getTeachingAudiencesForApplication(latestApplication.getId()));
+                result.put("schedules", getSchedulesForApplication(latestApplication.getId()));
+                result.put("subjectFees", getSubjectFeesForApplication(latestApplication.getId()));
+            } else {
+                result.put("hasDraft", false);
+
+                // Return user info as fallback data
+                result.put("firstName", user.getFirstName());
+                result.put("lastName", user.getLastName());
+                result.put("imageAvatar", user.getImageAvatar());
+                result.put("phoneNumber", user.getPhoneNumber());
+                result.put("address", user.getAddress());
+                result.put("dateOfBirth", user.getDateOfBirth());
+                result.put("gender", user.getGender());
+                result.put("timezone", user.getTimezone());
+            }
         }
+        if (user.getRole() == UserRole.TUTOR) {
+            // Với tutor: tìm application hiện tại (DRAFT/SUBMITTED/REJECTED) và lưu nháp giống flow student
+            ProfileApplication draftApplication = findOrCreateDraftApplication(user);
+            updateBasicApplicationFromRequest(draftApplication, request);
+            ProfileApplication saved = applicationRepository.saveAndFlush(draftApplication);
+            updateRelatedEntitiesFromRequest(saved, request);
+            return Map.of(
+                "success", true,
+                "message", "Đã lưu nháp thành công!",
+                "applicationId", saved.getId(),
+                "status", saved.getStatus().toString()
+            );
+        }
+        throw new RuntimeException("Unauthorized role for this endpoint");
     }
 
 
@@ -594,15 +781,28 @@ public class TutorProfileDraftService {
     public Map<String, Object> submitDraftRequest(String username, BecomeTutorDraftRequest request) {
         log.info("Submitting draft request for user: {}", username);
         
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        User user = resolveUserByPrincipal(username);
         
-        // Only STUDENT can use this endpoint
+        // Cho phép STUDENT submit hồ sơ lần đầu, và TUTOR submit bản cập nhật
         if (user.getRole() == UserRole.STUDENT) {
             return submitApplicationForStudent(username, request);
-        } else {
-            throw new RuntimeException("Only students can use this endpoint");
         }
+        if (user.getRole() == UserRole.TUTOR) {
+            // Tutor submit cập nhật: chuyển application hiện tại về SUBMITTED
+            ProfileApplication draftApplication = findOrCreateDraftApplication(user);
+            updateBasicApplicationFromRequest(draftApplication, request);
+            draftApplication.setStatus(ApplicationStatus.SUBMITTED);
+            draftApplication.setSubmittedAt(ZonedDateTime.now());
+            ProfileApplication saved = applicationRepository.saveAndFlush(draftApplication);
+            updateRelatedEntitiesFromRequest(saved, request);
+            return Map.of(
+                "success", true,
+                "message", "Đã gửi hồ sơ thành công! Vui lòng chờ admin duyệt.",
+                "applicationId", saved.getId(),
+                "status", saved.getStatus().toString()
+            );
+        }
+        throw new RuntimeException("Unauthorized role for this endpoint");
     }
 
     /**
@@ -612,8 +812,7 @@ public class TutorProfileDraftService {
     public Map<String, Object> getDraftProfileData(String username) {
         log.info("Getting draft profile data for user: {}", username);
         
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        User user = resolveUserByPrincipal(username);
         
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);
@@ -621,7 +820,7 @@ public class TutorProfileDraftService {
         result.put("userId", user.getId());
         result.put("username", user.getUsername());
         
-        if (user.getRole() == UserRole.STUDENT) {
+        if (user.getRole() == UserRole.STUDENT || user.getRole() == UserRole.TUTOR) {
             // For students becoming tutors - get latest application (DRAFT or SUBMITTED)
             List<ProfileApplication> applications = applicationRepository
                     .findByUserOrderByCreatedAtDesc(user);
@@ -663,27 +862,87 @@ public class TutorProfileDraftService {
                 // Load related data from application
                 result.put("educations", getEducationsForApplication(latestApplication.getId()));
                 result.put("certificates", getCertificatesForApplication(latestApplication.getId()));
-                result.put("teachingAudiences", getTeachingAudiencesForApplication(latestApplication.getId()));
+                result.put("teachingAudiences", getTeachingAudiencesForApplicationAsMap(latestApplication.getId()));
                 result.put("schedules", getSchedulesForApplication(latestApplication.getId()));
                 result.put("subjectFees", getSubjectFeesForApplication(latestApplication.getId()));
             } else {
-                result.put("hasDraft", false);
+                // Không có application; với TUTOR thì tìm application mới nhất (có thể đã APPROVED)
+                List<ProfileApplication> allApplications = applicationRepository
+                        .findByUserOrderByCreatedAtDesc(user);
                 
-                // Return user info as fallback data
-                result.put("firstName", user.getFirstName());
-                result.put("lastName", user.getLastName());
-                result.put("imageAvatar", user.getImageAvatar());
-                result.put("phoneNumber", user.getPhoneNumber());
-                result.put("address", user.getAddress());
-                result.put("dateOfBirth", user.getDateOfBirth());
-                result.put("gender", user.getGender());
-                result.put("timezone", user.getTimezone());
+                ProfileApplication latestApprovedApplication = allApplications.stream()
+                        .filter(app -> app.getStatus() == ApplicationStatus.APPROVED)
+                        .findFirst()
+                        .orElse(null);
+                
+                if (latestApprovedApplication != null) {
+                    // Có application đã approved - lấy dữ liệu từ đó
+                    result.put("hasDraft", true);
+                    result.put("applicationId", latestApprovedApplication.getId());
+                    result.put("status", latestApprovedApplication.getStatus().toString());
+
+                    // Personal info
+                    result.put("firstName", user.getFirstName());
+                    result.put("lastName", user.getLastName());
+                    result.put("imageAvatar", user.getImageAvatar());
+
+                    // Tutor-specific fields từ application
+                    result.put("bio", latestApprovedApplication.getBio());
+                    result.put("headline", latestApprovedApplication.getHeadline());
+                    result.put("experience", latestApprovedApplication.getExperience());
+                    result.put("cvFileUrl", latestApprovedApplication.getCvFileUrl());
+                    result.put("videoIntro", latestApprovedApplication.getVideoIntro());
+
+                    // User info (editable)
+                    result.put("phoneNumber", user.getPhoneNumber());
+                    result.put("address", user.getAddress());
+                    result.put("dateOfBirth", user.getDateOfBirth());
+                    result.put("gender", user.getGender());
+                    result.put("timezone", user.getTimezone());
+
+                    // Related entities from application
+                    result.put("educations", getEducationsForApplication(latestApprovedApplication.getId()));
+                    result.put("certificates", getCertificatesForApplication(latestApprovedApplication.getId()));
+                    result.put("teachingAudiences", getTeachingAudiencesForApplicationAsMap(latestApprovedApplication.getId()));
+                    result.put("schedules", getSchedulesForApplication(latestApprovedApplication.getId()));
+                    result.put("subjectFees", getSubjectFeesForApplication(latestApprovedApplication.getId()));
+                } else {
+                    // Fallback tối thiểu từ User
+                    result.put("hasDraft", false);
+                    result.put("firstName", user.getFirstName());
+                    result.put("lastName", user.getLastName());
+                    result.put("imageAvatar", user.getImageAvatar());
+                    result.put("phoneNumber", user.getPhoneNumber());
+                    result.put("address", user.getAddress());
+                    result.put("dateOfBirth", user.getDateOfBirth());
+                    result.put("gender", user.getGender());
+                    result.put("timezone", user.getTimezone());
+                }
             }
             
         }
         
         result.put("message", "Draft profile data retrieved successfully");
         return result;
+    }
+
+    private User resolveUserByPrincipal(String principal) {
+        return userRepository.findByUsername(principal)
+                .or(() -> {
+                    try {
+                        return userRepository.findByEmail(principal);
+                    } catch (Exception ignored) {
+                        return Optional.empty();
+                    }
+                })
+                .or(() -> {
+                    try {
+                        return userRepository.findByPhoneNumber(principal);
+                    } catch (Exception ignored) {
+                        return Optional.empty();
+                    }
+                })
+                .orElseThrow(() -> new RuntimeException("User not found: " + principal));
     }
 
     /**
@@ -920,25 +1179,17 @@ public class TutorProfileDraftService {
      * Get schedules for profile
      */
     private List<Map<String, Object>> getSchedulesForProfile(Integer profileId) {
-        // Schedules are now managed through ProfileApplication, not TutorProfile
-        List<ApplicationSchedule> schedules = new ArrayList<>();
-        return schedules.stream().map(schedule -> {
-            Map<String, Object> schedData = new HashMap<>();
-            schedData.put("id", schedule.getId());
-            schedData.put("dayOfWeek", schedule.getDayOfWeek());
-            schedData.put("fromTime", schedule.getFromTime().toString());
-            schedData.put("toTime", schedule.getToTime().toString());
-            schedData.put("enable", schedule.getEnable());
-            return schedData;
-        }).collect(Collectors.toList());
+        // Schedules chỉ được lưu theo ProfileApplication, không theo TutorProfile
+        // Với TUTOR role không có application thì schedules sẽ rỗng
+        return new ArrayList<>();
     }
 
     /**
      * Get subject fees for profile
      */
     private List<Map<String, Object>> getSubjectFeesForProfile(Integer profileId) {
-        // Subject fees are now managed through ProfileApplication, not TutorProfile
-        List<ApplicationSubjectFee> subjectFees = new ArrayList<>();
+        // Lấy subject fees từ ApplicationSubjectFee theo TutorProfile
+        List<ApplicationSubjectFee> subjectFees = applicationSubjectFeeRepository.findByTutorProfileId(profileId);
         return subjectFees.stream().map(subjectFee -> {
             Map<String, Object> feeData = new HashMap<>();
             feeData.put("id", subjectFee.getId());
@@ -1043,11 +1294,14 @@ public class TutorProfileDraftService {
         List<ApplicationTeachingAudience> applicationTeachingAudiences = 
             applicationTeachingAudienceRepository.findByTutorProfileId(profileId);
         
+        log.info("Found {} teaching audiences for profileId: {}", applicationTeachingAudiences.size(), profileId);
+        
         return applicationTeachingAudiences.stream().map(appAudience -> {
             TeachingAudience audience = appAudience.getTeachingAudience();
             Map<String, Object> audienceData = new HashMap<>();
             audienceData.put("id", audience.getId());
             audienceData.put("name", audience.getName());
+            log.info("Teaching audience: {} - {}", audience.getId(), audience.getName());
             return audienceData;
         }).collect(Collectors.toList());
     }
@@ -1273,6 +1527,19 @@ public class TutorProfileDraftService {
         return applicationTeachingAudienceRepository.findByApplicationId(applicationId)
                 .stream()
                 .map(ata -> ata.getTeachingAudience().getName())
+                .collect(Collectors.toList());
+    }
+    
+    private List<Map<String, Object>> getTeachingAudiencesForApplicationAsMap(Long applicationId) {
+        return applicationTeachingAudienceRepository.findByApplicationId(applicationId)
+                .stream()
+                .map(ata -> {
+                    TeachingAudience audience = ata.getTeachingAudience();
+                    Map<String, Object> audienceData = new HashMap<>();
+                    audienceData.put("id", audience.getId());
+                    audienceData.put("name", audience.getName());
+                    return audienceData;
+                })
                 .collect(Collectors.toList());
     }
     

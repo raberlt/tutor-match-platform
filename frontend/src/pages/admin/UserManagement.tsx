@@ -282,18 +282,23 @@ const UserManagement: React.FC = () => {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Quản lý người dùng
-        </h1>
-        <p className="text-gray-600">
-          Xem, tìm kiếm và quản lý tài khoản hệ thống
-        </p>
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Quản lý người dùng
+            </h1>
+            <p className="text-sm text-gray-600">
+              Xem, tìm kiếm và quản lý tài khoản hệ thống
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-l-blue-500">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
               <svg
@@ -314,14 +319,14 @@ const UserManagement: React.FC = () => {
               <p className="text-sm font-medium text-gray-600">
                 Tổng người dùng
               </p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900">
                 {stats?.totalUsers || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-l-green-500">
           <div className="flex items-center">
             <div className="p-2 bg-green-100 rounded-lg">
               <svg
@@ -340,14 +345,14 @@ const UserManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Học sinh</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900">
                 {stats?.students || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-l-purple-500">
           <div className="flex items-center">
             <div className="p-2 bg-purple-100 rounded-lg">
               <svg
@@ -366,14 +371,14 @@ const UserManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Gia sư</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900">
                 {stats?.tutors || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-l-red-500">
           <div className="flex items-center">
             <div className="p-2 bg-red-100 rounded-lg">
               <svg
@@ -392,7 +397,7 @@ const UserManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Quản trị viên</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900">
                 {stats?.admins || 0}
               </p>
             </div>
@@ -401,7 +406,7 @@ const UserManagement: React.FC = () => {
       </div>
 
       {/* Controls */}
-      <div className="bg-white p-6 rounded-lg shadow mb-6">
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative">
@@ -445,7 +450,7 @@ const UserManagement: React.FC = () => {
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="active">Hoạt động</option>
-              <option value="inactive">Không hoạt động</option>
+              <option value="inactive">Đã khóa</option>
             </select>
           </div>
 
@@ -671,7 +676,7 @@ const UserManagement: React.FC = () => {
       )}
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-medium text-gray-900">
             Danh sách người dùng ({filteredUsers.length})
@@ -682,25 +687,25 @@ const UserManagement: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Họ tên
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Email
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Vai trò
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Trạng thái
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ngày tạo
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Thao tác
                 </th>
               </tr>
@@ -708,16 +713,16 @@ const UserManagement: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {user.id}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                     {user.firstName} {user.lastName}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                     {user.email}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         user.role === "ADMIN"
@@ -734,7 +739,7 @@ const UserManagement: React.FC = () => {
                         : "Học sinh"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         user.enable
@@ -745,10 +750,10 @@ const UserManagement: React.FC = () => {
                       {user.enable ? "Hoạt động" : "Đã khóa"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(user.createdAt).toLocaleDateString("vi-VN")}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleEditUser(user)}

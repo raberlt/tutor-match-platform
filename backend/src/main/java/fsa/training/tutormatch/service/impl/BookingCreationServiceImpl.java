@@ -124,6 +124,8 @@ public class BookingCreationServiceImpl implements BookingCreationService {
         // Gói học chờ gia sư đồng ý trước khi thanh toán
         booking.setStatus(BookingStatus.AWAITING_TUTOR_ACCEPT);
         // paymentStatus sẽ là null cho đến khi gia sư đồng ý và chuyển sang TUTOR_ACCEPTED
+        // Set payment deadline 24 giờ cho package booking
+        booking.setPaymentDeadline(java.time.ZonedDateTime.now().plusHours(24));
 
         booking = bookingRepository.save(booking);
 

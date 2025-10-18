@@ -36,6 +36,7 @@ interface Booking {
   tutorId?: number;
   sessions?: Session[];
   paymentDeadline?: string;
+  paymentStatus?: string; // Thêm thông tin trạng thái thanh toán
 }
 
 interface SessionHistory {
@@ -350,7 +351,7 @@ const MySessions: React.FC = () => {
       case "AWAITING_TUTOR_ACCEPT":
         return "Chờ gia sư chấp nhận";
       case "TUTOR_ACCEPTED":
-        return "Gia sư đã chấp nhận";
+        return "Chờ thanh toán";
       case "TUTOR_REJECTED":
         return "Giảng viên đã từ chối";
       case "CANCELLED":
@@ -464,7 +465,7 @@ const MySessions: React.FC = () => {
               className="px-3 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
               onClick={() => openCancelBooking(booking.id)}
             >
-              Huỷ lịch
+              Huỷ & hoàn 100%
             </button>
           );
         }
@@ -495,7 +496,7 @@ const MySessions: React.FC = () => {
             className="px-3 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50"
             onClick={() => openCancelBooking(booking.id)}
           >
-            Huỷ lịch
+            Huỷ
           </button>
         );
         break;
@@ -574,15 +575,36 @@ const MySessions: React.FC = () => {
         );
         break;
       case "CANCELLED":
-        actions.push(
-          <button
-            key="refund"
-            className="px-3 py-2 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-50"
-            onClick={() => console.log("Request refund", booking.id)}
-          >
-            Hoàn tiền
-          </button>
-        );
+        // Chỉ hiển thị nút hoàn tiền nếu đã thanh toán trước khi huỷ
+        // Đối với học đơn: chỉ hoàn tiền nếu đã thanh toán
+        // Đối với học gói: có thể hoàn tiền theo chính sách
+        const isPaid =
+          booking.paymentStatus === "PAYMENT_COMPLETED" ||
+          booking.paymentStatus === "PAID";
+
+        if (isPaid) {
+          actions.push(
+            <button
+              key="refund"
+              className="px-3 py-2 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-50"
+              onClick={() => console.log("Request refund", booking.id)}
+            >
+              Hoàn tiền
+            </button>
+          );
+        } else if (isPackage) {
+          // Học gói chưa thanh toán vẫn có thể hoàn tiền (theo chính sách)
+          actions.push(
+            <button
+              key="refund"
+              className="px-3 py-2 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-50"
+              onClick={() => console.log("Request refund", booking.id)}
+            >
+              Hoàn tiền
+            </button>
+          );
+        }
+        // Học đơn chưa thanh toán: không hiển thị nút hoàn tiền
         break;
       case "REFUNDED":
         actions.push(

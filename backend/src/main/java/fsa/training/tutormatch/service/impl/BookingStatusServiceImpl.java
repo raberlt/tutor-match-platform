@@ -2,6 +2,7 @@ package fsa.training.tutormatch.service.impl;
 
 import fsa.training.tutormatch.entity.Booking;
 import fsa.training.tutormatch.enums.BookingStatus;
+import fsa.training.tutormatch.enums.PaymentStatus;
 import fsa.training.tutormatch.entity.User;
 import fsa.training.tutormatch.repository.BookingRepository;
 import fsa.training.tutormatch.repository.UserRepository;
@@ -40,8 +41,9 @@ public class BookingStatusServiceImpl implements BookingStatusService {
             throw new IllegalArgumentException("Cannot accept this booking");
         }
         
-        // Update status -> tutor approved
-        booking.setStatus(BookingStatus.TUTOR_ACCEPTED);
+        // Update status -> chuyển sang chờ thanh toán
+        booking.setStatus(BookingStatus.PAYMENT_PENDING);
+        booking.setPaymentStatus(PaymentStatus.PENDING);
         // Nếu là gói học, set deadline thanh toán 24h
         try {
             if (booking.getBookingType() != null && String.valueOf(booking.getBookingType()).equals("PACKAGE")) {

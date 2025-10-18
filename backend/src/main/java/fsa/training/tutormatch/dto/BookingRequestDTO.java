@@ -3,6 +3,7 @@ package fsa.training.tutormatch.dto;
 import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Data
@@ -17,6 +18,8 @@ public class BookingRequestDTO {
     private String note;
     private Double totalAmount;
     private Integer totalSessions;
+    private ZonedDateTime paymentDeadline;
+    private ZonedDateTime bookingCreatedAt;
     
     // Student info (minimal)
     private StudentInfo student;

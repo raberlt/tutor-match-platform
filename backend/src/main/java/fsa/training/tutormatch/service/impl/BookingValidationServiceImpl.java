@@ -93,8 +93,8 @@ public class BookingValidationServiceImpl implements BookingValidationService {
         switch (action.toLowerCase()) {
             case "accept":
             case "reject":
-                if (booking.getStatus() != BookingStatus.PAYMENT_PENDING) {
-                    throw new IllegalArgumentException("Can only accept/reject pending bookings");
+                if (booking.getStatus() != BookingStatus.PAYMENT_PENDING && booking.getStatus() != BookingStatus.AWAITING_TUTOR_ACCEPT) {
+                    throw new IllegalArgumentException("Can only accept/reject pending bookings or awaiting tutor accept");
                 }
                 break;
             case "cancel":
@@ -117,7 +117,7 @@ public class BookingValidationServiceImpl implements BookingValidationService {
         return booking != null && 
                tutor != null &&
                Objects.equals(booking.getTutor().getId(), tutor.getId()) &&
-               booking.getStatus() == BookingStatus.PAYMENT_PENDING;
+               (booking.getStatus() == BookingStatus.PAYMENT_PENDING || booking.getStatus() == BookingStatus.AWAITING_TUTOR_ACCEPT);
     }
     
     @Override

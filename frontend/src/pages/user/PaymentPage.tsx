@@ -80,8 +80,16 @@ const PaymentPage: React.FC = () => {
         bookingId: 12345,
         bookingCode: "BK001234",
         bookingType: "SINGLE_SESSION", // hoặc "PACKAGE"
-        bookingCreatedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(), // 2 phút trước
-        paymentDeadline: new Date(Date.now() + 8 * 60 * 1000).toISOString(), // 8 phút nữa
+        bookingCreatedAt: (() => {
+          const savedTime = localStorage.getItem("mockBookingCreatedAt");
+          if (savedTime) {
+            return savedTime;
+          }
+          const mockTime = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+          localStorage.setItem("mockBookingCreatedAt", mockTime);
+          return mockTime;
+        })(), // 2 phút trước để có 8 phút còn lại
+        // Không set paymentDeadline để để logic tự tính (10 phút cho SINGLE_SESSION)
         tutor: {
           id: 0,
           name: "Nguyễn Văn A",
@@ -161,10 +169,13 @@ const PaymentPage: React.FC = () => {
   }, [bookingData.bookingId, navigate]);
 
   const setPaymentDeadlineBasedOnBookingType = useCallback(() => {
+    console.log("=== setPaymentDeadlineBasedOnBookingType called ===");
+    console.log("bookingData:", bookingData);
+
     const bookingId = bookingData.bookingId || bookingData.bookingCode;
     const localStorageKey = `paymentDeadline_${bookingId}`;
 
-    // Kiểm tra localStorage trước
+    // Kiểm tra localStorage trước - nếu có deadline đã lưu thì sử dụng
     const savedDeadline = localStorage.getItem(localStorageKey);
     if (savedDeadline) {
       const deadlineTime = new Date(savedDeadline).getTime();
@@ -205,6 +216,12 @@ const PaymentPage: React.FC = () => {
         bookingCreatedTime + deadlineMinutes * 60 * 1000
       );
 
+      console.log(`Booking created at: ${bookingData.bookingCreatedAt}`);
+      console.log(`Is single session: ${isSingleSession}`);
+      console.log(`Deadline minutes: ${deadlineMinutes}`);
+      console.log(`Calculated deadline: ${deadline.toISOString()}`);
+      console.log(`Current time: ${new Date().toISOString()}`);
+
       setPaymentDeadline(deadline.toISOString());
       localStorage.setItem(localStorageKey, deadline.toISOString());
       console.log(
@@ -215,21 +232,39 @@ const PaymentPage: React.FC = () => {
       return;
     }
 
-    // Fallback: tính từ thời điểm hiện tại (chỉ dùng khi không có dữ liệu)
-    const now = new Date();
-    const isSingleSession = bookingData.bookingType === "SINGLE_SESSION";
+    // Fallback: tính từ thời điểm tạo booking hoặc mô phỏng
+    let baseTime;
+    if (bookingData.bookingCreatedAt) {
+      baseTime = new Date(bookingData.bookingCreatedAt).getTime();
+      console.log(
+        "Fallback using bookingCreatedAt:",
+        bookingData.bookingCreatedAt
+      );
+    } else {
+      // Mô phỏng: tính từ thời điểm hiện tại trừ đi một khoảng để có countdown hợp lý
+      baseTime = Date.now() - 2 * 60 * 1000; // Trừ 2 phút
+      console.log("Fallback using simulated time (current - 2 minutes)");
+    }
 
-    // Single session: 10 minutes, Package: 24 hours
+    const isSingleSession = bookingData.bookingType === "SINGLE_SESSION";
     const deadlineMinutes = isSingleSession ? 10 : 24 * 60;
-    const deadline = new Date(now.getTime() + deadlineMinutes * 60 * 1000);
+    const deadline = new Date(baseTime + deadlineMinutes * 60 * 1000);
 
     setPaymentDeadline(deadline.toISOString());
     localStorage.setItem(localStorageKey, deadline.toISOString());
     console.log(
-      `Payment deadline set from current time (fallback): ${deadline.toISOString()} (${
+      `Payment deadline set from base time: ${deadline.toISOString()} (${
         isSingleSession ? "10 minutes" : "24 hours"
       })`
     );
+
+    // Debug: Log để kiểm tra
+    console.log("=== PaymentPage Countdown Debug ===");
+    console.log("bookingData.bookingType:", bookingData.bookingType);
+    console.log("isSingleSession:", isSingleSession);
+    console.log("deadlineMinutes:", deadlineMinutes);
+    console.log("baseTime:", new Date(baseTime).toISOString());
+    console.log("paymentDeadline set to:", deadline.toISOString());
   }, [
     bookingData.bookingType,
     bookingData.paymentDeadline,
@@ -322,6 +357,7 @@ const PaymentPage: React.FC = () => {
     fetchBookingData();
 
     // Set payment deadline based on booking type
+    setIsExpired(false); // Reset expired state
     setPaymentDeadlineBasedOnBookingType();
   }, [
     location.state,
@@ -329,6 +365,52 @@ const PaymentPage: React.FC = () => {
     setPaymentDeadlineBasedOnBookingType,
     fetchBookingData,
   ]);
+
+  // Force set deadline if not set - sử dụng paymentDeadline từ API
+  useEffect(() => {
+    if (!paymentDeadline && bookingData) {
+      console.log("=== Setting payment deadline from API ===");
+
+      // Ưu tiên sử dụng paymentDeadline từ API
+      if (bookingData.paymentDeadline) {
+        console.log(
+          "Using paymentDeadline from API:",
+          bookingData.paymentDeadline
+        );
+        setPaymentDeadline(bookingData.paymentDeadline);
+        setIsExpired(false);
+        return;
+      }
+
+      // Fallback: tính từ bookingCreatedAt
+      if (bookingData.bookingCreatedAt) {
+        console.log(
+          "Fallback: Using bookingCreatedAt:",
+          bookingData.bookingCreatedAt
+        );
+        const baseTime = new Date(bookingData.bookingCreatedAt).getTime();
+        const isSingleSession = bookingData.bookingType === "SINGLE_SESSION";
+        const deadlineMinutes = isSingleSession ? 10 : 24 * 60;
+        const deadline = new Date(baseTime + deadlineMinutes * 60 * 1000);
+
+        console.log("Calculated deadline:", deadline.toISOString());
+        setPaymentDeadline(deadline.toISOString());
+        setIsExpired(false);
+        return;
+      }
+
+      // Last fallback: tính từ thời điểm hiện tại
+      console.log("Last fallback: Using current time");
+      const now = new Date();
+      const isSingleSession = bookingData.bookingType === "SINGLE_SESSION";
+      const deadlineMinutes = isSingleSession ? 10 : 24 * 60;
+      const deadline = new Date(now.getTime() + deadlineMinutes * 60 * 1000);
+
+      console.log("Fallback deadline:", deadline.toISOString());
+      setPaymentDeadline(deadline.toISOString());
+      setIsExpired(false);
+    }
+  }, [paymentDeadline, bookingData]);
 
   // Countdown timer
   useEffect(() => {
@@ -412,7 +494,15 @@ const PaymentPage: React.FC = () => {
   };
 
   const renderCountdown = () => {
-    if (!paymentDeadline || isExpired) return null;
+    if (!paymentDeadline || isExpired) {
+      console.log(
+        "Countdown not rendered - paymentDeadline:",
+        paymentDeadline,
+        "isExpired:",
+        isExpired
+      );
+      return null;
+    }
 
     const deadline = new Date(paymentDeadline).getTime();
     const now = Date.now();

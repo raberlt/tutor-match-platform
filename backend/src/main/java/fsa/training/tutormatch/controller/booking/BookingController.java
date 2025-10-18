@@ -4,6 +4,7 @@ import fsa.training.tutormatch.dto.BookingRequestCreateDTO;
 import fsa.training.tutormatch.dto.BookingRequestDTO;
 import fsa.training.tutormatch.entity.Booking;
 import fsa.training.tutormatch.enums.BookingStatus;
+import fsa.training.tutormatch.enums.PaymentStatus;
 import fsa.training.tutormatch.enums.BookingType;
 import fsa.training.tutormatch.entity.TutorProfile;
 import fsa.training.tutormatch.entity.User;
@@ -12,9 +13,7 @@ import fsa.training.tutormatch.repository.UserRepository;
 import fsa.training.tutormatch.service.BookingService;
 import fsa.training.tutormatch.service.PaymentService;
 import fsa.training.tutormatch.enums.PaymentMethod;
-import fsa.training.tutormatch.enums.PaymentStatus;
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,11 +34,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.time.format.DateTimeFormatter;
 
 @RestController
@@ -619,8 +614,13 @@ public class BookingController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
             }
             
-            // Update status: tutor chấp nhận -> chuyển sang TUTOR_ACCEPTED
-            booking.setStatus(BookingStatus.TUTOR_ACCEPTED);
+            // Update status: tutor chấp nhận -> chuyển sang chờ thanh toán
+            booking.setStatus(BookingStatus.PAYMENT_PENDING);
+            booking.setPaymentStatus(PaymentStatus.PENDING);
+            // Set payment deadline cho package booking
+            if (booking.getBookingType() != null && booking.getBookingType().toString().equals("PACKAGE")) {
+                booking.setPaymentDeadline(java.time.ZonedDateTime.now().plusHours(24));
+            }
             bookingRepository.save(booking);
             
             Map<String, Object> response = new HashMap<>();
@@ -786,6 +786,10 @@ public class BookingController {
             dto.setToTime(null);
         }
         dto.setNote(booking.getNote());
+        
+        // Set payment deadline and creation time
+        dto.setPaymentDeadline(booking.getPaymentDeadline());
+        dto.setBookingCreatedAt(booking.getCreatedAt());
         
         // Set financial fields
         if (booking.getTotalAmount() != null) {

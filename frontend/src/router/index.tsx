@@ -28,14 +28,17 @@ import PaymentQR from "../pages/user/PaymentQR";
 
 // Tutor pages
 import { TutorDashboard } from "../pages/tutor/TutorDashboard";
-import { Schedule } from "../pages/tutor/Schedule";
 import { ProfileManagement } from "../pages/tutor/ProfileManagement";
 import { TutorInbox } from "../pages/tutor/TutorInbox";
 import TutorBookings from "../pages/tutor/TutorBookings";
+import Revenue from "../pages/tutor/Revenue";
 
 // Admin pages (only import pages that exist and export correctly)
 import UserManagement from "../pages/admin/UserManagement";
 import { TutorApproval } from "../pages/admin/TutorApproval";
+import AdminRevenue from "../pages/admin/AdminRevenue";
+import AdminCoupons from "../pages/admin/AdminCoupons";
+import AdminMessages from "../pages/admin/AdminMessages";
 
 // Demo pages
 import BookingDemo from "../pages/BookingDemo";
@@ -264,10 +267,6 @@ export const router = createBrowserRouter([
         element: <TutorDashboard />,
       },
       {
-        path: "schedule",
-        element: <Schedule />,
-      },
-      {
         path: "profile",
         element: <ProfileManagement />,
       },
@@ -284,14 +283,11 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "earnings",
+        path: "revenue",
         element: (
-          <div className="text-center p-8">
-            <h1 className="text-2xl font-bold">Thu nhập</h1>
-            <p className="text-gray-600 mt-2">
-              Trang này đang được phát triển...
-            </p>
-          </div>
+          <BookingProtectedRoute allowedRoles={["TUTOR"]}>
+            <Revenue />
+          </BookingProtectedRoute>
         ),
       },
     ],
@@ -306,6 +302,9 @@ export const router = createBrowserRouter([
       { path: "dashboard", element: <AdminDashboard /> },
       { path: "users", element: <UserManagement /> },
       { path: "tutor-approval", element: <TutorApproval /> },
+      { path: "revenue", element: <AdminRevenue /> },
+      { path: "coupons", element: <AdminCoupons /> },
+      { path: "messages", element: <AdminMessages /> },
       { path: "profile", element: <TutorApproval /> },
       { path: "profiles", element: <TutorApproval /> },
       // Các trang dưới đây sẽ được bật khi có component hoàn chỉnh

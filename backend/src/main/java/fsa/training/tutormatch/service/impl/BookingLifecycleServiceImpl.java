@@ -23,7 +23,7 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
     @Override
     public void acceptPackageBooking(Integer bookingId, Integer tutorUserId) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow();
-        booking.setStatus(BookingStatus.TUTOR_ACCEPTED);
+        booking.setStatus(BookingStatus.PAYMENT_PENDING); // Chuyển sang chờ thanh toán
         booking.setPaymentStatus(PaymentStatus.PENDING); // Set payment status khi gia sư đồng ý
         booking.setPaymentDeadline(ZonedDateTime.now().plusHours(24));
         bookingRepository.save(booking);

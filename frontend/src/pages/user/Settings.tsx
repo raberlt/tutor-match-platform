@@ -390,33 +390,7 @@ export const Settings: React.FC = () => {
     }
   };
 
-  // Mô phỏng thanh toán thành công (chỉ để test)
-  const simulatePaymentSuccess = async (txRef: string) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/payment/simulate-success/${txRef}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setMessage("Mô phỏng thanh toán thành công! Số dư đã được cập nhật.");
-          setTransactionStatus("COMPLETED");
-          setCreditBalance(data.newBalance);
-          stopStatusCheck();
-        } else {
-          setError(data.message || "Mô phỏng thanh toán thất bại");
-        }
-      }
-    } catch (error) {
-      console.error("Error simulating payment:", error);
-      setError("Có lỗi xảy ra khi mô phỏng thanh toán");
-    }
-  };
+  
 
   // Bắt đầu kiểm tra trạng thái định kỳ
   const startStatusCheck = (txRef: string) => {
@@ -1263,61 +1237,7 @@ export const Settings: React.FC = () => {
                       </p>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex space-x-3">
-                      <button
-                        onClick={() => {
-                          setShowQRCode(false);
-                          setQrCodeUrl("");
-                          setTransactionRef("");
-                          setSubmittedAmount("");
-                          setTransactionStatus("PENDING");
-                          stopStatusCheck();
-                        }}
-                        className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
-                      >
-                        Nạp lại
-                      </button>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(qrCodeUrl);
-                          setMessage("Đã sao chép link QR code!");
-                        }}
-                        className="flex-1 px-4 py-2 text-white rounded-md hover:opacity-90 transition-colors"
-                        style={{ backgroundColor: "rgb(148, 204, 230)" }}
-                      >
-                        Sao chép link
-                      </button>
-                      {transactionStatus === "PENDING" && (
-                        <button
-                          onClick={() => {
-                            if (transactionRef) {
-                              setCheckingStatus(true);
-                              checkTransactionStatus(transactionRef);
-                              setTimeout(() => setCheckingStatus(false), 2000);
-                            }
-                          }}
-                          disabled={checkingStatus}
-                          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
-                        >
-                          {checkingStatus
-                            ? "Đang kiểm tra..."
-                            : "Kiểm tra trạng thái"}
-                        </button>
-                      )}
-                      {transactionStatus === "PENDING" && (
-                        <button
-                          onClick={() => {
-                            if (transactionRef) {
-                              simulatePaymentSuccess(transactionRef);
-                            }
-                          }}
-                          className="flex-1 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-                        >
-                          Mô phỏng thanh toán thành công
-                        </button>
-                      )}
-                    </div>
+                    
                   </div>
                 </div>
               )}

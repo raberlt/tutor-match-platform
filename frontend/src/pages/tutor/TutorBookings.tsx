@@ -1045,6 +1045,27 @@ const TutorBookings: React.FC = () => {
                         </div>
                       )}
 
+                    {booking.status === "payment_pending" &&
+                      booking.type === "package" && (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleCancelBooking(booking.id)}
+                            className="flex-1 py-2 text-sm text-white rounded-2xl transition-colors duration-200"
+                            style={{ backgroundColor: "rgb(107, 114, 128)" }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.backgroundColor =
+                                "rgb(75, 85, 99)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.backgroundColor =
+                                "rgb(107, 114, 128)")
+                            }
+                          >
+                            Hủy
+                          </button>
+                        </div>
+                      )}
+
                     {booking.status === "payment_completed" &&
                       booking.type === "package" && (
                         <div className="flex space-x-2">

@@ -752,22 +752,41 @@ const MySessions: React.FC = () => {
 
   // Filter bookings based on search and filters
   const filteredBookings = bookings.filter((booking) => {
+    // Debug log
+    if (searchTerm) {
+      console.log("Filtering booking:", booking.id, {
+        tutorName: `${booking.tutor?.firstName || ""} ${
+          booking.tutor?.lastName || ""
+        }`.trim(),
+        tutorUserName: `${booking.tutor?.user?.firstName || ""} ${
+          booking.tutor?.user?.lastName || ""
+        }`.trim(),
+        subjectName: booking.sessions?.[0]?.subject?.name,
+        searchTerm,
+      });
+    }
+
     // Search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch =
         booking.id.toString().includes(searchLower) ||
-        (booking.tutor?.user?.firstName &&
-          booking.tutor.user.firstName.toLowerCase().includes(searchLower)) ||
-        (booking.tutor?.user?.lastName &&
-          booking.tutor.user.lastName.toLowerCase().includes(searchLower)) ||
+        booking.bookingCode?.toLowerCase().includes(searchLower) ||
+        // Check tutor name from both tutor object and user object
         (booking.tutor?.firstName &&
           booking.tutor.firstName.toLowerCase().includes(searchLower)) ||
         (booking.tutor?.lastName &&
           booking.tutor.lastName.toLowerCase().includes(searchLower)) ||
-        (booking.sessions?.[0]?.subject?.name &&
-          booking.sessions[0].subject.name.toLowerCase().includes(searchLower));
+        (booking.tutor?.user?.firstName &&
+          booking.tutor.user.firstName.toLowerCase().includes(searchLower)) ||
+        (booking.tutor?.user?.lastName &&
+          booking.tutor.user.lastName.toLowerCase().includes(searchLower)) ||
+        // Check subject name from sessions
+        booking.sessions?.some((session) =>
+          session.subject?.name?.toLowerCase().includes(searchLower)
+        );
 
+      console.log("Search match result:", matchesSearch);
       if (!matchesSearch) return false;
     }
 
@@ -1096,25 +1115,9 @@ const MySessions: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Buổi học của tôi
-              </h1>
-              <p className="mt-2 text-gray-600">
-                Quản lý và theo dõi các buổi học của bạn
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={toggleView}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
-              >
-                <CalendarIcon />
-                <span className="ml-2">
-                  {isCalendarView ? "Xem danh sách" : "Xem lịch"}
-                </span>
-              </button>
-            </div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Buổi học của tôi
+            </h1>
           </div>
         </div>
 

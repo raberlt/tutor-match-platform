@@ -13,4 +13,7 @@ public interface SubjectRepository extends JpaRepository<Subject, Integer> {
     // Page<Subject> findByCategory(SubjectCategory category, Pageable pageable);
     // Page<Subject> findByLevel(SubjectLevel level, Pageable pageable);
     // long countByIsActive(Boolean isActive);
+    
+    // Find by name
+    Subject findByName(String name);
 }

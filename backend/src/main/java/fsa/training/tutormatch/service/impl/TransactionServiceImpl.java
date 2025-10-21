@@ -215,6 +215,12 @@ public class TransactionServiceImpl implements TransactionService {
     }
     
     @Override
+    @Transactional
+    public Transaction saveTransaction(Transaction transaction) {
+        return transactionRepository.save(transaction);
+    }
+    
+    @Override
     public Transaction getTransactionById(Integer transactionId) {
         return transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new IllegalArgumentException("Transaction not found"));
@@ -248,6 +254,11 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Page<Transaction> getTransactionsByPayment(Payment payment, Pageable pageable) {
         return transactionRepository.findByPayment(payment, pageable);
+    }
+    
+    @Override
+    public List<Transaction> findByPaymentId(Integer paymentId) {
+        return transactionRepository.findByPaymentId(paymentId);
     }
     
     @Override

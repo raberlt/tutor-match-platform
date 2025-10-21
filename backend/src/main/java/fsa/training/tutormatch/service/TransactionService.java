@@ -28,6 +28,7 @@ public interface TransactionService {
     Transaction updateTransaction(Integer transactionId, Transaction transaction);
     Transaction updateTransactionStatus(Integer transactionId, TransactionStatus status);
     Transaction processTransaction(Integer transactionId);
+    Transaction saveTransaction(Transaction transaction);
     
     // Get transactions
     Transaction getTransactionById(Integer transactionId);
@@ -37,6 +38,7 @@ public interface TransactionService {
     Page<Transaction> getTransactionsByBooking(Booking booking, Pageable pageable);
     List<Transaction> getTransactionsByPayment(Payment payment);
     Page<Transaction> getTransactionsByPayment(Payment payment, Pageable pageable);
+    List<Transaction> findByPaymentId(Integer paymentId);
     
     // Get transactions by type
     List<Transaction> getTransactionsByType(TransactionType type);

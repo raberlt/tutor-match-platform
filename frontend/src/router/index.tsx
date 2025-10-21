@@ -39,6 +39,10 @@ import { TutorApproval } from "../pages/admin/TutorApproval";
 import AdminRevenue from "../pages/admin/AdminRevenue";
 import AdminCoupons from "../pages/admin/AdminCoupons";
 import AdminMessages from "../pages/admin/AdminMessages";
+import AdminBookings from "../pages/admin/AdminBookings";
+import TestDataGenerator from "../pages/admin/TestDataGenerator";
+import TestDataDemo from "../pages/admin/TestDataDemo";
+import SimpleTest from "../pages/admin/SimpleTest";
 
 // Demo pages
 import BookingDemo from "../pages/BookingDemo";
@@ -305,6 +309,10 @@ export const router = createBrowserRouter([
       { path: "revenue", element: <AdminRevenue /> },
       { path: "coupons", element: <AdminCoupons /> },
       { path: "messages", element: <AdminMessages /> },
+      { path: "bookings", element: <AdminBookings /> },
+      { path: "test-data", element: <TestDataGenerator /> },
+      { path: "test-demo", element: <TestDataDemo /> },
+      { path: "simple-test", element: <SimpleTest /> },
       { path: "profile", element: <TutorApproval /> },
       { path: "profiles", element: <TutorApproval /> },
       // Các trang dưới đây sẽ được bật khi có component hoàn chỉnh

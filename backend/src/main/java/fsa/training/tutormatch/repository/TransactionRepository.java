@@ -33,6 +33,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
     // Find by payment
     List<Transaction> findByPaymentOrderByCreatedAtDesc(Payment payment);
     Page<Transaction> findByPayment(Payment payment, Pageable pageable);
+    @Query("SELECT t FROM Transaction t WHERE t.payment.id = :paymentId")
+    List<Transaction> findByPaymentId(@Param("paymentId") Integer paymentId);
     
     // Find by transaction type
     List<Transaction> findByTypeOrderByCreatedAtDesc(TransactionType type);

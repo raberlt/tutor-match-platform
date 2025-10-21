@@ -20,3 +20,4 @@ public interface QRCodeService {
      */
     String generatePaymentQRCode(BigDecimal amount, String transactionRef);
 }
+

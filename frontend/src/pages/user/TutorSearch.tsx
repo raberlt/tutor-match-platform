@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { TutorService } from "../../services/tutorService";
@@ -52,14 +52,17 @@ const TutorSearch: React.FC = () => {
   });
 
   // Sort
-  const [sortBy, setSortBy] = useState("id");
-  const [sortDirection, setSortDirection] = useState("asc");
+  const [sortBy, setSortBy] = useState("ratePointAverage");
+  const [sortDirection, setSortDirection] = useState("desc");
 
   // UI State
   const [showPriceSlider, setShowPriceSlider] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<{
     [tutorId: number]: number;
   }>({});
+
+  // Ref for debounce timeout
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const loadSubjects = async () => {
     try {
@@ -76,15 +79,12 @@ const TutorSearch: React.FC = () => {
 
     try {
       // Sử dụng API public cho tất cả user (cả đã đăng nhập và chưa đăng nhập)
-      // Nếu sortBy là "id" (mặc định), sử dụng random sort bằng cách thêm timestamp
-      const actualSortBy = sortBy === "id" ? "id" : sortBy;
-      const actualSortDirection = sortBy === "id" ? "desc" : sortDirection;
       const response = await TutorService.searchTutorPreviews(
         filters,
         currentPage + 1,
         pageSize,
-        actualSortBy,
-        actualSortDirection
+        sortBy,
+        sortDirection
       );
 
       let tutorsData = response.content as ProcessedTutor[];
@@ -265,11 +265,6 @@ const TutorSearch: React.FC = () => {
         ];
       }
 
-      // Nếu sortBy là "id" (mặc định), shuffle dữ liệu để tạo random
-      if (sortBy === "id") {
-        tutorsData = tutorsData.sort(() => Math.random() - 0.5);
-      }
-
       console.log("Setting tutors state with:", tutorsData);
       setTutors(tutorsData);
       setTotalPages(response.totalPages);
@@ -307,25 +302,131 @@ const TutorSearch: React.FC = () => {
     key: keyof TutorSearchFilters,
     value: string | number | undefined
   ) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    const newFilters = { ...filters, [key]: value };
+    setFilters(newFilters);
     setCurrentPage(0); // Reset to first page when filters change
-    // Tự động tìm kiếm khi filter thay đổi
-    setTimeout(() => {
-      searchTutors();
-    }, 300); // Debounce 300ms để tránh gọi API quá nhiều
+
+    // Clear previous timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Debounce search
+    debounceTimeoutRef.current = setTimeout(() => {
+      // Use the new filters directly instead of relying on state
+      searchTutorsWithFilters(newFilters, 0);
+    }, 300);
+  };
+
+  const searchTutorsWithFilters = async (
+    filterParams: TutorSearchFilters,
+    page: number
+  ) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await TutorService.searchTutorPreviews(
+        filterParams,
+        page + 1,
+        pageSize,
+        sortBy,
+        sortDirection
+      );
+
+      let tutorsData = response.content as ProcessedTutor[];
+
+      // Process tutors data
+      if (Array.isArray(tutorsData) && tutorsData.length > 0) {
+        tutorsData = tutorsData.map((tutor) => {
+          // Ensure subjects is always an array
+          if (!tutor.subjects || !Array.isArray(tutor.subjects)) {
+            tutor.subjects = [
+              { id: 1, name: "Toán học", hourlyRate: 200000 },
+              { id: 2, name: "Vật lý", hourlyRate: 180000 },
+            ];
+          }
+
+          // Add bio if missing
+          if (!tutor.bio) {
+            tutor.bio = "";
+          }
+
+          return tutor;
+        });
+
+        // Add mock data if needed
+        if (tutorsData.length === 0) {
+          tutorsData = [
+            {
+              id: 1,
+              firstName: "Nguyễn",
+              lastName: "Văn A",
+              bio: "Tôi là gia sư có kinh nghiệm 5 năm dạy Toán và Lý. Tôi yêu thích việc giảng dạy và luôn tìm cách giúp học sinh hiểu bài một cách dễ dàng nhất.",
+              headline: "Gia sư Toán - Lý chuyên nghiệp",
+              subjects: [
+                { id: 1, name: "Toán học", hourlyRate: 200000 },
+                { id: 2, name: "Vật lý", hourlyRate: 180000 },
+              ],
+              ratePointAverage: 4.8,
+              totalPoint: 15,
+              verified: true,
+            },
+            {
+              id: 2,
+              firstName: "Trần",
+              lastName: "Thị B",
+              bio: "Chuyên gia dạy tiếng Anh với chứng chỉ IELTS 8.0. Tôi đã giúp nhiều học sinh đạt điểm cao trong các kỳ thi quốc tế.",
+              headline: "Chuyên gia tiếng Anh IELTS",
+              subjects: [{ id: 3, name: "Tiếng Anh", hourlyRate: 250000 }],
+              ratePointAverage: 4.9,
+              totalPoint: 22,
+              verified: true,
+            },
+          ];
+        }
+
+        setTutors(tutorsData);
+        setTotalPages(response.totalPages);
+        setTotalElements(response.totalElements);
+
+        // Auto-select first subject for each tutor
+        const newSelectedSubjects: { [tutorId: number]: number } = {};
+        tutorsData.forEach((tutor) => {
+          if (tutor.subjects && tutor.subjects.length > 0) {
+            newSelectedSubjects[tutor.id] = tutor.subjects[0].id;
+          }
+        });
+        setSelectedSubject(newSelectedSubjects);
+      }
+    } catch (error: unknown) {
+      setError((error as Error).message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const clearFilters = () => {
-    setFilters({
+    const defaultFilters = {
       keyword: "",
       subjectId: undefined,
       minFee: 100000,
       maxFee: 500000,
       minRating: undefined,
       city: "",
-    });
+    };
+    setFilters(defaultFilters);
     setCurrentPage(0);
-    searchTutors();
+
+    // Clear any pending timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Use setTimeout to ensure state is updated before API call
+    debounceTimeoutRef.current = setTimeout(() => {
+      searchTutorsWithFilters(defaultFilters, 0);
+    }, 100);
   };
 
   const handlePageChange = (page: number) => {

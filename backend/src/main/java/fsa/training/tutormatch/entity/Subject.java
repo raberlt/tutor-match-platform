@@ -1,6 +1,8 @@
 package fsa.training.tutormatch.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import java.time.ZonedDateTime;
 
 @Entity
@@ -27,9 +29,11 @@ public class Subject {
     // @Column(name = "is_active", nullable = false)
     // private Boolean isActive = true;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     private ZonedDateTime createdAt;
 
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private ZonedDateTime updatedAt;
 

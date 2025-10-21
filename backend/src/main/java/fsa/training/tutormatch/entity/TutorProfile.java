@@ -72,6 +72,14 @@ public class TutorProfile {
     @Column(nullable = false)
     private boolean isVerified = false;
 
+    // Location
+    @Column(columnDefinition = "NVARCHAR(100)")
+    private String city;
+
+    // Status
+    @Column(columnDefinition = "BIT DEFAULT 1")
+    private Boolean isActive = true;
+
     // Relationships
 
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

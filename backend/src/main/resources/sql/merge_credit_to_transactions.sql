@@ -68,3 +68,4 @@ CREATE INDEX IX_transactions_balance_before ON transactions(balance_before);
 CREATE INDEX IX_transactions_balance_after ON transactions(balance_after);
 
 PRINT 'Credit transactions merged to transactions table successfully!';
+

@@ -2,9 +2,14 @@ package fsa.training.tutormatch.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fsa.training.tutormatch.entity.Booking;
+import fsa.training.tutormatch.entity.Payment;
 import fsa.training.tutormatch.entity.Transaction;
 import fsa.training.tutormatch.entity.User;
+import fsa.training.tutormatch.enums.PaymentStatus;
 import fsa.training.tutormatch.enums.TransactionStatus;
+import fsa.training.tutormatch.repository.BookingRepository;
+import fsa.training.tutormatch.repository.PaymentRepository;
 import fsa.training.tutormatch.repository.TransactionRepository;
 import fsa.training.tutormatch.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +31,8 @@ public class SepayWebhookController {
 
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
+    private final PaymentRepository paymentRepository;
+    private final BookingRepository bookingRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PostMapping("/webhook")
@@ -190,20 +197,56 @@ public class SepayWebhookController {
                     return ResponseEntity.ok(Map.of("status", "error", "message", "Amount mismatch"));
                 }
                 
-                // Update transaction status to COMPLETED
-                transaction.setStatus(TransactionStatus.COMPLETED);
-                transaction.setProcessedAt(ZonedDateTime.now());
-                transaction.setGatewayTransactionId(gatewayTransactionId);
-                transaction.setBalanceAfter(transaction.getBalanceBefore().add(transaction.getAmount()));
-                transactionRepository.save(transaction);
-                
-                // Update user credit balance
-                User user = transaction.getUser();
-                user.setCreditBalance(user.getCreditBalance().add(transaction.getAmount()));
-                userRepository.save(user);
-                
-                log.info("Transaction {} completed successfully. User {} credit updated from {} to {}", 
-                        transactionRef, user.getUsername(), transaction.getBalanceBefore(), user.getCreditBalance());
+                // Xử lý theo loại transaction
+                if (transaction.getType() == fsa.training.tutormatch.enums.TransactionType.DEPOSIT) {
+                    // Nạp tín dụng: cộng tiền vào tài khoản
+                    User user = transaction.getUser();
+                    user.setCreditBalance(user.getCreditBalance().add(transaction.getAmount()));
+                    userRepository.save(user);
+                    
+                    // Update transaction status to COMPLETED
+                    transaction.setStatus(TransactionStatus.COMPLETED);
+                    transaction.setProcessedAt(ZonedDateTime.now());
+                    transaction.setGatewayTransactionId(gatewayTransactionId);
+                    transaction.setBalanceAfter(user.getCreditBalance());
+                    transactionRepository.save(transaction);
+                    
+                    log.info("Transaction {} completed successfully. User {} credit updated from {} to {}", 
+                            transactionRef, user.getUsername(), transaction.getBalanceBefore(), user.getCreditBalance());
+                    
+                } else if (transaction.getType() == fsa.training.tutormatch.enums.TransactionType.PAYMENT) {
+                    // Thanh toán booking: trừ tiền từ tài khoản và cập nhật payment/booking
+                    User user = transaction.getUser();
+                    user.setCreditBalance(user.getCreditBalance().subtract(transaction.getAmount()));
+                    userRepository.save(user);
+                    
+                    // Update transaction status to COMPLETED
+                    transaction.setStatus(TransactionStatus.COMPLETED);
+                    transaction.setProcessedAt(ZonedDateTime.now());
+                    transaction.setGatewayTransactionId(gatewayTransactionId);
+                    transaction.setBalanceAfter(user.getCreditBalance());
+                    transactionRepository.save(transaction);
+                    
+                    // Cập nhật payment
+                    if (transaction.getPayment() != null) {
+                        Payment payment = transaction.getPayment();
+                        payment.setStatus(PaymentStatus.COMPLETED);
+                        payment.setPaidAt(ZonedDateTime.now());
+                        payment.setGatewayResponse("Payment completed via Sepay webhook");
+                        paymentRepository.save(payment);
+                        
+                        // Cập nhật booking
+                        if (payment.getBooking() != null) {
+                            Booking booking = payment.getBooking();
+                            booking.setPaymentStatus(PaymentStatus.COMPLETED);
+                            booking.setStatus(fsa.training.tutormatch.enums.BookingStatus.PAYMENT_COMPLETED);
+                            bookingRepository.save(booking);
+                        }
+                    }
+                    
+                    log.info("Payment transaction {} completed successfully. User {} credit updated from {} to {}", 
+                            transactionRef, user.getUsername(), transaction.getBalanceBefore(), user.getCreditBalance());
+                }
                 
                 return ResponseEntity.ok(Map.of("status", "success", "message", "Transaction completed successfully"));
                 

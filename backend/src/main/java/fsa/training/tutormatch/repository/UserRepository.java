@@ -37,6 +37,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     
     // Find by username containing
     List<User> findByUsernameContaining(String username);
+    
+    // Find by email containing (for test data cleanup)
+    List<User> findByEmailContaining(String email);
 }
 
 

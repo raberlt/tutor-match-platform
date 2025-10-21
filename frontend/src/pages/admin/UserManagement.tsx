@@ -576,81 +576,49 @@ const UserManagement: React.FC = () => {
                   />
                 </div>
 
-                {/* Student specific fields */}
+                {/* Student specific fields - chỉ giữ trình độ học vấn */}
                 {userType === "STUDENT" && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Trình độ học vấn
-                      </label>
-                      <select
-                        value={newUser.educationLevel}
-                        onChange={(e) =>
-                          setNewUser({
-                            ...newUser,
-                            educationLevel: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="INDEPENDENT_LEARNER">Tự học</option>
-                        <option value="ELEMENTARY">Tiểu học</option>
-                        <option value="MIDDLE_SCHOOL">Trung học cơ sở</option>
-                        <option value="HIGH_SCHOOL">Trung học phổ thông</option>
-                        <option value="COLLEGE_UNIVERSITY">
-                          Cao đẳng/Đại học
-                        </option>
-                      </select>
-                    </div>
-                  </>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Trình độ học vấn
+                    </label>
+                    <select
+                      value={newUser.educationLevel}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          educationLevel: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="INDEPENDENT_LEARNER">Tự học</option>
+                      <option value="ELEMENTARY">Tiểu học</option>
+                      <option value="MIDDLE_SCHOOL">Trung học cơ sở</option>
+                      <option value="HIGH_SCHOOL">Trung học phổ thông</option>
+                      <option value="COLLEGE_UNIVERSITY">
+                        Cao đẳng/Đại học
+                      </option>
+                    </select>
+                  </div>
                 )}
 
-                {/* Tutor specific fields */}
+                {/* Tutor specific fields - chỉ giữ thông tin cơ bản */}
                 {userType === "TUTOR" && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Giới thiệu bản thân
-                      </label>
-                      <textarea
-                        value={newUser.bio || ""}
-                        onChange={(e) =>
-                          setNewUser({ ...newUser, bio: e.target.value })
-                        }
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Mô tả ngắn về bản thân và kinh nghiệm giảng dạy..."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Tiêu đề hồ sơ
-                      </label>
-                      <input
-                        type="text"
-                        value={newUser.headline || ""}
-                        onChange={(e) =>
-                          setNewUser({ ...newUser, headline: e.target.value })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="VD: Gia sư Toán - Lý chuyên nghiệp"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Kinh nghiệm giảng dạy
-                      </label>
-                      <textarea
-                        value={newUser.experience || ""}
-                        onChange={(e) =>
-                          setNewUser({ ...newUser, experience: e.target.value })
-                        }
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Mô tả kinh nghiệm giảng dạy của bạn..."
-                      />
-                    </div>
-                  </>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tiêu đề hồ sơ
+                    </label>
+                    <input
+                      type="text"
+                      value={newUser.headline || ""}
+                      onChange={(e) =>
+                        setNewUser({ ...newUser, headline: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="VD: Gia sư Toán - Lý chuyên nghiệp"
+                    />
+                  </div>
                 )}
               </div>
 
